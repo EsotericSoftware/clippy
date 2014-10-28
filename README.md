@@ -2,6 +2,8 @@
 
 Clippy is a clipboard history tool for Windows. It uses a database to stores any text item that is copied to the clipboard. The stored text items can be easily retrieved by browsing or searching.
 
+![](http://i.imgur.com/4vEWhmX.png)
+
 Clippy is a powerful tool, especially for programmers:
 
 * It is very common to need to copy and paste a few different items. Since the operating system clipboard can only hold a single item, this is a tedious task without Clippy.
