@@ -14,11 +14,11 @@ Clippy is a powerful tool, especially for programmers:
 
 ## Download
 
-Download the latest version of Clippy from the releases page:
+Download the latest version of Clippy here:
 
 [Download Clippy](https://github.com/EsotericSoftware/clippy/releases)
 
-When run, Clippy stores any text items that are placed on the clipboard. These items can be retrieved by pressing the hotkey to show Clippy's popup (see below). Clippy can be exited by clicking the icon in the system tray.
+There is no installation, only an `Clippy.exe` file. Place this file anywhere you like and run it. Clippy runs in the backgruond and stores any text items that are placed on the clipboard. These items can be retrieved by pressing the hotkey to show Clippy's popup (see below). Clippy can be exited by clicking the icon in the system tray.
 
 ## Popup
 
