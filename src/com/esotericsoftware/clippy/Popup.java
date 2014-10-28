@@ -1,0 +1,441 @@
+
+package com.esotericsoftware.clippy;
+
+import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.minlog.Log.*;
+import static java.awt.GridBagConstraints.*;
+
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.ToolTipManager;
+
+import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
+import com.esotericsoftware.clippy.Win.GUITHREADINFO;
+import com.esotericsoftware.clippy.Win.MONITORINFO;
+import com.esotericsoftware.clippy.Win.POINT;
+import com.esotericsoftware.clippy.Win.RECT;
+import com.esotericsoftware.clippy.util.DocumentChangeListener;
+import com.esotericsoftware.clippy.util.PopupFrame;
+import com.esotericsoftware.clippy.util.TextItem;
+import com.esotericsoftware.minlog.Log;
+import com.sun.jna.Pointer;
+
+public class Popup extends PopupFrame {
+	final ArrayList<TextItem> items = new ArrayList();
+	final ArrayList<String> itemText = new ArrayList();
+	final POINT popupPosition = new POINT();
+	final GridBagConstraints c = new GridBagConstraints();
+	final Rectangle rectangle = new Rectangle(0, 0, 0, TextItem.getItemHeight());
+	TextItem selectedItem;
+
+	final JPanel itemPanel = new JPanel();
+	final JTextField searchField = new JTextField();
+	final JPanel blockMouse = new JPanel();
+	final JCheckBox lockCheckbox = new JCheckBox("Lock order");
+	Point mouseStart;
+
+	final ExecutorService searchExecutor = Executors.newFixedThreadPool(1);
+	volatile int startIndex;
+	final ArrayList<String> searchText = new ArrayList();
+
+	public Popup () {
+		blockMouse.setOpaque(false);
+		setGlassPane(blockMouse); // Prevent mouse from selecting items until the mouse is moved a bit.
+		blockMouse.addMouseMotionListener(new MouseAdapter() {
+			public void mouseMoved (MouseEvent e) {
+				Point mouse = MouseInfo.getPointerInfo().getLocation();
+				if (mouse.distance(mouseStart) > 15) blockMouse.setVisible(false);
+			}
+		});
+
+		itemPanel.setLayout(new GridBagLayout());
+
+		JScrollPane scroll = new JScrollPane(itemPanel) {
+			public Dimension getPreferredSize () {
+				Dimension prefSize = super.getPreferredSize();
+				prefSize.width = Math.min(prefSize.width, clippy.config.popupWidth);
+				prefSize.height = Math.min(prefSize.height, TextItem.getItemHeight() * clippy.config.popupCount);
+				return prefSize;
+			}
+		};
+		scroll.setBorder(BorderFactory.createEmptyBorder());
+		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+		c.gridy = 1;
+		c.fill = BOTH;
+		c.weightx = 1;
+		c.weighty = 1;
+		panel.add(scroll, c);
+
+		c.weighty = 0;
+		c.fill = HORIZONTAL;
+		c.anchor = WEST;
+
+		searchField.setFont(TextItem.font);
+		searchField.addFocusListener(focusListener);
+		searchField.getDocument().addDocumentListener(new DocumentChangeListener() {
+			public void changed () {
+				pack();
+				EventQueue.invokeLater(new Runnable() {
+					public void run () {
+						startIndex = 0;
+						showSearchItems(searchField.getText());
+					}
+				});
+			}
+		});
+
+		lockCheckbox.setFont(TextItem.font);
+		lockCheckbox.addFocusListener(focusListener);
+
+		KeyAdapter forwardKeys = new KeyAdapter() {
+			public void keyPressed (KeyEvent e) {
+				int keyCode = e.getKeyCode();
+				switch (keyCode) {
+				case KeyEvent.VK_UP:
+				case KeyEvent.VK_DOWN:
+				case KeyEvent.VK_ENTER:
+				case KeyEvent.VK_ESCAPE:
+				case KeyEvent.VK_PAGE_UP:
+				case KeyEvent.VK_PAGE_DOWN:
+					popupKeyPressed(keyCode);
+					return;
+				}
+			}
+		};
+		searchField.addKeyListener(forwardKeys);
+		lockCheckbox.addKeyListener(forwardKeys);
+		lockCheckbox.addKeyListener(new KeyAdapter() {
+			public void keyPressed (KeyEvent e) {
+				int keyCode = e.getKeyCode();
+				if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) popupKeyPressed(keyCode);
+			}
+		});
+
+		addKeyListener(new KeyAdapter() {
+			public void keyPressed (KeyEvent e) {
+				popupKeyPressed(e.getKeyCode());
+			}
+
+			public void keyTyped (KeyEvent e) {
+				popupKeyTyped(e);
+			}
+		});
+	}
+
+	void popupKeyPressed (int keyCode) {
+		switch (keyCode) {
+		case KeyEvent.VK_ESCAPE:
+			hidePopup();
+			return;
+		case KeyEvent.VK_ENTER: {
+			int index = items.indexOf(selectedItem);
+			if (index != -1) pasteItem(itemText.get(index));
+			return;
+		}
+		case KeyEvent.VK_PAGE_UP: {
+			if (items.isEmpty()) return;
+			int selectedIndex = items.indexOf(selectedItem);
+			if (selectedIndex == 0 && searchField.getParent() == null) {
+				// Page up at top of recent list shows previous page of items.
+				int oldStartIndex = startIndex;
+				startIndex = Math.max(0, startIndex - clippy.config.popupCount);
+				if (showRecentItems())
+					keepOnScreen();
+				else
+					startIndex = oldStartIndex;
+				return;
+			}
+			int index = Math.max(0, selectedIndex - clippy.config.popupCount);
+			TextItem item = items.get(index);
+			item.setSelected(true);
+			item.selected();
+			return;
+		}
+		case KeyEvent.VK_PAGE_DOWN: {
+			if (items.isEmpty()) return;
+			int selectedIndex = items.indexOf(selectedItem);
+			if (selectedIndex == items.size() - 1 && searchField.getParent() == null) {
+				// Page down at end of recent list shows next page of items.
+				int oldStartIndex = startIndex;
+				startIndex += clippy.config.popupCount;
+				if (showRecentItems())
+					keepOnScreen();
+				else
+					startIndex = oldStartIndex;
+				TextItem lastItem = items.get(items.size() - 1);
+				lastItem.setSelected(true);
+				lastItem.selected();
+				return;
+			}
+			int index = Math.min(selectedIndex + clippy.config.popupCount, items.size() - 1);
+			TextItem item = items.get(index);
+			item.setSelected(true);
+			item.selected();
+			return;
+		}
+		case KeyEvent.VK_UP: {
+			if (items.isEmpty()) return;
+			int index = items.indexOf(selectedItem) - 1;
+			if (index < 0) index = items.size() - 1;
+			TextItem item = items.get(index);
+			item.setSelected(true);
+			item.selected();
+			return;
+		}
+		case KeyEvent.VK_DOWN: {
+			if (items.isEmpty()) return;
+			int index = items.indexOf(selectedItem) + 1;
+			if (index >= items.size()) index = 0;
+			TextItem item = items.get(index);
+			item.setSelected(true);
+			item.selected();
+			return;
+		}
+		case KeyEvent.VK_HOME: {
+			TextItem item = items.get(0);
+			item.setSelected(true);
+			item.selected();
+			return;
+		}
+		case KeyEvent.VK_END: {
+			TextItem item = items.get(items.size() - 1);
+			item.setSelected(true);
+			item.selected();
+			return;
+		}
+		}
+
+		if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) {
+			int index = keyCode - KeyEvent.VK_0 - 1;
+			if (index < 0) index = 9;
+			if (index < itemText.size()) pasteItem(itemText.get(index));
+		}
+	}
+
+	void popupKeyTyped (KeyEvent e) {
+		// Show search field.
+		c.gridy = 0;
+		panel.add(searchField, c);
+		searchField.requestFocus();
+		searchField.dispatchEvent(e);
+		pack();
+		keepOnScreen();
+		startIndex = 0;
+		showSearchItems(searchField.getText());
+	}
+
+	public void altPressed () {
+		// Show options.
+		if (lockCheckbox.getParent() != null) {
+			requestFocus();
+			panel.remove(lockCheckbox);
+			pack();
+			return;
+		}
+		c.gridy = 2;
+		panel.add(lockCheckbox, c);
+		pack();
+		keepOnScreen();
+		lockCheckbox.requestFocus();
+	}
+
+	public void showPopup () {
+		if (DEBUG && !TRACE) debug("Show popup.");
+		if (!showRecentItems()) {
+			if (WARN) warn("No clips to show.");
+			return;
+		}
+
+		Pointer hwnd = GetForegroundWindow();
+		POINT position = getPopupPosition(hwnd, getWidth(), getHeight());
+		setLocation(position.x, position.y);
+		keepOnScreen();
+
+		mouseStart = MouseInfo.getPointerInfo().getLocation();
+		blockMouse.setVisible(true);
+
+		super.showPopup();
+		requestFocus();
+	}
+
+	private void keepOnScreen () {
+		POINT position = new POINT();
+		position.x = getX();
+		position.y = getY();
+
+		Pointer monitor = MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTONEAREST);
+		MONITORINFO monitorInfo = new MONITORINFO();
+		if (GetMonitorInfo(monitor, monitorInfo)) {
+			position.x = Math.min(Math.max(position.x, monitorInfo.rcMonitor.left), monitorInfo.rcMonitor.right - getWidth());
+			position.y = Math.min(Math.max(position.y, monitorInfo.rcMonitor.top), monitorInfo.rcMonitor.bottom - getHeight());
+		} else if (TRACE) //
+			trace("Unable to get monitor info.");
+
+		setLocation(position.x, position.y);
+	}
+
+	boolean showRecentItems () {
+		try {
+			ClipConnection conn = clippy.db.getThreadConnection();
+			conn.last(itemText, clippy.config.popupCount, startIndex);
+			if (itemText.size() == 0) return false;
+			populate();
+			return true;
+		} catch (SQLException ex) {
+			if (Log.ERROR) error("Unable to retrieve clips.", ex);
+			return false;
+		}
+	}
+
+	void showSearchItems (final String text) {
+		searchExecutor.submit(new Runnable() {
+			public void run () {
+				try {
+					ClipConnection conn = clippy.db.getThreadConnection();
+					conn.search(searchText, "%" + text + "%", clippy.config.popupSearchCount);
+					EventQueue.invokeLater(new Runnable() {
+						public void run () {
+							itemText.clear();
+							itemText.addAll(searchText);
+							populate();
+						}
+					});
+				} catch (SQLException ex) {
+					if (Log.ERROR) error("Unable to retrieve clips.", ex);
+				}
+			}
+		});
+	}
+
+	void populate () {
+		clearItems();
+		for (int i = 0, n = itemText.size(); i < n; i++) {
+			final String text = itemText.get(i);
+			String label = text.trim().replace("\r\n", "\n").replace('\n', ' ');
+			if (label.isEmpty()) label = text.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t").replace(" ", "\u2022");
+
+			if (i < 9)
+				label = (i + 1) + ": " + label;
+			else if (i == 9) //
+				label = "0: " + label;
+
+			TextItem item = new TextItem(label) {
+				public void clicked () {
+					pasteItem(text);
+				}
+
+				public void selected () {
+					if (!isSelected()) setSelected(true);
+					if (selectedItem != this) selectedItem.setSelected(false);
+					selectedItem = this;
+					scrollRectToVisible(rectangle);
+				}
+			};
+			if (item.getPreferredSize().width > clippy.config.popupWidth) item.tooltipText = text;
+			items.add(item);
+
+			if (i == 0) {
+				selectedItem = item;
+				item.setSelected(true);
+			}
+
+			c.gridy = i + 1;
+			itemPanel.add(item, c);
+		}
+		pack();
+	}
+
+	void pasteItem (String text) {
+		hidePopup();
+		clippy.paste(text);
+	}
+
+	POINT getScreenCenter (int width, int height) {
+		Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
+		popupPosition.x = size.width / 2 - width / 2;
+		popupPosition.y = size.height / 2 - height / 2;
+		return popupPosition;
+	}
+
+	POINT getPopupPosition (Pointer hwndForeground, int width, int height) {
+		if (hwndForeground == null) {
+			if (TRACE) trace("Unable to get foreground window, positioning popup using screen center.");
+			return getScreenCenter(width, height);
+		}
+
+		int threadId = GetWindowThreadProcessId(hwndForeground, null);
+
+		GUITHREADINFO guiInfo = new GUITHREADINFO();
+		if (!GetGUIThreadInfo(threadId, guiInfo)) {
+			if (TRACE) trace("Unable to get GUI thread info, positioning popup using screen center.");
+			return getScreenCenter(width, height);
+		}
+
+		if (guiInfo.hwndCaret != null) {
+			popupPosition.x = guiInfo.rcCaret.left - 2;
+			popupPosition.y = guiInfo.rcCaret.top - 2;
+			if (ClientToScreen(guiInfo.hwndCaret, popupPosition)) {
+				if (TRACE) trace("Positioning popup using caret position.");
+				return popupPosition;
+			}
+			if (TRACE) trace("Unable to compute caret screen coordinates.");
+		}
+
+		Pointer hwnd = guiInfo.hwndFocus;
+		if (TRACE && hwnd != null) trace("Positioning popup using window with keyboard focus.");
+		if (hwnd == null) {
+			hwnd = guiInfo.hwndActive;
+			if (TRACE && hwnd != null) trace("Positioning popup using active window.");
+		}
+		if (hwnd != null) {
+			RECT rect = new RECT();
+			if (GetWindowRect(hwnd, rect)) {
+				popupPosition.x = rect.left + (rect.right - rect.left) / 2 - width / 2;
+				popupPosition.y = rect.top + (rect.bottom - rect.top) / 2 - height / 2;
+				return popupPosition;
+			}
+			if (TRACE) trace("Unable to get window rectangle.");
+		}
+
+		if (TRACE) trace("Unable to use a window, positioning popup using screen center.");
+		return getScreenCenter(width, height);
+	}
+
+	public void hidePopup () {
+		super.hidePopup();
+		clearItems();
+		panel.remove(searchField);
+		if (!lockCheckbox.isSelected()) panel.remove(lockCheckbox);
+		searchField.setText("");
+		startIndex = 0;
+	}
+
+	public void clearItems () {
+		itemPanel.removeAll();
+		if (selectedItem != null) selectedItem.setSelected(false);
+		selectedItem = null;
+		items.clear();
+		ToolTipManager.sharedInstance().mouseExited(new MouseEvent(this, 0, 0, 0, 0, 0, 0, 0, 0, false, 0)); // Hide any tooltip.
+	}
+}

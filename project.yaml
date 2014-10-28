@@ -1,0 +1,4 @@
+main: com.esotericsoftware.clippy.Clippy
+---
+Build.build(project);
+Build.oneJAR(project);
