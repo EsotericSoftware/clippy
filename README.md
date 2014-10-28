@@ -1,6 +1,6 @@
 # Clippy
 
-Clippy is a clipboard history tool for Windows. It uses a database to stores any text item that is copied to the clipboard. The stored text items can be easily retrieved by browsing or searching.
+Clippy is a clipboard history tool for Windows. It uses a database to store any text items that are copied to the clipboard. The stored text items can be easily retrieved by browsing or searching.
 
 ![](http://i.imgur.com/4vEWhmX.png)
 
