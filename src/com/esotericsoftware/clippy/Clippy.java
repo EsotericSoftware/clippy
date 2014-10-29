@@ -140,6 +140,8 @@ public class Clippy {
 		}
 	}
 
+	// BOZO - Always on top.
+
 	public void paste (String text) {
 		if (text == null) return;
 		if (!clipboard.setContents(text)) return;
@@ -149,6 +151,14 @@ public class Clippy {
 		} catch (SQLException ex) {
 			if (ERROR) error("Error moving clipboard text to last.", ex);
 		}
+
+		// Could use SendInput or menu->Edit->Paste, but users should really just install the clink CMD prompt addon instead.
+		// char[] chars = new char[2048];
+		// int count = GetClassName(GetForegroundWindow(), chars, chars.length);
+		// if (count > 0) {
+		// if (new String(chars, 0, count).equals("ConsoleWindowClass")) {
+		// }
+		// }
 
 		keyboard.sendKeyUp(VK_SHIFT);
 		keyboard.sendKeyUp(VK_CONTROL); // 10

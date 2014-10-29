@@ -108,6 +108,8 @@ public class Win {
 
 		static public native int GetWindowThreadProcessId (Pointer hWnd, IntByReference lpdwProcessId);
 
+		static public native int GetClassName (Pointer hWnd, char[] lpClassName, int nMaxCount);
+
 		static public native boolean ClientToScreen (Pointer hWnd, POINT lpPoint);
 
 		static public native boolean GetWindowRect (Pointer hWnd, RECT rect);
