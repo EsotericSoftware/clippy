@@ -378,10 +378,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 				type = Types.REAL;
 			else if (dataType.startsWith("SMALLINT"))
 				type = Types.SMALLINT;
-			else if (dataType.startsWith("TIME"))
-				type = Types.TIME;
 			else if (dataType.startsWith("TIMESTAMP"))
 				type = Types.TIMESTAMP;
+			else if (dataType.startsWith("TIME"))
+				type = Types.TIME;
 			else if (dataType.startsWith("VARCHAR FOR BIT DATA"))
 				type = Types.VARBINARY;
 			else if (dataType.startsWith("VARCHAR"))
