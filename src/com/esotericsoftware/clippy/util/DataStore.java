@@ -28,10 +28,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.h2.fulltext.FullText;
@@ -42,7 +40,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	private final String databasePath, tableName, connectionOptions;
 	private boolean inMemory, socketLocking;
 	private TraceLevel traceLevel = TraceLevel.OFF;
-	private final ArrayList<ColumnDefinition> columns = new ArrayList();
+	private final ArrayList<String> columns = new ArrayList();
 	private final ArrayList<List<String>> indexes = new ArrayList();
 	private final ArrayList<List<String>> fulltextIndexes = new ArrayList();
 	private Connection defaultConn;
@@ -79,49 +77,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	}
 
 	/** Adds a column to the database table backing this data store. Can only be called before open is called. */
-	public void addColumn (String sqlColumnDefinition) {
-		addColumn(new ColumnDefinition(sqlColumnDefinition));
-	}
-
-	/** Adds a column to the database table backing this data store. Can only be called before open is called. */
-	public void addColumn (ColumnDefinition column) {
+	public void addColumn (String column) {
 		if (column == null) throw new IllegalArgumentException("column cannot be null.");
 		if (defaultConn != null) throw new IllegalStateException("DataStore has already been opened.");
 		columns.add(column);
-	}
-
-	/** Returns a List of ColumnDefinition objects. */
-	public List getColumns () {
-		return columns;
-	}
-
-	/** Returns a String containing all the column names for this DataStore, delimited with commas. */
-	public String getColumnNames () {
-		return getColumnNames(null);
-	}
-
-	/** Returns a String containing all the column names in this DataStore, delimited with commas.
-	 * @param append A String to append to each column name. */
-	public String getColumnNames (String append) {
-		StringBuffer buffer = new StringBuffer(100);
-		int i = 0;
-		for (Iterator iter = columns.iterator(); iter.hasNext(); i++) {
-			ColumnDefinition column = (ColumnDefinition)iter.next();
-			if (i > 0) buffer.append(',');
-			buffer.append(column.getName());
-			if (append != null) buffer.append(append);
-		}
-		return buffer.toString();
-	}
-
-	/** Returns a String containing a question mark for each column name in this DataStore, delimited with commas. */
-	public String getColumnPlaceholders () {
-		StringBuffer buffer = new StringBuffer(25);
-		for (int i = 0, n = columns.size(); i < n; i++) {
-			if (i > 0) buffer.append(',');
-			buffer.append('?');
-		}
-		return buffer.toString();
 	}
 
 	public void addIndex (String... columnNames) {
@@ -161,10 +120,9 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			StringBuffer buffer = new StringBuffer(100);
 			buffer.append("CREATE TABLE IF NOT EXISTS :table: (");
 			int i = 0;
-			for (Iterator iter = columns.iterator(); iter.hasNext(); i++) {
-				ColumnDefinition column = (ColumnDefinition)iter.next();
-				if (i > 0) buffer.append(',');
-				buffer.append(column.getDefinition());
+			for (String column : columns) {
+				if (i++ > 0) buffer.append(',');
+				buffer.append(column);
 			}
 			buffer.append(')');
 			stmt.execute(sql(buffer.toString()));
@@ -321,89 +279,6 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			ResultSet set = getCount.executeQuery();
 			if (!set.next()) return 0;
 			return set.getInt(1);
-		}
-	}
-
-	/** Represents a column in a SQL table. Stores the name, type, and SQL column definition. */
-	public class ColumnDefinition {
-		private final String definition;
-		private final String name;
-		private final int type;
-
-		public ColumnDefinition (String sqlColumnDefinition) {
-			if (sqlColumnDefinition == null) throw new IllegalArgumentException("sqlColumnDefinition cannot be null.");
-
-			// Determine column name and type from column definition.
-			definition = sqlColumnDefinition.trim();
-
-			int firstSpaceIndex = definition.indexOf(' ');
-			if (firstSpaceIndex == -1) throw new IllegalArgumentException("Invalid column definition: " + definition);
-			name = definition.substring(0, firstSpaceIndex).trim().toUpperCase();
-
-			int firstParenIndex = definition.indexOf('(');
-			if (firstParenIndex == -1) firstParenIndex = definition.length();
-			String dataType = definition.substring(firstSpaceIndex + 1, firstParenIndex).trim().toUpperCase();
-			if (dataType.length() == 0) throw new IllegalArgumentException("Invalid column definition: " + definition);
-			if (definition.indexOf("FOR BIT DATA") != -1) dataType += " FOR BIT DATA";
-
-			if (dataType.startsWith("BIGINT"))
-				type = Types.BIGINT;
-			else if (dataType.startsWith("BOOLEAN"))
-				type = Types.BOOLEAN;
-			else if (dataType.startsWith("BLOB"))
-				type = Types.BLOB;
-			else if (dataType.startsWith("CHAR FOR BIT DATA"))
-				type = Types.BINARY;
-			else if (dataType.startsWith("CHAR"))
-				type = Types.CHAR;
-			else if (dataType.startsWith("CLOB"))
-				type = Types.CLOB;
-			else if (dataType.startsWith("DATE"))
-				type = Types.DATE;
-			else if (dataType.startsWith("DECIMAL"))
-				type = Types.DECIMAL;
-			else if (dataType.startsWith("DOUBLE"))
-				type = Types.DOUBLE;
-			else if (dataType.startsWith("FLOAT"))
-				type = Types.FLOAT;
-			else if (dataType.startsWith("INTEGER"))
-				type = Types.INTEGER;
-			else if (dataType.startsWith("LONG VARCHAR FOR BIT DATA"))
-				type = Types.LONGVARBINARY;
-			else if (dataType.startsWith("LONG VARCHAR"))
-				type = Types.LONGVARCHAR;
-			else if (dataType.startsWith("NUMERIC"))
-				type = Types.NUMERIC;
-			else if (dataType.startsWith("REAL"))
-				type = Types.REAL;
-			else if (dataType.startsWith("SMALLINT"))
-				type = Types.SMALLINT;
-			else if (dataType.startsWith("TIMESTAMP"))
-				type = Types.TIMESTAMP;
-			else if (dataType.startsWith("TIME"))
-				type = Types.TIME;
-			else if (dataType.startsWith("VARCHAR FOR BIT DATA"))
-				type = Types.VARBINARY;
-			else if (dataType.startsWith("VARCHAR"))
-				type = Types.VARCHAR;
-			else
-				throw new IllegalArgumentException("Unknown SQL column data type: " + dataType);
-		}
-
-		public String getDefinition () {
-			return definition;
-		}
-
-		public String getName () {
-			return name;
-		}
-
-		public int getType () {
-			return type;
-		}
-
-		public String toString () {
-			return getName();
 		}
 	}
 
