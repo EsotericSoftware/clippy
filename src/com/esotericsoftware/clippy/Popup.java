@@ -67,6 +67,7 @@ public class Popup extends PopupFrame {
 	final GridBagConstraints c = new GridBagConstraints();
 	final Rectangle rectangle = new Rectangle(0, 0, 0, TextItem.getItemHeight());
 	TextItem selectedItem;
+	String selectNextPopulate;
 
 	final JPanel itemPanel = new JPanel();
 	final JTextField searchField = new JTextField();
@@ -181,19 +182,12 @@ public class Popup extends PopupFrame {
 					index++;
 				else if (index != 0) //
 					index--;
-				String text = itemText.get(index);
+				selectNextPopulate = itemText.get(index);
 
 				if (searchField.getParent() == null) {
 					if (!showRecentItems()) hidePopup();
 				} else
 					showSearchItems(searchField.getText());
-
-				index = itemText.indexOf(text);
-				if (index != -1) {
-					TextItem item = items.get(index);
-					item.setSelected(true);
-					item.selected();
-				}
 			}
 			return;
 		case KeyEvent.VK_ESCAPE:
@@ -417,7 +411,18 @@ public class Popup extends PopupFrame {
 			c.gridy = i + 1;
 			itemPanel.add(item, c);
 		}
+
 		pack();
+
+		if (selectNextPopulate != null) {
+			int index = itemText.indexOf(selectNextPopulate);
+			if (index != -1) {
+				TextItem item = items.get(index);
+				item.setSelected(true);
+				item.selected();
+			}
+			selectNextPopulate = null;
+		}
 	}
 
 	void pasteItem (String text) {
