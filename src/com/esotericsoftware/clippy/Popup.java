@@ -130,15 +130,15 @@ public class Popup extends PopupFrame {
 
 		KeyAdapter forwardKeys = new KeyAdapter() {
 			public void keyPressed (KeyEvent e) {
-				int keyCode = e.getKeyCode();
-				switch (keyCode) {
+				switch (e.getKeyCode()) {
 				case KeyEvent.VK_UP:
 				case KeyEvent.VK_DOWN:
 				case KeyEvent.VK_ENTER:
 				case KeyEvent.VK_ESCAPE:
 				case KeyEvent.VK_PAGE_UP:
 				case KeyEvent.VK_PAGE_DOWN:
-					popupKeyPressed(keyCode);
+				case KeyEvent.VK_DELETE:
+					popupKeyPressed(e);
 					return;
 				}
 			}
@@ -148,13 +148,13 @@ public class Popup extends PopupFrame {
 		lockCheckbox.addKeyListener(new KeyAdapter() {
 			public void keyPressed (KeyEvent e) {
 				int keyCode = e.getKeyCode();
-				if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) popupKeyPressed(keyCode);
+				if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) popupKeyPressed(e);
 			}
 		});
 
 		addKeyListener(new KeyAdapter() {
 			public void keyPressed (KeyEvent e) {
-				popupKeyPressed(e.getKeyCode());
+				popupKeyPressed(e);
 			}
 
 			public void keyTyped (KeyEvent e) {
@@ -163,8 +163,39 @@ public class Popup extends PopupFrame {
 		});
 	}
 
-	void popupKeyPressed (int keyCode) {
+	void popupKeyPressed (KeyEvent e) {
+		int keyCode = e.getKeyCode();
 		switch (keyCode) {
+		case KeyEvent.VK_DELETE:
+			if (e.isShiftDown() && e.isControlDown()) {
+				int index = items.indexOf(selectedItem);
+				if (index == -1) return;
+				try {
+					clippy.db.getThreadConnection().removeClip(itemText.get(index));
+					if (Log.TRACE) trace("Deleted clip.");
+				} catch (SQLException ex) {
+					if (Log.ERROR) error("Unable to delete clip.", ex);
+				}
+
+				if (index < items.size() - 1)
+					index++;
+				else if (index != 0) //
+					index--;
+				String text = itemText.get(index);
+
+				if (searchField.getParent() == null) {
+					if (!showRecentItems()) hidePopup();
+				} else
+					showSearchItems(searchField.getText());
+
+				index = itemText.indexOf(text);
+				if (index != -1) {
+					TextItem item = items.get(index);
+					item.setSelected(true);
+					item.selected();
+				}
+			}
+			return;
 		case KeyEvent.VK_ESCAPE:
 			hidePopup();
 			return;
@@ -254,6 +285,8 @@ public class Popup extends PopupFrame {
 	}
 
 	void popupKeyTyped (KeyEvent e) {
+		if (e.getKeyChar() == KeyEvent.VK_DELETE && e.isShiftDown() && e.isControlDown()) return;
+
 		// Show search field.
 		c.gridy = 0;
 		panel.add(searchField, c);
@@ -281,6 +314,7 @@ public class Popup extends PopupFrame {
 	}
 
 	public void showPopup () {
+		if (isVisible()) return;
 		if (DEBUG && !TRACE) debug("Show popup.");
 		if (!showRecentItems()) {
 			if (WARN) warn("No clips to show.");
