@@ -78,6 +78,7 @@ public class Win {
 		static public final int WM_RBUTTONUP = 0x205;
 
 		static public final int CF_TEXT = 1;
+		static public final int CF_UNICODETEXT = 13;
 		static public final int CF_HDROP = 15;
 
 		static public final int IMAGE_ICON = 1;

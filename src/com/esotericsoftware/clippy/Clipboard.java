@@ -104,7 +104,9 @@ public class Clipboard {
 		if (!open(500)) return null;
 		try {
 			int format;
-			if (IsClipboardFormatAvailable(CF_TEXT)) {
+			if (IsClipboardFormatAvailable(CF_UNICODETEXT)) {
+				format = CF_UNICODETEXT;
+			} else if (IsClipboardFormatAvailable(CF_TEXT)) {
 				format = CF_TEXT;
 			} else if (IsClipboardFormatAvailable(CF_HDROP)) {
 				format = CF_HDROP;
@@ -126,10 +128,15 @@ public class Clipboard {
 				return null;
 			}
 
-			String text;
-			if (format == CF_TEXT) {
+			String text = null;
+			switch (format) {
+			case CF_UNICODETEXT:
+				text = data.getWideString(0);
+				break;
+			case CF_TEXT:
 				text = data.getString(0);
-			} else {
+				break;
+			case CF_HDROP:
 				int fileCount = DragQueryFile(data, -1, null, 0);
 				if (fileCount == 0) {
 					if (WARN) warn("Unable to query file count.");
@@ -147,6 +154,7 @@ public class Clipboard {
 				}
 				buffer.setLength(buffer.length() - 1);
 				text = buffer.toString();
+				break;
 			}
 
 			GlobalUnlock(globalData);
@@ -171,7 +179,7 @@ public class Clipboard {
 				return false;
 			}
 
-			Pointer data = GlobalAlloc(GMEM_MOVEABLE, text.length() + 1);
+			Pointer data = GlobalAlloc(GMEM_MOVEABLE, (text.length() + 1) * 2); // 2 is sizeof(WCHAR)
 			if (data == null) {
 				if (WARN) warn("Unable to allocate data.");
 				return false;
@@ -182,10 +190,10 @@ public class Clipboard {
 				if (WARN) warn("Unable to lock buffer.");
 				return false;
 			}
-			buffer.setString(0, text);
+			buffer.setWideString(0, text);
 			GlobalUnlock(data);
 
-			if (SetClipboardData(CF_TEXT, buffer) == null) {
+			if (SetClipboardData(CF_UNICODETEXT, buffer) == null) {
 				if (WARN) warn("Unable to set clipboard data.");
 				return false;
 			}
