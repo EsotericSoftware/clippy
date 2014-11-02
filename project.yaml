@@ -2,3 +2,5 @@ main: com.esotericsoftware.clippy.Clippy
 ---
 Build.build(project);
 Build.oneJAR(project);
+shell("jsmoothcmd.bat " + project.path("build/Clippy.jsmooth"));
+shell("build\\RCEDIT.exe /I build\\Clippy.exe build\\icon.ico");

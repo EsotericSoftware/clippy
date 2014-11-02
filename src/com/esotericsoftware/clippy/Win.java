@@ -23,6 +23,7 @@ package com.esotericsoftware.clippy;
 import java.util.Arrays;
 import java.util.List;
 
+import com.sun.jna.Callback;
 import com.sun.jna.IntegerType;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
@@ -30,11 +31,13 @@ import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.WString;
 import com.sun.jna.ptr.IntByReference;
-import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
 import com.sun.jna.win32.W32APIOptions;
 
 /** @author Nathan Sweet */
 public class Win {
+	static public boolean is64Bit = System.getProperty("os.arch").equals("amd64")
+		|| System.getProperty("os.arch").equals("x86_64");
+
 	static public class Kernel32 {
 		static {
 			Native.register(NativeLibrary.getInstance("kernel32", W32APIOptions.DEFAULT_OPTIONS));
@@ -93,7 +96,7 @@ public class Win {
 		static public native Pointer CreateWindowEx (int dwExStyle, WString lpClassName, WString lpWindowName, int dwStyle, int x,
 			int y, int nWidth, int nHeight, int hWndParent, int hMenu, int hInstance, int lpParam);
 
-		static public native int SetWindowLongPtr (Pointer hWnd, int nIndex, StdCallCallback procedure);
+		static public native int SetWindowLong (Pointer hWnd, int nIndex, Callback procedure);
 
 		static public native int DefWindowProc (Pointer hWnd, int uMsg, Parameter wParam, Parameter lParam);
 
@@ -152,6 +155,14 @@ public class Win {
 		static public native boolean GetGUIThreadInfo (int idThread, GUITHREADINFO lpgui);
 
 		static public native Pointer LoadImage (Pointer hinst, WString name, int type, int xDesired, int yDesired, int load);
+	}
+
+	static public class User32_64 {
+		static {
+			Native.register(NativeLibrary.getInstance("user32", W32APIOptions.DEFAULT_OPTIONS));
+		}
+
+		static public native int SetWindowLongPtr (Pointer hWnd, int nIndex, Callback procedure);
 	}
 
 	static public class Shell32 {

@@ -241,8 +241,8 @@ public class Popup extends PopupFrame {
 		}
 		case KeyEvent.VK_UP: {
 			if (items.isEmpty()) return;
-			int index = items.indexOf(selectedItem) - 1;
-			if (index < 0) index = items.size() - 1;
+			int index = items.indexOf(selectedItem) - (e.isControlDown() ? 5 : 1);
+			if (index < 0) index = e.isControlDown() ? 0 : (items.size() - 1);
 			TextItem item = items.get(index);
 			item.setSelected(true);
 			item.selected();
@@ -250,8 +250,8 @@ public class Popup extends PopupFrame {
 		}
 		case KeyEvent.VK_DOWN: {
 			if (items.isEmpty()) return;
-			int index = items.indexOf(selectedItem) + 1;
-			if (index >= items.size()) index = 0;
+			int index = items.indexOf(selectedItem) + (e.isControlDown() ? 5 : 1);
+			if (index >= items.size()) index = e.isControlDown() ? (items.size() - 1) : 0;
 			TextItem item = items.get(index);
 			item.setSelected(true);
 			item.selected();

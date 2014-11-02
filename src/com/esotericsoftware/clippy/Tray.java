@@ -23,6 +23,7 @@ package com.esotericsoftware.clippy;
 import static com.esotericsoftware.clippy.Win.NOTIFYICONDATA.*;
 import static com.esotericsoftware.clippy.Win.Shell32.*;
 import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.clippy.Win.User32_64.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.IOException;
@@ -82,7 +83,7 @@ public class Tray {
 					}
 				});
 
-				SetWindowLongPtr(hwnd, GWL_WNDPROC, wndProc = new StdCallCallback() {
+				wndProc = new StdCallCallback() {
 					public int callback (Pointer hwnd, int message, Parameter wParameter, Parameter lParameter) {
 						if (message == wmTrayIcon) {
 							int lParam = lParameter.intValue();
@@ -106,7 +107,11 @@ public class Tray {
 						}
 						return DefWindowProc(hwnd, message, wParameter, lParameter);
 					}
-				});
+				};
+				if (Win.is64Bit)
+					SetWindowLongPtr(hwnd, GWL_WNDPROC, wndProc);
+				else
+					SetWindowLong(hwnd, GWL_WNDPROC, wndProc);
 
 				try {
 					barrier.await();

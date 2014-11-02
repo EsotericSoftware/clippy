@@ -3,10 +3,10 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="assets"/>
 	<classpathentry kind="lib" path="libs/minlog-1.2.jar"/>
-	<classpathentry kind="lib" path="libs/jna-4.1.0-win32-x86-64.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="lib" path="libs/jna-4.1.0-min.jar"/>
 	<classpathentry kind="lib" path="libs/h2-1.4.181.jar"/>
 	<classpathentry kind="lib" path="libs/jsonbeans-0.7a.jar"/>
+	<classpathentry kind="lib" path="libs/jna-4.1.0-natives.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

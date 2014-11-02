@@ -64,7 +64,6 @@ public class Clippy {
 		});
 
 		config = new Config();
-		TextItem.font = Font.decode(config.font);
 
 		if (Log.ERROR) {
 			try {
@@ -75,6 +74,8 @@ public class Clippy {
 				if (WARN) warn("Unable to write log file.", ex);
 			}
 		}
+
+		TextItem.font = Font.decode(config.font);
 
 		try {
 			db = new ClipDataStore();
