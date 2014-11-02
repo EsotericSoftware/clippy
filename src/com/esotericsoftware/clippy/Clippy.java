@@ -141,8 +141,6 @@ public class Clippy {
 		}
 	}
 
-	// BOZO - Always on top.
-
 	public void paste (String text) {
 		if (text == null) return;
 		if (!clipboard.setContents(text)) return;
