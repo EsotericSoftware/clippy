@@ -6,7 +6,6 @@
 <JVMSearchPath>registry</JVMSearchPath>
 <JVMSearchPath>exepath</JVMSearchPath>
 <JVMSearchPath>jview</JVMSearchPath>
-<arguments></arguments>
 <currentDirectory>${EXECUTABLEPATH}</currentDirectory>
 <embeddedJar>true</embeddedJar>
 <executableName>Clippy.exe</executableName>

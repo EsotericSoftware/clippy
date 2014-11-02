@@ -3,4 +3,6 @@ main: com.esotericsoftware.clippy.Clippy
 Build.build(project);
 Build.oneJAR(project);
 shell("jsmoothcmd.bat " + project.path("build/Clippy.jsmooth"));
-shell("build\\RCEDIT.exe /I build\\Clippy.exe build\\icon.ico");
+shell("ResHacker.exe -delete build/Clippy.exe, build/Clippy.exe, ICONGROUP, A, 1033");
+shell("ResHacker.exe -delete build/Clippy.exe, build/Clippy.exe, ICONGROUP, A2, 1033");
+shell("ResHacker.exe -add build/Clippy.exe, build/Clippy.exe, build/icon.ico, ICONGROUP, MAINICON, 0");
