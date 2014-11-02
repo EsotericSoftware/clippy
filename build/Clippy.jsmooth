@@ -12,7 +12,7 @@
 <initialMemoryHeap>6291456</initialMemoryHeap>
 <jarLocation>..\..\target\clippy\dist\onejar\clippy-all.jar</jarLocation>
 <mainClassName>com.esotericsoftware.clippy.Clippy</mainClassName>
-<maximumMemoryHeap>33554432</maximumMemoryHeap>
+<maximumMemoryHeap>67108864</maximumMemoryHeap>
 <maximumVersion></maximumVersion>
 <minimumVersion>1.7</minimumVersion>
 <skeletonName>Windowed Wrapper</skeletonName>
