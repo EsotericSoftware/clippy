@@ -42,6 +42,13 @@ public class Config {
 	public String font = "Consolas-14";
 	public int maxLengthToStore = 25000;
 
+	public String pastebinHotkey = "ctrl enter";
+	public String pastebinDevKey;
+	public String pastebinFormat = "java";
+	public String pastebinPrivate = "1";
+	public String pastebinExpire = "N";
+	public boolean pastebinRaw = true;
+
 	public Config () {
 		Json json = new Json();
 		json.setUsePrototypes(false);

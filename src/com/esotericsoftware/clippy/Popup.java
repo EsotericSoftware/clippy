@@ -184,10 +184,7 @@ public class Popup extends PopupFrame {
 					index--;
 				selectNextPopulate = itemText.get(index);
 
-				if (searchField.getParent() == null) {
-					if (!showRecentItems()) hidePopup();
-				} else
-					showSearchItems(searchField.getText());
+				refresh();
 			}
 			return;
 		case KeyEvent.VK_ESCAPE:
@@ -195,7 +192,13 @@ public class Popup extends PopupFrame {
 			return;
 		case KeyEvent.VK_ENTER: {
 			int index = items.indexOf(selectedItem);
-			if (index != -1) pasteItem(itemText.get(index));
+			if (index != -1) {
+				String text = itemText.get(index);
+				if (e.isControlDown())
+					Pastebin.save(text);
+				else
+					pasteItem(text);
+			}
 			return;
 		}
 		case KeyEvent.VK_PAGE_UP: {
@@ -280,6 +283,7 @@ public class Popup extends PopupFrame {
 
 	void popupKeyTyped (KeyEvent e) {
 		if (e.getKeyChar() == KeyEvent.VK_DELETE && e.isShiftDown() && e.isControlDown()) return;
+		if (e.getKeyChar() == KeyEvent.VK_ENTER && e.isControlDown()) return;
 
 		// Show search field.
 		c.gridy = 0;
@@ -374,6 +378,13 @@ public class Popup extends PopupFrame {
 				}
 			}
 		});
+	}
+
+	public void refresh () {
+		if (searchField.getParent() == null) {
+			if (!showRecentItems()) hidePopup();
+		} else
+			showSearchItems(searchField.getText());
 	}
 
 	void populate () {

@@ -41,6 +41,9 @@ import com.esotericsoftware.clippy.util.TextItem;
 import com.esotericsoftware.minlog.Log;
 import com.sun.jna.WString;
 
+// BOZO - Favorites that always show up before others when searching.
+// BOZO - Require alt+num.
+
 /** @author Nathan Sweet */
 public class Clippy {
 	static public Clippy instance;
