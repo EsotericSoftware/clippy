@@ -30,15 +30,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 import javax.swing.KeyStroke;
 
-import com.esotericsoftware.clippy.Win.GUITHREADINFO;
-import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.clippy.Win.MSG;
-import com.sun.jna.Pointer;
 
 /** @author Nathan Sweet */
 public class Keyboard {

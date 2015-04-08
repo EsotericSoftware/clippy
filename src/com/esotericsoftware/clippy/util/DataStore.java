@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.h2.fulltext.FullText;
+import org.h2.fulltext.FullTextLucene;
 
 /** Create a table in a local database and access it in a thread safe manner.
  * @author Nathan Sweet */
@@ -43,6 +44,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	private final ArrayList<String> columns = new ArrayList();
 	private final ArrayList<List<String>> indexes = new ArrayList();
 	private final ArrayList<List<String>> fulltextIndexes = new ArrayList();
+	private boolean lucene;
 	private Connection defaultConn;
 	private boolean newTable, indexesCreated;
 	private ThreadLocal<T> threadConnections;
@@ -91,6 +93,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	public void addFulltextIndex (String... columnNames) {
 		if (indexesCreated) throw new IllegalStateException("Indexes have already been created.");
 		fulltextIndexes.add(Arrays.asList(columnNames));
+	}
+
+	public void setFulltextLucene (boolean lucene) {
+		this.lucene = lucene;
 	}
 
 	/** Gets the name of the database table backing this DataStore. */
@@ -187,7 +193,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 		if (fulltextIndexes.size() > 0) {
 			if (TRACE) trace("Creating fulltext indexes: " + this + ", " + fulltextIndexes);
-			FullText.init(defaultConn);
+			if (lucene)
+				FullTextLucene.init(defaultConn);
+			else
+				FullText.init(defaultConn);
 			for (int i = 0, n = fulltextIndexes.size(); i < n; i++) {
 				List<String> columnNames = fulltextIndexes.get(i);
 				buffer.setLength(0);
@@ -195,10 +204,14 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 					if (ii > 0) buffer.append(',');
 					buffer.append(columnNames.get(ii).toUpperCase());
 				}
-				FullText.createIndex(defaultConn, "PUBLIC", getTableName(), buffer.toString());
+				if (lucene)
+					FullTextLucene.createIndex(defaultConn, "PUBLIC", getTableName(), buffer.toString());
+				else
+					FullText.createIndex(defaultConn, "PUBLIC", getTableName(), buffer.toString());
 			}
 			// Example fulltext query:
 			// SELECT T.* FROM FT_SEARCH_DATA(?, 0, 0) FT, table T WHERE FT.TABLE='table' AND T.id=FT.KEYS[0]
+			// FullText.searchData(conn, text, limit, offset);
 		}
 
 		indexesCreated = true;

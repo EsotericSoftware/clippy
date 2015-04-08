@@ -63,6 +63,7 @@ import com.sun.jna.Pointer;
 public class Popup extends PopupFrame {
 	final ArrayList<TextItem> items = new ArrayList();
 	final ArrayList<String> itemText = new ArrayList();
+	final ArrayList<Integer> itemIDs = new ArrayList();
 	final POINT popupPosition = new POINT();
 	final GridBagConstraints c = new GridBagConstraints();
 	final Rectangle rectangle = new Rectangle(0, 0, 0, TextItem.getItemHeight());
@@ -78,6 +79,7 @@ public class Popup extends PopupFrame {
 	final ExecutorService searchExecutor = Executors.newFixedThreadPool(1);
 	volatile int startIndex;
 	final ArrayList<String> searchText = new ArrayList();
+	final ArrayList<Integer> searchIDs = new ArrayList();
 
 	public Popup () {
 		blockMouse.setOpaque(false);
@@ -172,7 +174,7 @@ public class Popup extends PopupFrame {
 				int index = items.indexOf(selectedItem);
 				if (index == -1) return;
 				try {
-					clippy.db.getThreadConnection().removeClip(itemText.get(index));
+					clippy.db.getThreadConnection().remove(itemText.get(index));
 					if (Log.TRACE) trace("Deleted clip.");
 				} catch (SQLException ex) {
 					if (Log.ERROR) error("Unable to delete clip.", ex);
@@ -193,7 +195,7 @@ public class Popup extends PopupFrame {
 		case KeyEvent.VK_ENTER: {
 			int index = items.indexOf(selectedItem);
 			if (index != -1) {
-				String text = itemText.get(index);
+				String text = getText(itemIDs.get(index));
 				if (e.isControlDown())
 					Pastebin.save(text);
 				else
@@ -277,7 +279,17 @@ public class Popup extends PopupFrame {
 		if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) {
 			int index = keyCode - KeyEvent.VK_0 - 1;
 			if (index < 0) index = 9;
-			if (index < itemText.size()) pasteItem(itemText.get(index));
+			if (index < itemText.size()) pasteItem(getText(itemIDs.get(index)));
+		}
+	}
+
+	private String getText (int id) {
+		try {
+			ClipConnection conn = clippy.db.getThreadConnection();
+			return conn.getText(id);
+		} catch (SQLException ex) {
+			if (Log.ERROR) error("Unable to retrieve full text.", ex);
+			return "";
 		}
 	}
 
@@ -350,7 +362,7 @@ public class Popup extends PopupFrame {
 	boolean showRecentItems () {
 		try {
 			ClipConnection conn = clippy.db.getThreadConnection();
-			conn.last(itemText, clippy.config.popupCount, startIndex);
+			conn.last(itemIDs, itemText, clippy.config.popupCount, startIndex);
 			if (itemText.size() == 0) return false;
 			populate();
 			return true;
@@ -365,11 +377,13 @@ public class Popup extends PopupFrame {
 			public void run () {
 				try {
 					ClipConnection conn = clippy.db.getThreadConnection();
-					conn.search(searchText, "%" + text + "%", clippy.config.popupSearchCount);
+					conn.search(searchIDs, searchText, "%" + text + "%", clippy.config.popupSearchCount);
 					EventQueue.invokeLater(new Runnable() {
 						public void run () {
 							itemText.clear();
 							itemText.addAll(searchText);
+							itemIDs.clear();
+							itemIDs.addAll(searchIDs);
 							populate();
 						}
 					});

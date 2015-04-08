@@ -23,8 +23,6 @@ package com.esotericsoftware.clippy;
 import static java.awt.GridBagConstraints.*;
 
 import java.awt.GridBagConstraints;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 
 import com.esotericsoftware.clippy.util.PopupFrame;
 import com.esotericsoftware.clippy.util.TextItem;

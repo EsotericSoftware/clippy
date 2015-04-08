@@ -20,7 +20,6 @@
 
 package com.esotericsoftware.clippy.util;
 
-import java.awt.Font;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

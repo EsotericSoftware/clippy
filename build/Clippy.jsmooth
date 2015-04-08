@@ -6,13 +6,18 @@
 <JVMSearchPath>registry</JVMSearchPath>
 <JVMSearchPath>exepath</JVMSearchPath>
 <JVMSearchPath>jview</JVMSearchPath>
+<arguments></arguments>
 <currentDirectory>${EXECUTABLEPATH}</currentDirectory>
 <embeddedJar>true</embeddedJar>
 <executableName>Clippy.exe</executableName>
-<initialMemoryHeap>6291456</initialMemoryHeap>
+<initialMemoryHeap>12582912</initialMemoryHeap>
 <jarLocation>..\..\target\clippy\dist\onejar\clippy-all.jar</jarLocation>
+<javaProperties>
+<name>-Xms1024</name>
+<value></value>
+</javaProperties>
 <mainClassName>com.esotericsoftware.clippy.Clippy</mainClassName>
-<maximumMemoryHeap>67108864</maximumMemoryHeap>
+<maximumMemoryHeap>134217728</maximumMemoryHeap>
 <maximumVersion></maximumVersion>
 <minimumVersion>1.7</minimumVersion>
 <skeletonName>Windowed Wrapper</skeletonName>
@@ -40,4 +45,6 @@
 <key>Debug</key>
 <value>0</value>
 </skeletonProperties>
+<uacRequireAdmin>false</uacRequireAdmin>
+<uacRequireAdministrator>0</uacRequireAdministrator>
 </jsmoothproject>

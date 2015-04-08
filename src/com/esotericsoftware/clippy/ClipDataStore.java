@@ -37,8 +37,9 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			setSocketLocking(true);
 		addColumn("id INTEGER IDENTITY");
 		addColumn("text VARCHAR_IGNORECASE");
+		addColumn("snip VARCHAR_IGNORECASE(128)");
 		open();
-		addIndex("text");
+		addIndex("snip");
 		createIndexes();
 		getThreadConnection().execute("SET LOG 0"); // Disable transaction log.
 	}
@@ -48,25 +49,27 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	}
 
 	public final class ClipConnection extends DataStore.DataStoreConnection {
-		private final PreparedStatement addClip, removeClip, contains, makeLast, search, last;
+		private final PreparedStatement add, remove, contains, makeLast, search, last, getText;
 
 		ClipConnection () throws SQLException {
-			addClip = prepareStatement("INSERT INTO :table: SET text=?");
-			removeClip = prepareStatement("DELETE FROM :table: WHERE text=?");
+			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?");
+			remove = prepareStatement("DELETE FROM :table: WHERE text=?");
 			contains = prepareStatement("SELECT COUNT(*) FROM :table: WHERE text=? LIMIT 1");
 			makeLast = prepareStatement("UPDATE :table: SET id=(SELECT MAX(id) + 1 FROM :table:) WHERE text=? LIMIT 1");
-			last = prepareStatement("SELECT text FROM clips ORDER BY id DESC LIMIT ? OFFSET ?");
-			search = prepareStatement("SELECT text FROM clips WHERE text LIKE ? ORDER BY id DESC LIMIT ?");
+			last = prepareStatement("SELECT id, snip FROM clips ORDER BY id DESC LIMIT ? OFFSET ?");
+			search = prepareStatement("SELECT id, snip FROM clips WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
+			getText = prepareStatement("SELECT text FROM clips WHERE id=? LIMIT 1");
 		}
 
-		public void addClip (String text) throws SQLException {
-			addClip.setString(1, text);
-			addClip.executeUpdate();
+		public void add (String text) throws SQLException {
+			add.setString(1, text);
+			add.setString(2, text.substring(0, Math.min(text.length(), 128)));
+			add.executeUpdate();
 		}
 
-		public void removeClip (String text) throws SQLException {
-			removeClip.setString(1, text);
-			removeClip.executeUpdate();
+		public void remove (String text) throws SQLException {
+			remove.setString(1, text);
+			remove.executeUpdate();
 		}
 
 		public boolean contains (String text) throws SQLException {
@@ -81,7 +84,8 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			makeLast.executeUpdate();
 		}
 
-		public ArrayList<String> search (ArrayList<String> results, String text, int max) throws SQLException {
+		public ArrayList<String> search (ArrayList<Integer> ids, ArrayList<String> results, String text, int max)
+			throws SQLException {
 			search.setString(1, text);
 			search.setInt(2, max);
 			ResultSet set = search.executeQuery();
@@ -91,14 +95,24 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			return results;
 		}
 
-		public ArrayList<String> last (ArrayList<String> results, int max, int start) throws SQLException {
+		public void last (ArrayList<Integer> ids, ArrayList<String> snips, int max, int start) throws SQLException {
 			last.setInt(1, max);
 			last.setInt(2, start);
 			ResultSet set = last.executeQuery();
-			results.clear();
-			while (set.next())
-				results.add(set.getString(1));
-			return results;
+			ids.clear();
+			snips.clear();
+			while (set.next()) {
+				ids.add(set.getInt(1));
+				snips.add(set.getString(2));
+			}
+		}
+
+		/** @return May be null. */
+		public String getText (int id) throws SQLException {
+			getText.setInt(1, id);
+			ResultSet set = getText.executeQuery();
+			if (set.next()) return set.getString(1);
+			return null;
 		}
 	}
 }

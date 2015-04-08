@@ -137,8 +137,8 @@ public class Clippy {
 		if (TRACE) trace("Store clipboard text: " + text.trim());
 		try {
 			ClipConnection conn = db.getThreadConnection();
-			if (!config.allowDuplicateClips) conn.removeClip(text);
-			conn.addClip(text);
+			if (!config.allowDuplicateClips) conn.remove(text);
+			conn.add(text);
 		} catch (SQLException ex) {
 			if (ERROR) error("Error storing clipboard text.", ex);
 		}
