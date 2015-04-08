@@ -56,9 +56,9 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			remove = prepareStatement("DELETE FROM :table: WHERE text=?");
 			contains = prepareStatement("SELECT COUNT(*) FROM :table: WHERE text=? LIMIT 1");
 			makeLast = prepareStatement("UPDATE :table: SET id=(SELECT MAX(id) + 1 FROM :table:) WHERE text=? LIMIT 1");
-			last = prepareStatement("SELECT id, snip FROM clips ORDER BY id DESC LIMIT ? OFFSET ?");
-			search = prepareStatement("SELECT id, snip FROM clips WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
-			getText = prepareStatement("SELECT text FROM clips WHERE id=? LIMIT 1");
+			last = prepareStatement("SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ? OFFSET ?");
+			search = prepareStatement("SELECT id, snip FROM :table: WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
+			getText = prepareStatement("SELECT text FROM :table: WHERE id=? LIMIT 1");
 		}
 
 		public void add (String text) throws SQLException {
@@ -84,15 +84,17 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			makeLast.executeUpdate();
 		}
 
-		public ArrayList<String> search (ArrayList<Integer> ids, ArrayList<String> results, String text, int max)
-			throws SQLException {
+		public ArrayList<String> search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max) throws SQLException {
 			search.setString(1, text);
 			search.setInt(2, max);
 			ResultSet set = search.executeQuery();
-			results.clear();
-			while (set.next())
-				results.add(set.getString(1));
-			return results;
+			ids.clear();
+			snips.clear();
+			while (set.next()) {
+				ids.add(set.getInt(1));
+				snips.add(set.getString(2));
+			}
+			return snips;
 		}
 
 		public void last (ArrayList<Integer> ids, ArrayList<String> snips, int max, int start) throws SQLException {
