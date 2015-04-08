@@ -20,7 +20,13 @@ Download the latest version of Clippy here:
 
 [Download Clippy](https://github.com/EsotericSoftware/clippy/releases)
 
-There is no installation, only a `Clippy.exe` file. Place this file anywhere you like and run it. Clippy runs in the backgruond and stores any text items that are placed on the clipboard. These items can be retrieved by pressing the hotkey to show Clippy's popup (see below). Clippy can be exited by clicking the icon in the system tray.
+There is no installation, only a `Clippy.exe` or `Clippy.jar` file. Place the file anywhere you like and run it. The EXE will automatically find a Java installation and use it. It is highly recommended to run Clippy using 64-bit Java. Clippy may run much more slowly if 32-bit Java is used. To be sure of which Java installation Clippy uses, run it from the command line:
+
+```
+C:\path\to\64-bit\Java\javaw -jar C:\path\to\Clippy.jar
+```
+
+Clippy runs in the backgruond and stores any text items that are placed on the clipboard. These items can be retrieved by pressing the hotkey to show Clippy's popup (see below). Clippy can be exited by clicking the icon in the system tray.
 
 ## Popup
 
