@@ -27,6 +27,7 @@ import com.sun.jna.Callback;
 import com.sun.jna.IntegerType;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
+import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.WString;
@@ -37,6 +38,16 @@ import com.sun.jna.win32.W32APIOptions;
 public class Win {
 	static public boolean is64Bit = System.getProperty("os.arch").equals("amd64")
 		|| System.getProperty("os.arch").equals("x86_64");
+
+	static class CLibrary {
+		public static native int strlen (Pointer p);
+
+		public static native int wcslen (Pointer p);
+
+		static {
+			Native.register(Platform.C_LIBRARY_NAME);
+		}
+	}
 
 	static public class Kernel32 {
 		static {

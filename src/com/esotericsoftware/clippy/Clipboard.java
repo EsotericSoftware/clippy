@@ -20,6 +20,7 @@
 
 package com.esotericsoftware.clippy;
 
+import static com.esotericsoftware.clippy.Win.CLibrary.*;
 import static com.esotericsoftware.clippy.Win.Kernel32.*;
 import static com.esotericsoftware.clippy.Win.Shell32.*;
 import static com.esotericsoftware.clippy.Win.User32.*;
@@ -35,8 +36,11 @@ import com.sun.jna.WString;
 public class Clipboard {
 	Pointer hwnd;
 	final char[] chars = new char[2048];
+	final int maxTextLength;
 
-	public Clipboard () {
+	public Clipboard (int maxTextLength) {
+		this.maxTextLength = maxTextLength;
+
 		final CyclicBarrier barrier = new CyclicBarrier(2);
 
 		new Thread("Clipboard") {
@@ -130,12 +134,20 @@ public class Clipboard {
 
 			String text = null;
 			switch (format) {
-			case CF_UNICODETEXT:
-				text = data.getWideString(0);
+			case CF_UNICODETEXT: {
+				if (wcslen(data) <= maxTextLength)
+					text = data.getWideString(0);
+				else
+					text = new String(data.getCharArray(0, maxTextLength));
 				break;
-			case CF_TEXT:
-				text = data.getString(0);
+			}
+			case CF_TEXT: {
+				if (strlen(data) <= maxTextLength)
+					text = data.getString(0);
+				else
+					text = new String(data.getCharArray(0, maxTextLength));
 				break;
+			}
 			case CF_HDROP:
 				int fileCount = DragQueryFile(data, -1, null, 0);
 				if (fileCount == 0) {

@@ -101,7 +101,7 @@ public class Clippy {
 		if (plainTextHotkey != null) keyboard.registerHotkey(plainTextHotkey);
 		keyboard.start();
 
-		clipboard = new Clipboard() {
+		clipboard = new Clipboard(config.maxLengthToStore) {
 			protected void changed () {
 				storeClipboard();
 			}
