@@ -38,6 +38,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -64,6 +65,8 @@ public class Popup extends PopupFrame {
 	final ArrayList<TextItem> items = new ArrayList();
 	final ArrayList<String> itemText = new ArrayList();
 	final ArrayList<Integer> itemIDs = new ArrayList();
+	final LinkedList<Integer> recentIDs = new LinkedList();
+	final LinkedList<String> recentText = new LinkedList();
 	final POINT popupPosition = new POINT();
 	final GridBagConstraints c = new GridBagConstraints();
 	final Rectangle rectangle = new Rectangle(0, 0, 0, TextItem.getItemHeight());
@@ -385,17 +388,53 @@ public class Popup extends PopupFrame {
 		setLocation(position.x, position.y);
 	}
 
-	boolean showRecentItems () {
-		try {
-			ClipConnection conn = clippy.db.getThreadConnection();
-			conn.last(itemIDs, itemText, clippy.config.popupCount, startIndex);
-			if (itemText.size() == 0) return false;
-			populate();
-			return true;
-		} catch (SQLException ex) {
-			if (Log.ERROR) error("Unable to retrieve clips.", ex);
-			return false;
+	public void addRecent (int id, String text) {
+		if (text.length() > ClipDataStore.maxSnipSize) {
+			// Don't use recent cache for large entries.
+			recentIDs.clear();
+			recentText.clear();
+			return;
 		}
+		int index = recentText.indexOf(text);
+		if (index != -1) {
+			if (lockCheckbox.isSelected()) return;
+			recentIDs.remove(index);
+			recentText.remove(index);
+		}
+		if (recentIDs.size() >= clippy.config.popupCount) {
+			recentIDs.removeLast();
+			recentText.removeLast();
+		}
+		recentIDs.addFirst(id);
+		recentText.addFirst(text);
+		if (isVisible()) refresh();
+	}
+
+	boolean showRecentItems () {
+		if (startIndex != 0 || recentText.size() == 0) {
+			try {
+				ClipConnection conn = clippy.db.getThreadConnection();
+				conn.last(itemIDs, itemText, clippy.config.popupCount, startIndex);
+				if (itemText.size() == 0) return false;
+				if (startIndex == 0) {
+					recentIDs.clear();
+					recentText.clear();
+					recentIDs.addAll(itemIDs);
+					recentText.addAll(itemText);
+				}
+				populate();
+				return true;
+			} catch (SQLException ex) {
+				if (Log.ERROR) error("Unable to retrieve clips.", ex);
+				return false;
+			}
+		}
+		itemIDs.clear();
+		itemText.clear();
+		itemIDs.addAll(recentIDs);
+		itemText.addAll(recentText);
+		populate();
+		return true;
 	}
 
 	void showSearchItems (final String text) {

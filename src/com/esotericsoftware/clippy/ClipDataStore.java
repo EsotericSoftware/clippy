@@ -29,6 +29,8 @@ import com.esotericsoftware.clippy.util.DataStore;
 
 /** @author Nathan Sweet */
 public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
+	static public final int maxSnipSize = 2048;
+
 	public ClipDataStore () throws SQLException {
 		super("~/.clippy/db/db", "clips");
 		if (System.getProperty("dev") != null)
@@ -37,9 +39,10 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			setSocketLocking(true);
 		addColumn("id INTEGER IDENTITY");
 		addColumn("text VARCHAR_IGNORECASE");
-		addColumn("snip VARCHAR_IGNORECASE(128)");
+		addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ")");
 		open();
 		addIndex("snip");
+		addIndex("text");
 		createIndexes();
 		getThreadConnection().execute("SET LOG 0"); // Disable transaction log.
 	}
@@ -61,10 +64,12 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			getText = prepareStatement("SELECT text FROM :table: WHERE id=? LIMIT 1");
 		}
 
-		public void add (String text) throws SQLException {
+		public int add (String text) throws SQLException {
 			add.setString(1, text);
-			add.setString(2, text.substring(0, Math.min(text.length(), 128)));
+			add.setString(2, text.substring(0, Math.min(text.length(), maxSnipSize)));
 			add.executeUpdate();
+			ResultSet set = add.getGeneratedKeys();
+			return set.next() ? set.getInt(1) : 0;
 		}
 
 		public void remove (String text) throws SQLException {
@@ -84,7 +89,8 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			makeLast.executeUpdate();
 		}
 
-		public ArrayList<String> search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max) throws SQLException {
+		public ArrayList<String> search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max)
+			throws SQLException {
 			search.setString(1, text);
 			search.setInt(2, max);
 			ResultSet set = search.executeQuery();

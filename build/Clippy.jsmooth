@@ -6,16 +6,11 @@
 <JVMSearchPath>registry</JVMSearchPath>
 <JVMSearchPath>exepath</JVMSearchPath>
 <JVMSearchPath>jview</JVMSearchPath>
-<arguments></arguments>
 <currentDirectory>${EXECUTABLEPATH}</currentDirectory>
 <embeddedJar>true</embeddedJar>
 <executableName>Clippy.exe</executableName>
-<initialMemoryHeap>12582912</initialMemoryHeap>
+<initialMemoryHeap>33554432</initialMemoryHeap>
 <jarLocation>..\..\target\clippy\dist\onejar\clippy-all.jar</jarLocation>
-<javaProperties>
-<name>-Xms1024</name>
-<value></value>
-</javaProperties>
 <mainClassName>com.esotericsoftware.clippy.Clippy</mainClassName>
 <maximumMemoryHeap>134217728</maximumMemoryHeap>
 <maximumVersion></maximumVersion>

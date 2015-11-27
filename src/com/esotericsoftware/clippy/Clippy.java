@@ -103,7 +103,8 @@ public class Clippy {
 
 		clipboard = new Clipboard(config.maxLengthToStore) {
 			protected void changed () {
-				storeClipboard();
+				String text = clipboard.getContents();
+				if (text != null) store(text);
 			}
 		};
 
@@ -118,7 +119,8 @@ public class Clippy {
 			}
 		};
 
-		storeClipboard();
+		String text = clipboard.getContents();
+		if (text != null) store(text);
 
 		if (INFO) info("Started.");
 	}
@@ -127,9 +129,7 @@ public class Clippy {
 		popup.showPopup();
 	}
 
-	void storeClipboard () {
-		String text = clipboard.getContents();
-		if (text == null) return;
+	void store (String text) {
 		if (text.length() > config.maxLengthToStore) {
 			if (TRACE) trace("Text too large to store: " + text.length());
 			return;
@@ -138,7 +138,8 @@ public class Clippy {
 		try {
 			ClipConnection conn = db.getThreadConnection();
 			if (!config.allowDuplicateClips) conn.remove(text);
-			conn.add(text);
+			int id = conn.add(text);
+			popup.addRecent(id, text);
 		} catch (SQLException ex) {
 			if (ERROR) error("Error storing clipboard text.", ex);
 		}

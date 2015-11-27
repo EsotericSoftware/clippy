@@ -34,7 +34,7 @@ public class Pastebin {
 				try {
 					clippy.popup.hidePopup();
 					clippy.paste(post(text));
-					clippy.storeClipboard();
+					clippy.store(text);
 				} catch (IOException ex) {
 					if (ERROR) error("Unable to save pastebin.", ex);
 				}
