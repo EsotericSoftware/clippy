@@ -341,15 +341,16 @@ public class Popup extends PopupFrame {
 		if (isAltMode()) {
 			requestFocus();
 			panel.remove(lockCheckbox);
+			updateNumberLabels();
 			pack();
 		} else {
 			c.gridy = 2;
 			panel.add(lockCheckbox, c);
+			updateNumberLabels();
 			pack();
 			keepOnScreen();
 			lockCheckbox.requestFocus();
 		}
-		updateNumberLabels();
 	}
 
 	public void showPopup () {
