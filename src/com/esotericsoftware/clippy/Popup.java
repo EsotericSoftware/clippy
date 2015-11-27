@@ -151,7 +151,7 @@ public class Popup extends PopupFrame {
 		lockCheckbox.addKeyListener(new KeyAdapter() {
 			public void keyPressed (KeyEvent e) {
 				int keyCode = e.getKeyCode();
-				if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) popupKeyPressed(e);
+				if (!isAltMode() || (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9)) popupKeyPressed(e);
 			}
 		});
 
@@ -276,10 +276,12 @@ public class Popup extends PopupFrame {
 		}
 		}
 
-		if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) {
-			int index = keyCode - KeyEvent.VK_0 - 1;
-			if (index < 0) index = 9;
-			if (index < itemText.size()) pasteItem(getText(itemIDs.get(index)));
+		if (isAltMode()) {
+			if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) {
+				int index = keyCode - KeyEvent.VK_0 - 1;
+				if (index < 0) index = 9;
+				if (index < itemText.size()) pasteItem(getText(itemIDs.get(index)));
+			}
 		}
 	}
 
@@ -308,19 +310,43 @@ public class Popup extends PopupFrame {
 		showSearchItems(searchField.getText());
 	}
 
+	public boolean isNumberMode () {
+		return clippy.config.popupDefaultNumbers != isAltMode();
+	}
+
+	public boolean isAltMode () {
+		return lockCheckbox.getParent() != null;
+	}
+
+	private void updateNumberLabels () {
+		boolean numberMode = isNumberMode();
+		for (int i = 0, n = Math.min(items.size(), 10); i < n; i++) {
+			TextItem item = items.get(i);
+			String label = item.label;
+			if (numberMode) {
+				if (i < 9)
+					label = (i + 1) + ": " + label;
+				else if (i == 9) //
+					label = "0: " + label;
+			}
+			item.setText(label);
+		}
+	}
+
 	public void altPressed () {
 		// Show options.
-		if (lockCheckbox.getParent() != null) {
+		if (isAltMode()) {
 			requestFocus();
 			panel.remove(lockCheckbox);
 			pack();
-			return;
+		} else {
+			c.gridy = 2;
+			panel.add(lockCheckbox, c);
+			pack();
+			keepOnScreen();
+			lockCheckbox.requestFocus();
 		}
-		c.gridy = 2;
-		panel.add(lockCheckbox, c);
-		pack();
-		keepOnScreen();
-		lockCheckbox.requestFocus();
+		updateNumberLabels();
 	}
 
 	public void showPopup () {
@@ -408,11 +434,6 @@ public class Popup extends PopupFrame {
 			String label = text.trim().replace("\r\n", "\n").replace('\n', ' ');
 			if (label.isEmpty()) label = text.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t").replace(" ", "\u2022");
 
-			if (i < 9)
-				label = (i + 1) + ": " + label;
-			else if (i == 9) //
-				label = "0: " + label;
-
 			TextItem item = new TextItem(label) {
 				public void clicked () {
 					pasteItem(text);
@@ -436,6 +457,8 @@ public class Popup extends PopupFrame {
 			c.gridy = i + 1;
 			itemPanel.add(item, c);
 		}
+
+		if (isNumberMode()) updateNumberLabels();
 
 		pack();
 

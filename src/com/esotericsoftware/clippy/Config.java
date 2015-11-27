@@ -35,6 +35,7 @@ public class Config {
 	public int popupWidth = 640;
 	public int popupCount = 20;
 	public int popupSearchCount = 60;
+	public boolean popupDefaultNumbers;
 	public String popupHotkey = "ctrl shift INSERT";
 	public String plainTextHotkey = "ctrl shift V";
 	public boolean allowDuplicateClips;

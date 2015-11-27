@@ -36,9 +36,11 @@ public class TextItem extends JLabel {
 
 	boolean selected, mouseMoved;
 	public String tooltipText;
+	public String label;
 
-	public TextItem (String text) {
-		super(text);
+	public TextItem (String label) {
+		super(label);
+		this.label = label;
 		setOpaque(true);
 		setFont(font);
 		setBorder(BorderFactory.createEmptyBorder(2, 7, 2, 7));
@@ -53,8 +55,8 @@ public class TextItem extends JLabel {
 				selected();
 
 				if (tooltipText != null) {
-					setToolTipText("<html><pre><font size=3>"
-						+ tooltipText.replace("\r\n", "\n").replace("\n", "<br>").replace("\t", "   "));
+					setToolTipText(
+						"<html><pre><font size=3>" + tooltipText.replace("\r\n", "\n").replace("\n", "<br>").replace("\t", "   "));
 					tooltipText = null;
 				}
 			}
