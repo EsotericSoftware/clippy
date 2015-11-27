@@ -213,7 +213,7 @@ public class Popup extends PopupFrame {
 				// Page up at top of recent list shows previous page of items.
 				int oldStartIndex = startIndex;
 				startIndex = Math.max(0, startIndex - clippy.config.popupCount);
-				if (showRecentItems())
+				if (showRecentItems(false))
 					keepOnScreen();
 				else
 					startIndex = oldStartIndex;
@@ -232,7 +232,7 @@ public class Popup extends PopupFrame {
 				// Page down at end of recent list shows next page of items.
 				int oldStartIndex = startIndex;
 				startIndex += clippy.config.popupCount;
-				if (showRecentItems())
+				if (showRecentItems(false))
 					keepOnScreen();
 				else
 					startIndex = oldStartIndex;
@@ -356,7 +356,7 @@ public class Popup extends PopupFrame {
 	public void showPopup () {
 		if (isVisible()) return;
 		if (DEBUG && !TRACE) debug("Show popup.");
-		if (!showRecentItems()) {
+		if (!showRecentItems(true)) {
 			if (WARN) warn("No clips to show.");
 			return;
 		}
@@ -390,36 +390,45 @@ public class Popup extends PopupFrame {
 	}
 
 	public void addRecent (int id, String text) {
+		if (isVisible()) {
+			refresh();
+			return;
+		}
+
+		if (recentText.size() == 0) return;
+
+		// Don't use recent cache for large entries.
 		if (text.length() > ClipDataStore.maxSnipSize) {
-			// Don't use recent cache for large entries.
 			recentIDs.clear();
 			recentText.clear();
 			return;
 		}
+
 		int index = recentText.indexOf(text);
 		if (index != -1) {
 			if (lockCheckbox.isSelected()) return;
 			recentIDs.remove(index);
 			recentText.remove(index);
 		}
+
 		if (recentIDs.size() >= clippy.config.popupCount) {
 			recentIDs.removeLast();
 			recentText.removeLast();
 		}
+
 		recentIDs.addFirst(id);
 		recentText.addFirst(text);
-		if (isVisible()) refresh();
 	}
 
-	boolean showRecentItems () {
-		if (startIndex != 0 || recentText.size() == 0) {
+	boolean showRecentItems (boolean useCache) {
+		if (!useCache || startIndex != 0 || recentText.size() == 0) {
 			try {
 				ClipConnection conn = clippy.db.getThreadConnection();
 				conn.last(itemIDs, itemText, clippy.config.popupCount, startIndex);
 				if (itemText.size() == 0) return false;
+				recentIDs.clear();
+				recentText.clear();
 				if (startIndex == 0) {
-					recentIDs.clear();
-					recentText.clear();
 					recentIDs.addAll(itemIDs);
 					recentText.addAll(itemText);
 				}
@@ -462,7 +471,7 @@ public class Popup extends PopupFrame {
 
 	public void refresh () {
 		if (searchField.getParent() == null) {
-			if (!showRecentItems()) hidePopup();
+			if (!showRecentItems(false)) hidePopup();
 		} else
 			showSearchItems(searchField.getText());
 	}
