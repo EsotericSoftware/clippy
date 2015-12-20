@@ -80,8 +80,8 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		}
 
 		public void removeID (int id) throws SQLException {
-			removeText.setInt(1, id);
-			removeText.executeUpdate();
+			removeID.setInt(1, id);
+			removeID.executeUpdate();
 		}
 
 		public boolean contains (String text) throws SQLException {
