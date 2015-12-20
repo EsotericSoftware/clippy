@@ -30,7 +30,7 @@ Clippy runs in the backgruond and stores any text items that are placed on the c
 
 ## Popup
 
-The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items. Items can be selected by pressing `up` or `down` and are put on the clipboard and pasted by pressing `enter` or by clicking. Pressing 'home' or 'end' selects the first or last item. Pressing `page up` or `page down` shows additional pages of items. Pressing `ctrl+shift+delete` deletes the selected item. The popup is hidden by pasting an item, pressing `escape`, or clicking outside the popup.
+The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items. Items can be selected by pressing `up` or `down` and are put on the clipboard and pasted by pressing `enter` or by clicking. Pressing 'home' or 'end' selects the first or last item. Pressing `page up` or `page down` shows additional pages of items. Pressing `ctrl+shift+delete` deletes the selected item. The popup is hidden by pasting an item, pressing `escape`, or clicking outside the popup. Pressing `ctrl+shift+enter` uploads the item to PasteBin.com and puts a link on the clipboard.
 
 ### Search
 
@@ -38,7 +38,7 @@ Items can be searched simply by typing while the popup is open. All items contai
 
 ### Menu
 
-The popup menu is shown by pressing `alt`. The `Lock items` checkbox prevents the order of items from changing when an existing item is chosen.
+The popup menu is shown by pressing `alt`. The `Lock items` checkbox prevents the order of items from changing when an existing item is chosen. Numbers `0-9` can be pressed to choose an item.
 
 ## Configuration
 
