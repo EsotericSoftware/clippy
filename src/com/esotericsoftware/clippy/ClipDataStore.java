@@ -33,6 +33,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 
 	public ClipDataStore () throws SQLException {
 		super("~/.clippy/db/db", "clips");
+		// setTraceLevel(TraceLevel.DEBUG);
 		if (System.getProperty("dev") != null)
 			setInMemory(true);
 		else
@@ -52,11 +53,12 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	}
 
 	public final class ClipConnection extends DataStore.DataStoreConnection {
-		private final PreparedStatement add, remove, contains, makeLast, search, last, getText;
+		private final PreparedStatement add, removeText, removeID, contains, makeLast, search, last, getText;
 
 		ClipConnection () throws SQLException {
 			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?");
-			remove = prepareStatement("DELETE FROM :table: WHERE text=?");
+			removeText = prepareStatement("DELETE FROM :table: WHERE text=?");
+			removeID = prepareStatement("DELETE FROM :table: WHERE id=?");
 			contains = prepareStatement("SELECT COUNT(*) FROM :table: WHERE text=? LIMIT 1");
 			makeLast = prepareStatement("UPDATE :table: SET id=(SELECT MAX(id) + 1 FROM :table:) WHERE text=? LIMIT 1");
 			last = prepareStatement("SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ? OFFSET ?");
@@ -72,9 +74,14 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			return set.next() ? set.getInt(1) : 0;
 		}
 
-		public void remove (String text) throws SQLException {
-			remove.setString(1, text);
-			remove.executeUpdate();
+		public void removeText (String text) throws SQLException {
+			removeText.setString(1, text);
+			removeText.executeUpdate();
+		}
+
+		public void removeID (int id) throws SQLException {
+			removeText.setInt(1, id);
+			removeText.executeUpdate();
 		}
 
 		public boolean contains (String text) throws SQLException {
@@ -84,13 +91,15 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			return set.getInt(1) != 0;
 		}
 
-		public void makeLast (String text) throws SQLException {
+		public int makeLast (String text) throws SQLException {
 			makeLast.setString(1, text);
 			makeLast.executeUpdate();
+			ResultSet set = makeLast.getGeneratedKeys();
+			if (set.next()) return set.getInt(1);
+			return -1;
 		}
 
-		public ArrayList<String> search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max)
-			throws SQLException {
+		public void search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max) throws SQLException {
 			search.setString(1, text);
 			search.setInt(2, max);
 			ResultSet set = search.executeQuery();
@@ -100,7 +109,6 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 				ids.add(set.getInt(1));
 				snips.add(set.getString(2));
 			}
-			return snips;
 		}
 
 		public void last (ArrayList<Integer> ids, ArrayList<String> snips, int max, int start) throws SQLException {

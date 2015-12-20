@@ -21,6 +21,7 @@
 package com.esotericsoftware.clippy.util;
 
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -81,6 +82,9 @@ public class TextItem extends JLabel {
 			setBackground(null);
 			setForeground(Color.black);
 		}
+
+		Container parent = getParent();
+		if (parent != null) parent.repaint();
 	}
 
 	public boolean isSelected () {

@@ -49,7 +49,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ToolTipManager;
 
-import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
 import com.esotericsoftware.clippy.Win.GUITHREADINFO;
 import com.esotericsoftware.clippy.Win.MONITORINFO;
 import com.esotericsoftware.clippy.Win.POINT;
@@ -63,7 +62,7 @@ import com.sun.jna.Pointer;
 /** @author Nathan Sweet */
 public class Popup extends PopupFrame {
 	final ArrayList<TextItem> items = new ArrayList();
-	final ArrayList<String> itemText = new ArrayList();
+	final ArrayList<String> itemSnips = new ArrayList();
 	final ArrayList<Integer> itemIDs = new ArrayList();
 	final LinkedList<Integer> recentIDs = new LinkedList();
 	final LinkedList<String> recentText = new LinkedList();
@@ -81,7 +80,7 @@ public class Popup extends PopupFrame {
 
 	final ExecutorService searchExecutor = Executors.newFixedThreadPool(1);
 	volatile int startIndex;
-	final ArrayList<String> searchText = new ArrayList();
+	final ArrayList<String> searchSnips = new ArrayList();
 	final ArrayList<Integer> searchIDs = new ArrayList();
 
 	public Popup () {
@@ -177,7 +176,15 @@ public class Popup extends PopupFrame {
 				int index = items.indexOf(selectedItem);
 				if (index == -1) return;
 				try {
-					clippy.db.getThreadConnection().remove(itemText.get(index));
+					Integer id = itemIDs.get(index);
+					clippy.db.getThreadConnection().removeID(id);
+
+					int recentIndex = recentIDs.indexOf(id);
+					if (recentIndex != -1) {
+						recentIDs.remove(recentIndex);
+						recentText.remove(recentIndex);
+					}
+
 					if (Log.TRACE) trace("Deleted clip.");
 				} catch (SQLException ex) {
 					if (Log.ERROR) error("Unable to delete clip.", ex);
@@ -187,7 +194,7 @@ public class Popup extends PopupFrame {
 					index++;
 				else if (index != 0) //
 					index--;
-				selectNextPopulate = itemText.get(index);
+				selectNextPopulate = itemSnips.get(index);
 
 				refresh();
 			}
@@ -198,18 +205,19 @@ public class Popup extends PopupFrame {
 		case KeyEvent.VK_ENTER: {
 			int index = items.indexOf(selectedItem);
 			if (index != -1) {
-				String text = getText(itemIDs.get(index));
-				if (e.isControlDown())
+				int id = itemIDs.get(index);
+				String text = getText(id);
+				if (text != null && e.isControlDown())
 					Pastebin.save(text);
 				else
-					pasteItem(text);
+					pasteItem(id, text);
 			}
 			return;
 		}
 		case KeyEvent.VK_PAGE_UP: {
 			if (items.isEmpty()) return;
 			int selectedIndex = items.indexOf(selectedItem);
-			if (selectedIndex == 0 && searchField.getParent() == null) {
+			if (selectedIndex == 0 && !isSearchResults()) {
 				// Page up at top of recent list shows previous page of items.
 				int oldStartIndex = startIndex;
 				startIndex = Math.max(0, startIndex - clippy.config.popupCount);
@@ -228,7 +236,7 @@ public class Popup extends PopupFrame {
 		case KeyEvent.VK_PAGE_DOWN: {
 			if (items.isEmpty()) return;
 			int selectedIndex = items.indexOf(selectedItem);
-			if (selectedIndex == items.size() - 1 && searchField.getParent() == null) {
+			if (selectedIndex == items.size() - 1 && !isSearchResults()) {
 				// Page down at end of recent list shows next page of items.
 				int oldStartIndex = startIndex;
 				startIndex += clippy.config.popupCount;
@@ -283,15 +291,17 @@ public class Popup extends PopupFrame {
 			if (keyCode >= KeyEvent.VK_0 && keyCode <= KeyEvent.VK_9) {
 				int index = keyCode - KeyEvent.VK_0 - 1;
 				if (index < 0) index = 9;
-				if (index < itemText.size()) pasteItem(getText(itemIDs.get(index)));
+				if (index < itemSnips.size()) {
+					int id = itemIDs.get(index);
+					pasteItem(id, getText(id));
+				}
 			}
 		}
 	}
 
 	private String getText (int id) {
 		try {
-			ClipConnection conn = clippy.db.getThreadConnection();
-			return conn.getText(id);
+			return clippy.db.getThreadConnection().getText(id);
 		} catch (SQLException ex) {
 			if (Log.ERROR) error("Unable to retrieve full text.", ex);
 			return "";
@@ -354,7 +364,14 @@ public class Popup extends PopupFrame {
 	}
 
 	public void showPopup () {
-		if (isVisible()) return;
+		if (isVisible()) {
+			searchField.setText("");
+			startIndex = 0;
+			showRecentItems(false);
+			pack();
+			keepOnScreen();
+			return;
+		}
 		if (DEBUG && !TRACE) debug("Show popup.");
 		if (!showRecentItems(true)) {
 			if (WARN) warn("No clips to show.");
@@ -389,7 +406,21 @@ public class Popup extends PopupFrame {
 		setLocation(position.x, position.y);
 	}
 
-	public void addRecent (int id, String text) {
+	public void makeLast (int newID, String text) {
+		int index = recentText.indexOf(text);
+		if (index == -1) return;
+		Integer oldID = recentIDs.remove(index);
+		recentText.remove(index);
+		recentIDs.addFirst(newID);
+		recentText.addFirst(text);
+	}
+
+	public void clearRecentItems () {
+		recentIDs.clear();
+		recentText.clear();
+	}
+
+	public void addRecentItem (int id, String text) {
 		if (isVisible()) {
 			refresh();
 			return;
@@ -399,16 +430,17 @@ public class Popup extends PopupFrame {
 
 		// Don't use recent cache for large entries.
 		if (text.length() > ClipDataStore.maxSnipSize) {
-			recentIDs.clear();
-			recentText.clear();
+			clearRecentItems();
 			return;
 		}
 
-		int index = recentText.indexOf(text);
-		if (index != -1) {
-			if (lockCheckbox.isSelected()) return;
-			recentIDs.remove(index);
-			recentText.remove(index);
+		if (!clippy.config.allowDuplicateClips) {
+			int index = recentText.indexOf(text);
+			if (index != -1) {
+				if (lockCheckbox.isSelected()) return;
+				recentIDs.remove(index);
+				recentText.remove(index);
+			}
 		}
 
 		if (recentIDs.size() >= clippy.config.popupCount) {
@@ -423,14 +455,13 @@ public class Popup extends PopupFrame {
 	boolean showRecentItems (boolean useCache) {
 		if (!useCache || startIndex != 0 || recentText.size() == 0) {
 			try {
-				ClipConnection conn = clippy.db.getThreadConnection();
-				conn.last(itemIDs, itemText, clippy.config.popupCount, startIndex);
-				if (itemText.size() == 0) return false;
+				clippy.db.getThreadConnection().last(itemIDs, itemSnips, clippy.config.popupCount, startIndex);
+				if (itemSnips.size() == 0) return false;
 				recentIDs.clear();
 				recentText.clear();
 				if (startIndex == 0) {
 					recentIDs.addAll(itemIDs);
-					recentText.addAll(itemText);
+					recentText.addAll(itemSnips);
 				}
 				populate();
 				return true;
@@ -440,23 +471,26 @@ public class Popup extends PopupFrame {
 			}
 		}
 		itemIDs.clear();
-		itemText.clear();
+		itemSnips.clear();
 		itemIDs.addAll(recentIDs);
-		itemText.addAll(recentText);
+		itemSnips.addAll(recentText);
 		populate();
 		return true;
 	}
 
 	void showSearchItems (final String text) {
+		if (text.length() == 0) {
+			if (!showRecentItems(false)) hidePopup();
+			return;
+		}
 		searchExecutor.submit(new Runnable() {
 			public void run () {
 				try {
-					ClipConnection conn = clippy.db.getThreadConnection();
-					conn.search(searchIDs, searchText, "%" + text + "%", clippy.config.popupSearchCount);
+					clippy.db.getThreadConnection().search(searchIDs, searchSnips, "%" + text + "%", clippy.config.popupSearchCount);
 					EventQueue.invokeLater(new Runnable() {
 						public void run () {
-							itemText.clear();
-							itemText.addAll(searchText);
+							itemSnips.clear();
+							itemSnips.addAll(searchSnips);
 							itemIDs.clear();
 							itemIDs.addAll(searchIDs);
 							populate();
@@ -469,23 +503,25 @@ public class Popup extends PopupFrame {
 		});
 	}
 
+	boolean isSearchResults () {
+		return searchField.getParent() != null && searchField.getText().length() > 0;
+	}
+
 	public void refresh () {
-		if (searchField.getParent() == null) {
-			if (!showRecentItems(false)) hidePopup();
-		} else
-			showSearchItems(searchField.getText());
+		showSearchItems(searchField.getParent() == null ? "" : searchField.getText());
 	}
 
 	void populate () {
 		clearItems();
-		for (int i = 0, n = itemText.size(); i < n; i++) {
-			final String text = itemText.get(i);
+		for (int i = 0, n = itemSnips.size(); i < n; i++) {
+			final String text = itemSnips.get(i);
+			final int id = itemIDs.get(i);
 			String label = text.trim().replace("\r\n", "\n").replace('\n', ' ');
 			if (label.isEmpty()) label = text.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t").replace(" ", "\u2022");
 
 			TextItem item = new TextItem(label) {
 				public void clicked () {
-					pasteItem(text);
+					pasteItem(id, text);
 				}
 
 				public void selected () {
@@ -512,7 +548,7 @@ public class Popup extends PopupFrame {
 		pack();
 
 		if (selectNextPopulate != null) {
-			int index = itemText.indexOf(selectNextPopulate);
+			int index = itemSnips.indexOf(selectNextPopulate);
 			if (index != -1) {
 				TextItem item = items.get(index);
 				item.setSelected(true);
@@ -522,9 +558,11 @@ public class Popup extends PopupFrame {
 		}
 	}
 
-	void pasteItem (String text) {
+	void pasteItem (int id, String text) {
+		if (text == null) throw new RuntimeException("Invalid item ID: " + id);
 		hidePopup();
-		clippy.paste(text);
+		int newID = clippy.paste(text);
+		if (newID != -1) addRecentItem(newID, text);
 	}
 
 	POINT getScreenCenter (int width, int height) {

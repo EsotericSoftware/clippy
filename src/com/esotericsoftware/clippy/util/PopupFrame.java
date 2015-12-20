@@ -44,6 +44,7 @@ public class PopupFrame extends JFrame {
 	public final Clippy clippy = Clippy.instance;
 	public final JPanel panel = new JPanel();
 	protected final FocusAdapter focusListener;
+	boolean altPressed;
 
 	public PopupFrame () {
 		setType(JFrame.Type.UTILITY);
@@ -72,7 +73,12 @@ public class PopupFrame extends JFrame {
 			private final KeyEventDispatcher disableAlt = new KeyEventDispatcher() {
 				public boolean dispatchKeyEvent (KeyEvent e) {
 					if (e.getKeyCode() == KeyEvent.VK_ALT) {
-						if (e.getID() == KeyEvent.KEY_PRESSED) altPressed();
+						if (e.getID() == KeyEvent.KEY_RELEASED)
+							altPressed = false;
+						else if (!altPressed && e.getID() == KeyEvent.KEY_PRESSED) {
+							altPressed = true;
+							altPressed();
+						}
 						return true; // Don't show OS window menu.
 					}
 					return false;
@@ -107,6 +113,7 @@ public class PopupFrame extends JFrame {
 
 	public void hidePopup () {
 		super.setVisible(false);
+		altPressed = false;
 	}
 
 	public void altPressed () {

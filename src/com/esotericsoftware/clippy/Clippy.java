@@ -42,7 +42,6 @@ import com.esotericsoftware.minlog.Log;
 import com.sun.jna.WString;
 
 // BOZO - Favorites that always show up before others when searching.
-// BOZO - Require alt+num.
 
 /** @author Nathan Sweet */
 public class Clippy {
@@ -137,25 +136,31 @@ public class Clippy {
 		if (TRACE) trace("Store clipboard text: " + text.trim());
 		try {
 			ClipConnection conn = db.getThreadConnection();
-			if (!config.allowDuplicateClips) conn.remove(text);
+			if (!config.allowDuplicateClips) conn.removeText(text);
 			int id = conn.add(text);
-			popup.addRecent(id, text);
+			popup.addRecentItem(id, text);
 		} catch (SQLException ex) {
 			if (ERROR) error("Error storing clipboard text.", ex);
 		}
 	}
 
-	public void paste (String text) {
-		if (text == null) return;
-		if (!clipboard.setContents(text)) return;
+	/** @param text May be null.
+	 * @return The new ID for the clipboard item that was moved to last, or -1. */
+	public int paste (String text) {
+		int newID = -1;
+		if (text == null) return newID;
+		if (!clipboard.setContents(text)) return newID;
 
 		try {
-			if (!popup.lockCheckbox.isSelected()) db.getThreadConnection().makeLast(text);
+			if (!popup.lockCheckbox.isSelected()) {
+				newID = db.getThreadConnection().makeLast(text);
+				popup.makeLast(newID, text);
+			}
 		} catch (SQLException ex) {
 			if (ERROR) error("Error moving clipboard text to last.", ex);
 		}
 
-		// Could use SendInput or menu->Edit->Paste, but users should really just install the clink CMD prompt addon instead.
+		// Could use SendInput or menu->Edit->Paste, or users could install the clink CMD prompt addon or use Windows 10.
 		// char[] chars = new char[2048];
 		// int count = GetClassName(GetForegroundWindow(), chars, chars.length);
 		// if (count > 0) {
@@ -163,12 +168,16 @@ public class Clippy {
 		// }
 		// }
 
+		// Reset modifier key state in case they were down.
+		keyboard.sendKeyUp(VK_MENU);
 		keyboard.sendKeyUp(VK_SHIFT);
-		keyboard.sendKeyUp(VK_CONTROL); // 10
-		keyboard.sendKeyDown(VK_CONTROL); // 10
-		keyboard.sendKeyDown((byte)'V'); // 50
-		keyboard.sendKeyUp((byte)'V'); // 50
-		keyboard.sendKeyUp(VK_CONTROL); // 10
+		keyboard.sendKeyUp(VK_CONTROL);
+
+		keyboard.sendKeyDown(VK_CONTROL);
+		keyboard.sendKeyDown((byte)'V');
+		keyboard.sendKeyUp((byte)'V');
+		keyboard.sendKeyUp(VK_CONTROL);
+		return newID;
 	}
 
 	public static void main (String[] args) throws Exception {
