@@ -1,6 +1,6 @@
 # Clippy
 
-Clippy is a clipboard history tool for Windows. It uses a database to store any text items that are copied to the clipboard. The stored text items can be easily retrieved by browsing or searching.
+Clippy is a clipboard history tool for Windows. It uses a database to store any text items that are copied to the clipboard. The stored text items can be easily retrieved by browsing or searching. Clippy can also take screenshots and upload them to [imgur.com](http://imgur.com/).
 
 ![](http://i.imgur.com/4vEWhmX.png)
 
@@ -9,6 +9,10 @@ Clippy is a powerful tool, especially for programmers:
 * It is very common to need to copy and paste a few different items. Since the operating system clipboard can only hold a single item, this is a tedious task without Clippy.
 
 * Clippy can be used simply to keep text safe, just in case it is needed later. While writing an email or before refactoring a large piece of code, you can select all the text and copy it, knowing that Clippy has stored the text should it ever be needed in the future.
+
+* Commonly used pieces of text are easily found by typing any portion of the text.
+
+* Easily take a screenshot of the whole screen, the foreground application, or draw a rectangle with the mouse. The resulting image is uploaded to imgur.
 
 * Text pasted from Clippy's popup is always plain text. This means Clippy can be used to strip unwanted formatting from text.
 
@@ -34,15 +38,21 @@ The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the
 
 ### Search
 
-Items can be searched simply by typing while the popup is open. All items containing any of the typed text are shown.
+Items can be searched simply by typing while the popup is open. All items containing any of the typed text are shown. `%` can be used as a wildcard. Use `\%` to search for a percent sign.
 
 ### Menu
 
-The popup menu is shown by pressing `alt`. The `Lock items` checkbox prevents the order of items from changing when an existing item is chosen. Numbers `0-9` can be pressed to choose an item.
+A menu is shown on the popup by pressing `alt`. The `Lock items` checkbox prevents the order of items from changing when an existing item is chosen. Numbers `0-9` can be pressed to choose an item.
+
+## Screenshots
+
+The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is uploaded to imgur and a link is placed on the clipboard when the upload is complete. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
 
 ## Configuration
 
 Clippy stores its configuration file and the database in user folder, under the `.clippy` subfolder. The `config.json` file can be edited to configure Clippy. Eg, change the popup hotkey, the number of items shown on the popup, and more.
+
+Hotkeys are described using [these constants](https://docs.oracle.com/javase/8/docs/api/java/awt/event/KeyEvent.html), just omit the "VK_" prefix.
 
 ## Development details
 
