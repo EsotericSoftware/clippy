@@ -69,8 +69,9 @@ public class Screenshot {
 		Imgur.upload("213cecec326ed89", upload, new Callback<ImageResponse>() {
 			public void success (ImageResponse imageResponse, Response response) {
 				if (TRACE) trace("Upload success: " + imageResponse.data.link);
-				clippy.clipboard.setContents(imageResponse.data.link);
 				upload.image.delete();
+				clippy.clipboard.setContents(imageResponse.data.link);
+				clippy.store(imageResponse.data.link);
 			}
 
 			public void failure (RetrofitError ex) {
