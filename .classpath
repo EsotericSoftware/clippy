@@ -8,5 +8,7 @@
 	<classpathentry kind="lib" path="libs/jsonbeans-0.7a.jar"/>
 	<classpathentry kind="lib" path="libs/jna-4.1.0-natives.jar"/>
 	<classpathentry kind="lib" path="libs/h2-1.4.190.jar"/>
+	<classpathentry kind="lib" path="libs/retrofit-1.9.0.jar"/>
+	<classpathentry kind="lib" path="libs/gson-2.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

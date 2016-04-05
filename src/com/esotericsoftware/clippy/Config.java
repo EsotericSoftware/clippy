@@ -43,12 +43,15 @@ public class Config {
 	public String font = "Consolas-14";
 	public int maxLengthToStore = 1024 * 512; // 0.5 MB
 
-	public String pastebinHotkey = "ctrl enter";
 	public String pastebinDevKey;
 	public String pastebinFormat = "java";
 	public String pastebinPrivate = "1";
 	public String pastebinExpire = "N";
 	public boolean pastebinRaw = true;
+
+	public String imgurScreenshotHotkey = null;
+	public String imgurScreenshotAppHotkey = "ctrl alt shift BACK_SLASH";
+	public String imgurScreenshotRegionHotkey = "ctrl alt BACK_SLASH";
 
 	public Config () {
 		Json json = new Json();

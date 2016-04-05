@@ -378,8 +378,7 @@ public class Popup extends PopupFrame {
 			return;
 		}
 
-		Pointer hwnd = GetForegroundWindow();
-		POINT position = getPopupPosition(hwnd, getWidth(), getHeight());
+		POINT position = getPopupPosition(getWidth(), getHeight());
 		setLocation(position.x, position.y);
 		keepOnScreen();
 
@@ -572,7 +571,8 @@ public class Popup extends PopupFrame {
 		return popupPosition;
 	}
 
-	POINT getPopupPosition (Pointer hwndForeground, int width, int height) {
+	POINT getPopupPosition (int width, int height) {
+		Pointer hwndForeground = GetForegroundWindow();
 		if (hwndForeground == null) {
 			if (TRACE) trace("Unable to get foreground window, positioning popup using screen center.");
 			return getScreenCenter(width, height);

@@ -38,7 +38,8 @@ import com.esotericsoftware.clippy.Win.MSG;
 
 /** @author Nathan Sweet */
 public class Keyboard {
-	static private final boolean windows7 = System.getProperty("os.name", "").startsWith("Windows 7");
+	static private final boolean windows7Plus = System.getProperty("os.name", "").startsWith("Windows 7")
+		|| System.getProperty("os.name", "").startsWith("Windows 8");
 
 	static private final Map<Integer, Integer> codeExceptions = new HashMap<Integer, Integer>() {
 		{
@@ -52,6 +53,7 @@ public class Keyboard {
 			put(VK_SLASH, 0xBF);
 			put(VK_SEMICOLON, 0xBA);
 			put(VK_PRINTSCREEN, 0x2C);
+			put(VK_BACK_SLASH, 0xDC);
 		}
 	};
 
@@ -149,7 +151,7 @@ public class Keyboard {
 		if ((keyStrokeModifiers & InputEvent.CTRL_DOWN_MASK) != 0) modifiers |= MOD_CONTROL;
 		if ((keyStrokeModifiers & InputEvent.META_DOWN_MASK) != 0) modifiers |= MOD_WIN;
 		if ((keyStrokeModifiers & InputEvent.ALT_DOWN_MASK) != 0) modifiers |= MOD_ALT;
-		if (windows7) modifiers |= MOD_NOREPEAT;
+		if (windows7Plus) modifiers |= MOD_NOREPEAT;
 		return modifiers;
 	}
 }

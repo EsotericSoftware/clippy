@@ -25,6 +25,7 @@ import static com.esotericsoftware.minlog.Log.*;
 
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -54,6 +55,7 @@ public class Clippy {
 	Tray tray;
 	Keyboard keyboard;
 	Clipboard clipboard;
+	Screenshot screenshot;
 
 	public Clippy () {
 		instance = this;
@@ -86,18 +88,32 @@ public class Clippy {
 			System.exit(0);
 		}
 
+		screenshot = new Screenshot();
+
 		final KeyStroke popupHotkey = KeyStroke.getKeyStroke(config.popupHotkey);
 		final KeyStroke plainTextHotkey = KeyStroke.getKeyStroke(config.plainTextHotkey);
+		final KeyStroke imgurScreenshotHotkey = KeyStroke.getKeyStroke(config.imgurScreenshotHotkey);
+		final KeyStroke imgurScreenshotAppHotkey = KeyStroke.getKeyStroke(config.imgurScreenshotAppHotkey);
+		final KeyStroke imgurScreenshotRegionHotkey = KeyStroke.getKeyStroke(config.imgurScreenshotRegionHotkey);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(popupHotkey))
 					showPopup(keyStroke);
 				else if (keyStroke.equals(plainTextHotkey)) //
 					paste(clipboard.getContents());
+				else if (keyStroke.equals(imgurScreenshotHotkey)) //
+					screenshot.screen();
+				else if (keyStroke.equals(imgurScreenshotAppHotkey)) //
+					screenshot.app();
+				else if (keyStroke.equals(imgurScreenshotRegionHotkey)) //
+					screenshot.region();
 			}
 		};
 		if (popupHotkey != null) keyboard.registerHotkey(popupHotkey);
 		if (plainTextHotkey != null) keyboard.registerHotkey(plainTextHotkey);
+		if (imgurScreenshotHotkey != null) keyboard.registerHotkey(imgurScreenshotHotkey);
+		if (imgurScreenshotAppHotkey != null) keyboard.registerHotkey(imgurScreenshotAppHotkey);
+		if (imgurScreenshotRegionHotkey != null) keyboard.registerHotkey(imgurScreenshotRegionHotkey);
 		keyboard.start();
 
 		clipboard = new Clipboard(config.maxLengthToStore) {
