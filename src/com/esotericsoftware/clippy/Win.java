@@ -181,8 +181,9 @@ public class Win {
 			Native.register(NativeLibrary.getInstance("shell32", W32APIOptions.DEFAULT_OPTIONS));
 		}
 
-		static public final int NIM_ADD = 0;
-		static public final int NIM_DELETE = 2;
+		static public final int NIM_ADD = 0x0;
+		static public final int NIM_MODIFY = 0x1;
+		static public final int NIM_DELETE = 0x2;
 
 		//
 
@@ -257,6 +258,12 @@ public class Win {
 		static public final int NIF_TIP = 0x4;
 		static public final int NIF_INFO = 0x10;
 
+		static public final int NIIF_NONE = 0x0;
+		static public final int NIIF_INFO = 0x1;
+		static public final int NIIF_WARNING = 0x2;
+		static public final int NIIF_ERROR = 0x3;
+		static public final int NIIF_USER = 0x4;
+
 		public int cbSize;
 		public Pointer hWnd;
 		public int uID;
@@ -267,7 +274,7 @@ public class Win {
 		public int dwState;
 		public int dwStateMask;
 		public char[] szInfo = new char[256];
-		public int union; // {UINT uTimeout; UINT uVersion;};
+		public int uTimeoutOrVersion; // {UINT uTimeout; UINT uVersion;};
 		public char[] szInfoTitle = new char[64];
 		public int dwInfoFlags;
 		public int guidItem;
@@ -282,9 +289,17 @@ public class Win {
 			System.arraycopy(s.toCharArray(), 0, szTip, 0, Math.min(s.length(), szTip.length));
 		}
 
+		public void setBalloon (String title, String message, int millis, int niif) {
+			uFlags |= NIF_INFO;
+			System.arraycopy(message.toCharArray(), 0, szInfo, 0, Math.min(message.length(), szInfo.length));
+			uTimeoutOrVersion = millis;
+			System.arraycopy(title.toCharArray(), 0, szInfoTitle, 0, Math.min(title.length(), szInfoTitle.length));
+			dwInfoFlags = niif;
+		}
+
 		protected List<?> getFieldOrder () {
 			return Arrays.asList(new String[] {"cbSize", "hWnd", "uID", "uFlags", "uCallbackMessage", "hIcon", "szTip", "dwState",
-				"dwStateMask", "szInfo", "union", "szInfoTitle", "dwInfoFlags", "guidItem", "hBalloonIcon"});
+				"dwStateMask", "szInfo", "uTimeoutOrVersion", "szInfoTitle", "dwInfoFlags", "guidItem", "hBalloonIcon"});
 		}
 	}
 

@@ -42,6 +42,7 @@ import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
 public class Tray {
 	final NOTIFYICONDATA notifyIconData = new NOTIFYICONDATA();
 	final POINT mousePosition = new POINT();
+	Pointer hwnd;
 	StdCallCallback wndProc;
 
 	public Tray () {
@@ -51,8 +52,8 @@ public class Tray {
 			public void run () {
 				if (TRACE) trace("Entered tray thread.");
 
-				Pointer hwnd = CreateWindowEx(0, new WString("STATIC"), new WString("com.esotericsoftware.clippy"), 0, 0, 0, 0, 0, 0,
-					0, 0, 0);
+				hwnd = CreateWindowEx(0, new WString("STATIC"), new WString("com.esotericsoftware.clippy"), 0, 0, 0, 0, 0, 0, 0, 0,
+					0);
 				if (hwnd == null) {
 					if (ERROR) error("Unable to create tray window.");
 					System.exit(0);
@@ -70,7 +71,7 @@ public class Tray {
 					return;
 				}
 				notifyIconData.hWnd = hwnd;
-				notifyIconData.uID = 1000;
+				notifyIconData.uID = 1763;
 				notifyIconData.uFlags = NIF_ICON | NIF_MESSAGE;
 				notifyIconData.uCallbackMessage = wmTrayIcon;
 				notifyIconData.hIcon = LoadImage(null, new WString(iconPath), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
@@ -138,5 +139,13 @@ public class Tray {
 	}
 
 	protected void mouseUp (POINT position, int button) {
+	}
+
+	public void message (String title, String message, int millis) {
+		NOTIFYICONDATA notifyIconData = new NOTIFYICONDATA();
+		notifyIconData.hWnd = hwnd;
+		notifyIconData.uID = 1763;
+		notifyIconData.setBalloon(title, message, millis, NIIF_NONE);
+		Shell_NotifyIcon(NIM_MODIFY, notifyIconData);
 	}
 }

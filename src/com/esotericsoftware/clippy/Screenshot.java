@@ -72,6 +72,8 @@ public class Screenshot {
 				upload.image.delete();
 				clippy.clipboard.setContents(imageResponse.data.link);
 				clippy.store(imageResponse.data.link);
+				// Doesn't work?!
+				// clippy.tray.message("Upload complete", imageResponse.data.link, 10000);
 			}
 
 			public void failure (RetrofitError ex) {
