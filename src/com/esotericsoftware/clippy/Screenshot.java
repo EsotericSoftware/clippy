@@ -206,20 +206,21 @@ public class Screenshot {
 
 					public void mouseReleased (MouseEvent e) {
 						dispose();
-						if (x == x1 || y == y1) return;
-						if (x < x1) {
-							int temp = x;
-							x = x1;
+						int x2 = x, y2 = y;
+						if (x2 == x1 || y2 == y1) return;
+						if (x2 < x1) {
+							int temp = x2;
+							x2 = x1;
 							x1 = temp;
 						}
-						if (y < y1) {
-							int temp = y;
-							y = y1;
+						if (y2 < y1) {
+							int temp = y2;
+							y2 = y1;
 							y1 = temp;
 						}
-						BufferedImage subimage = new BufferedImage(x - x1, y - y1, type);
+						BufferedImage subimage = new BufferedImage(x2 - x1, y2 - y1, type);
 						Graphics2D g = subimage.createGraphics();
-						g.drawImage(image, 0, 0, subimage.getWidth(), subimage.getHeight(), x1, y1, x, y, null);
+						g.drawImage(image, 0, 0, subimage.getWidth(), subimage.getHeight(), x1, y1, x2, y2, null);
 						g.dispose();
 						upload(subimage);
 					}
