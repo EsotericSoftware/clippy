@@ -12,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
+import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -131,6 +132,11 @@ public class Screenshot {
 			boolean drag, lock, lockX, robotEvent;
 
 			{
+				Point mouse = MouseInfo.getPointerInfo().getLocation();
+				x = mouse.x;
+				y = mouse.y;
+				lastX = x;
+				lastY = y;
 				addMouseMotionListener(new MouseMotionAdapter() {
 					public void mouseDragged (MouseEvent e) {
 						mouseMoved(e);
@@ -316,5 +322,9 @@ public class Screenshot {
 		frame.setSize(width, height);
 		frame.setVisible(true);
 		frame.validate();
+	}
+
+	static public void main (String[] args) throws Exception {
+		new Screenshot().region();
 	}
 }
