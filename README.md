@@ -48,6 +48,10 @@ A menu is shown on the popup by pressing `alt`. The `Lock items` checkbox preven
 
 The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is uploaded to imgur and a link is placed on the clipboard when the upload is complete. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
 
+![](http://i.imgur.com/Ld05ys6.png)
+
+While taking a region screenshot, hold `shift` to move more slowly and `ctrl` to lock to the X or Y axis.
+
 ## Configuration
 
 Clippy stores its configuration file and the database in user folder, under the `.clippy` subfolder. The `config.json` file can be edited to configure Clippy. Eg, change the popup hotkey, the number of items shown on the popup, and more.
