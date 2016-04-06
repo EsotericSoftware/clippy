@@ -76,6 +76,7 @@ public class Config {
 			if (WARN) warn("Unable to set logging level.", ex);
 		}
 
+		configFile.getParentFile().mkdirs();
 		try {
 			OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF8");
 			writer.write(json.prettyPrint(this));
