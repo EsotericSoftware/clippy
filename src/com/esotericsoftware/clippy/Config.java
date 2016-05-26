@@ -54,7 +54,7 @@ public class Config {
 	public String screenshotRegionHotkey = "ctrl alt BACK_SLASH";
 	public String screenshotLastRegionHotkey = "ctrl shift BACK_SLASH";
 
-	public ScreenshotUpload screenshotUpload = ScreenshotUpload.sftp;
+	public ScreenshotUpload screenshotUpload = ScreenshotUpload.imgur;
 
 	public String ftpServer;
 	public int ftpPort;
