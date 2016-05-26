@@ -24,10 +24,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /** @author Nathan Sweet */
 public class Util {
+	static public final ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactory() {
+		public Thread newThread (Runnable runnable) {
+			return new Thread(runnable, "Util");
+		}
+	});
+
+	static public final Random random = new Random();
+
 	static public File extractFile (String sourcePath, String appName) throws IOException {
 		File extractedFile = getExtractPath(appName, new File(sourcePath).getName());
 		InputStream input = Util.class.getResourceAsStream("/" + sourcePath);
@@ -97,5 +109,14 @@ public class Util {
 		} finally {
 			testFile.delete();
 		}
+	}
+
+	static public String id (int length) {
+		String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-.~";
+		int alphabetLength = alphabet.length();
+		StringBuilder buffer = new StringBuilder();
+		for (int i = 0; i < length; i++)
+			buffer.append(alphabet.charAt(random.nextInt(alphabetLength)));
+		return buffer.toString();
 	}
 }

@@ -1,6 +1,7 @@
 
 package com.esotericsoftware.clippy;
 
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.BufferedInputStream;
@@ -10,17 +11,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 public class Pastebin {
 	static final Clippy clippy = Clippy.instance;
-	static private final ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactory() {
-		public Thread newThread (Runnable runnable) {
-			return new Thread(runnable, "Pastebin");
-		}
-	});
 
 	static public void save (final String text) {
 		if (clippy.config.pastebinDevKey == null) {

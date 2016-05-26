@@ -36,6 +36,7 @@ import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
 import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
+import com.esotericsoftware.clippy.Config.ScreenshotUpload;
 import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.clippy.util.MultiplexOutputStream;
 import com.esotericsoftware.clippy.util.TextItem;
@@ -56,6 +57,7 @@ public class Clippy {
 	Keyboard keyboard;
 	Clipboard clipboard;
 	Screenshot screenshot;
+	Upload upload;
 
 	public Clippy () {
 		instance = this;
@@ -79,6 +81,11 @@ public class Clippy {
 			}
 		}
 
+		if (config.screenshotUpload == ScreenshotUpload.imgur)
+			upload = new Upload.Imgur();
+		else
+			upload = new Upload.Sftp();
+
 		TextItem.font = Font.decode(config.font);
 
 		try {
@@ -92,9 +99,10 @@ public class Clippy {
 
 		final KeyStroke popupHotkey = KeyStroke.getKeyStroke(config.popupHotkey);
 		final KeyStroke plainTextHotkey = KeyStroke.getKeyStroke(config.plainTextHotkey);
-		final KeyStroke imgurScreenshotHotkey = KeyStroke.getKeyStroke(config.imgurScreenshotHotkey);
-		final KeyStroke imgurScreenshotAppHotkey = KeyStroke.getKeyStroke(config.imgurScreenshotAppHotkey);
-		final KeyStroke imgurScreenshotRegionHotkey = KeyStroke.getKeyStroke(config.imgurScreenshotRegionHotkey);
+		final KeyStroke imgurScreenshotHotkey = KeyStroke.getKeyStroke(config.screenshotHotkey);
+		final KeyStroke imgurScreenshotAppHotkey = KeyStroke.getKeyStroke(config.screenshotAppHotkey);
+		final KeyStroke imgurScreenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
+		final KeyStroke imgurScreenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(popupHotkey))
@@ -107,6 +115,8 @@ public class Clippy {
 					screenshot.app();
 				else if (keyStroke.equals(imgurScreenshotRegionHotkey)) //
 					screenshot.region();
+				else if (keyStroke.equals(imgurScreenshotLastRegionHotkey)) //
+					screenshot.lastRegion();
 			}
 		};
 		if (popupHotkey != null) keyboard.registerHotkey(popupHotkey);
@@ -114,6 +124,7 @@ public class Clippy {
 		if (imgurScreenshotHotkey != null) keyboard.registerHotkey(imgurScreenshotHotkey);
 		if (imgurScreenshotAppHotkey != null) keyboard.registerHotkey(imgurScreenshotAppHotkey);
 		if (imgurScreenshotRegionHotkey != null) keyboard.registerHotkey(imgurScreenshotRegionHotkey);
+		if (imgurScreenshotLastRegionHotkey != null) keyboard.registerHotkey(imgurScreenshotLastRegionHotkey);
 		keyboard.start();
 
 		clipboard = new Clipboard(config.maxLengthToStore) {

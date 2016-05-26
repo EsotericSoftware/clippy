@@ -12,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -36,15 +37,10 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import com.esotericsoftware.clippy.Upload.UploadListener;
 import com.esotericsoftware.clippy.Win.RECT;
-import com.esotericsoftware.clippy.imgur.ImageResponse;
-import com.esotericsoftware.clippy.imgur.Imgur;
-import com.esotericsoftware.clippy.imgur.Upload;
+import com.esotericsoftware.clippy.util.Util;
 import com.sun.jna.Pointer;
-
-import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 
 public class Screenshot {
 	static final int mag = 8, magOffsetX = 20, magOffsetY = 20, magD = 280;
@@ -53,6 +49,7 @@ public class Screenshot {
 	final Clippy clippy = Clippy.instance;
 	Robot robot;
 	final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {4}, 0);
+	int lastX1 = -1, lastY1, lastX2, lastY2, lastType;
 
 	public Screenshot () {
 		try {
@@ -66,6 +63,9 @@ public class Screenshot {
 		File file = null;
 		try {
 			file = File.createTempFile("clippy", null);
+			File idFile = new File(file.getParent(), Util.id(8) + ".png");
+			file.renameTo(idFile);
+			file = idFile;
 			if (TRACE) trace("Writing screenshot file: " + file);
 			ImageIO.write(image, "png", file);
 		} catch (IOException ex) {
@@ -73,23 +73,18 @@ public class Screenshot {
 			if (file != null) file.delete();
 			return;
 		}
-
-		if (TRACE) trace("Uploading to imgur: " + file);
-		final Upload upload = new Upload();
-		upload.image = file;
-		Imgur.upload("213cecec326ed89", upload, new Callback<ImageResponse>() {
-			public void success (ImageResponse imageResponse, Response response) {
-				if (TRACE) trace("Upload success: " + imageResponse.data.link);
-				upload.image.delete();
-				clippy.clipboard.setContents(imageResponse.data.link);
-				clippy.store(imageResponse.data.link);
+		final File uploadFile = file;
+		clippy.upload.uploadFile(file, new UploadListener() {
+			public void complete (String url) {
+				uploadFile.delete();
+				clippy.clipboard.setContents(url);
+				clippy.store(url);
 				// Doesn't work?!
-				// clippy.tray.message("Upload complete", imageResponse.data.link, 10000);
+				// clippy.tray.message("Upload complete", url, 10000);
 			}
 
-			public void failure (RetrofitError ex) {
-				if (ERROR) error("Error uploading to imgur: ", ex);
-				upload.image.delete();
+			public void failed () {
+				uploadFile.delete();
 			}
 		});
 	}
@@ -234,11 +229,12 @@ public class Screenshot {
 							y2 = y1;
 							y1 = temp;
 						}
-						BufferedImage subimage = new BufferedImage(x2 - x1, y2 - y1, type);
-						Graphics2D g = subimage.createGraphics();
-						g.drawImage(image, 0, 0, subimage.getWidth(), subimage.getHeight(), x1, y1, x2, y2, null);
-						g.dispose();
-						upload(subimage);
+						lastX1 = x1;
+						lastY1 = y1;
+						lastX2 = x2;
+						lastY2 = y2;
+						lastType = type;
+						uploadRegion(image, x1, y1, x2, y2, type);
 					}
 				});
 				addKeyListener(new KeyAdapter() {
@@ -345,6 +341,20 @@ public class Screenshot {
 		frame.setSize(width, height);
 		frame.setVisible(true);
 		frame.validate();
+	}
+
+	public void lastRegion () {
+		if (lastX1 == -1) return;
+		BufferedImage robotImage = robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
+		uploadRegion(robotImage, lastX1, lastY1, lastX2, lastY2, robotImage.getType());
+	}
+
+	void uploadRegion (Image image, int x1, int y1, int x2, int y2, int type) {
+		BufferedImage subimage = new BufferedImage(x2 - x1, y2 - y1, type);
+		Graphics2D g = subimage.createGraphics();
+		g.drawImage(image, 0, 0, subimage.getWidth(), subimage.getHeight(), x1, y1, x2, y2, null);
+		g.dispose();
+		upload(subimage);
 	}
 
 	static public void main (String[] args) throws Exception {

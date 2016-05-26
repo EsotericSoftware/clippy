@@ -49,9 +49,19 @@ public class Config {
 	public String pastebinExpire = "N";
 	public boolean pastebinRaw = true;
 
-	public String imgurScreenshotHotkey = null;
-	public String imgurScreenshotAppHotkey = "ctrl alt shift BACK_SLASH";
-	public String imgurScreenshotRegionHotkey = "ctrl alt BACK_SLASH";
+	public String screenshotHotkey = null;
+	public String screenshotAppHotkey = "ctrl alt shift BACK_SLASH";
+	public String screenshotRegionHotkey = "ctrl alt BACK_SLASH";
+	public String screenshotLastRegionHotkey = "ctrl shift BACK_SLASH";
+
+	public ScreenshotUpload screenshotUpload = ScreenshotUpload.sftp;
+
+	public String ftpServer;
+	public int ftpPort;
+	public String ftpUser;
+	public String ftpPassword;
+	public String ftpDir;
+	public String ftpUrl;
 
 	public Config () {
 		Json json = new Json();
@@ -84,5 +94,9 @@ public class Config {
 		} catch (Exception ex) {
 			if (WARN) warn("Unable to write config.json.", ex);
 		}
+	}
+
+	static public enum ScreenshotUpload {
+		imgur, ftp, sftp
 	}
 }
