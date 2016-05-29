@@ -24,7 +24,7 @@ Download the latest version of Clippy here:
 
 [Download Clippy](https://github.com/EsotericSoftware/clippy/releases)
 
-There is no installation, instead Clippy is provided as two files. `Clippy.exe` is an executable that automatically finds Java and runs Clippy. Alternatively, `Clippy.jar` can be run directly either by double clicking or with `javaw -jar Clippy.jar`. You don't need both files, each file is the whole app.
+There is no installation, instead Clippy is provided as two files. `Clippy.exe` is an executable that automatically finds Java and runs Clippy. Alternatively, `Clippy.jar` can be run directly either by double clicking or with `javaw -jar Clippy.jar`. Both files are not needed, each file is the whole app.
 
 It is highly recommended to run Clippy using 64-bit Java. Clippy may run much more slowly if 32-bit Java is used. To be sure of which Java installation Clippy uses, run it from the command line using the:
 
