@@ -163,4 +163,11 @@ public class Util {
 		file.renameTo(idFile);
 		return idFile;
 	}
+
+	static public void sleep (int millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException ignored) {
+		}
+	}
 }

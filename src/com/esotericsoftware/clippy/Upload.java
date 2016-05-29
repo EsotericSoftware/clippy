@@ -6,6 +6,7 @@ import static com.esotericsoftware.clippy.util.Util.readFile;
 import static com.esotericsoftware.minlog.Log.*;
 import static com.esotericsoftware.scar.Scar.*;
 
+import java.awt.EventQueue;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,6 +16,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,24 +41,61 @@ import retrofit.mime.TypedFile;
 public abstract class Upload {
 	static final Clippy clippy = Clippy.instance;
 
+	final HashMap<File, ProgressBar> progressBars = new HashMap();
+
 	public void upload (final File file, final boolean deleteAfterUpload, final UploadListener callback) {
+		final ProgressBar progressBar = newProgressBar(file);
 		threadPool.submit(new Runnable() {
 			public void run () {
 				try {
 					String url = upload(file);
 					if (TRACE) trace("Upload success: " + url);
+					if (progressBar != null) progressBar.done();
 					callback.complete(url);
 				} catch (Exception ex) {
 					if (ERROR) error("Upload failed.", ex);
+					if (progressBar != null) progressBar.failed();
 					callback.failed();
 				} finally {
 					if (deleteAfterUpload) file.delete();
+					synchronized (progressBars) {
+						progressBars.remove(file);
+					}
 				}
 			}
 		});
 	}
 
 	abstract protected String upload (File file) throws Exception;
+
+	void setProgress (final File file, float progress) {
+		ProgressBar progressBar = progressBars.get(file);
+		if (progressBar == null) return;
+		progressBar.setProgress(progress);
+	}
+
+	ProgressBar newProgressBar (final File file) {
+		if (!clippy.config.uploadProgressBar) return null;
+		if (!EventQueue.isDispatchThread()) {
+			try {
+				EventQueue.invokeAndWait(new Runnable() {
+					public void run () {
+						newProgressBar(file);
+					}
+				});
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
+			}
+			synchronized (progressBars) {
+				return progressBars.get(file);
+			}
+		}
+		ProgressBar progressBar = new ProgressBar(file.getName());
+		synchronized (progressBars) {
+			progressBars.put(file, progressBar);
+		}
+		return progressBar;
+	}
 
 	static public abstract class UploadListener {
 		public void complete (String url) {
@@ -132,7 +171,12 @@ public abstract class Upload {
 			conn.setUseCaches(false);
 
 			OutputStream output = conn.getOutputStream();
-			output.write(bytes);
+			int total = bytes.length, remaining = total;
+			while (remaining > 0) {
+				output.write(bytes, total - remaining, Math.min(64, remaining));
+				remaining -= 64;
+				setProgress(file, 1 - remaining / (float)total);
+			}
 			output.close();
 
 			BufferedInputStream input = new BufferedInputStream(conn.getInputStream(), 256);
@@ -155,14 +199,18 @@ public abstract class Upload {
 	}
 
 	static public class Sftp extends Upload {
-		protected String upload (File file) throws Exception {
+		protected String upload (final File file) throws Exception {
 			if (clippy.config.ftpServer == null) {
 				if (WARN) warn("SFTP upload is not configured.");
 				return null;
 			}
 			if (TRACE) trace("Uploading to SFTP: " + file);
 			sftpUpload(clippy.config.ftpServer, clippy.config.ftpPort, clippy.config.ftpUser, clippy.config.ftpPassword,
-				clippy.config.ftpDir, path(file.getAbsolutePath()));
+				clippy.config.ftpDir, path(file.getAbsolutePath()), new ProgressMonitor() {
+					public void progress (float fileProgress, float totalProgress) {
+						setProgress(file, totalProgress);
+					}
+				});
 			return clippy.config.ftpUrl + file.getName();
 		}
 	}
@@ -188,7 +236,10 @@ public abstract class Upload {
 			Util.writeFile(file.toPath(), text);
 			clippy.textUpload.upload(file, true, new UploadListener() {
 				public void complete (String url) {
-					clippy.paste(url);
+					if (clippy.config.pasteAfterUpload)
+						clippy.paste(url);
+					else
+						clippy.clipboard.setContents(url);
 					clippy.store(url);
 				}
 			});
@@ -211,10 +262,11 @@ public abstract class Upload {
 		}
 		clippy.imageUpload.upload(file, true, new UploadListener() {
 			public void complete (String url) {
-				clippy.paste(url);
+				if (clippy.config.pasteAfterUpload)
+					clippy.paste(url);
+				else
+					clippy.clipboard.setContents(url);
 				clippy.store(url);
-				// Doesn't work?!
-				// clippy.tray.message("Upload complete", url, 10000);
 			}
 		});
 	}
@@ -223,17 +275,21 @@ public abstract class Upload {
 		if (clippy.fileUpload == null) return;
 		clippy.fileUpload.upload(file, deleteAfterUpload, new UploadListener() {
 			public void complete (String url) {
-				clippy.paste(url);
+				if (clippy.config.pasteAfterUpload)
+					clippy.paste(url);
+				else
+					clippy.clipboard.setContents(url);
 				clippy.store(url);
-				// Doesn't work?!
-				// clippy.tray.message("Upload complete", url, 10000);
 			}
 		});
 	}
 
 	static public void uploadFiles (String[] files) {
 		if (clippy.fileUpload == null) return;
-		if (files.length == 1) uploadFile(new File(files[0]), false);
+		if (files.length == 1) {
+			uploadFile(new File(files[0]), false);
+			return;
+		}
 		Paths paths = new Paths();
 		for (String file : files)
 			paths.addFile(file);

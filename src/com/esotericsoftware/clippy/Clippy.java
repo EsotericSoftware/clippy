@@ -46,6 +46,7 @@ import com.sun.jna.WString;
 /** @author Nathan Sweet */
 public class Clippy {
 	static public Clippy instance;
+	static public final File logFile = new File(System.getProperty("user.home"), ".clippy/clippy.log");
 
 	Config config;
 	ClipDataStore db;
@@ -71,9 +72,9 @@ public class Clippy {
 
 		if (Log.ERROR) {
 			try {
-				FileOutputStream logFile = new FileOutputStream(new File(System.getProperty("user.home"), ".clippy/clippy.log"));
-				System.setOut(new PrintStream(new MultiplexOutputStream(System.out, logFile), true));
-				System.setErr(new PrintStream(new MultiplexOutputStream(System.err, logFile), true));
+				FileOutputStream output = new FileOutputStream(logFile);
+				System.setOut(new PrintStream(new MultiplexOutputStream(System.out, output), true));
+				System.setErr(new PrintStream(new MultiplexOutputStream(System.err, output), true));
 			} catch (Throwable ex) {
 				if (WARN) warn("Unable to write log file.", ex);
 			}
@@ -257,8 +258,12 @@ public class Clippy {
 		}
 
 		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
 		} catch (Throwable ignored) {
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (Throwable ignored2) {
+			}
 		}
 
 		EventQueue.invokeLater(new Runnable() {

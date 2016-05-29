@@ -56,6 +56,8 @@ public class Config {
 	public ImageUpload imageUpload = ImageUpload.imgur;
 	public TextUpload textUpload = TextUpload.pastebin;
 	public FileUpload fileUpload = null;
+	public boolean pasteAfterUpload = true;
+	public boolean uploadProgressBar = true;
 
 	public String pastebinDevKey = "c835896db1ea7dea6dd60b1c4412f1c3";
 	public String pastebinFormat = "text";
