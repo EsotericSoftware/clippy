@@ -64,7 +64,7 @@ public class Tray {
 
 				String iconPath;
 				try {
-					iconPath = Util.extractFile("tray.ico", "clippy").getAbsolutePath();
+					iconPath = Util.extractFile("tray.ico").getAbsolutePath();
 				} catch (IOException ex) {
 					if (ERROR) error("Unable to read icon.", ex);
 					System.exit(0);

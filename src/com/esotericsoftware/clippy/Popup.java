@@ -36,6 +36,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -49,6 +50,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ToolTipManager;
 
+import com.esotericsoftware.clippy.Upload.UploadListener;
 import com.esotericsoftware.clippy.Win.GUITHREADINFO;
 import com.esotericsoftware.clippy.Win.MONITORINFO;
 import com.esotericsoftware.clippy.Win.POINT;
@@ -56,6 +58,7 @@ import com.esotericsoftware.clippy.Win.RECT;
 import com.esotericsoftware.clippy.util.DocumentChangeListener;
 import com.esotericsoftware.clippy.util.PopupFrame;
 import com.esotericsoftware.clippy.util.TextItem;
+import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.minlog.Log;
 import com.sun.jna.Pointer;
 
@@ -207,9 +210,10 @@ public class Popup extends PopupFrame {
 			if (index != -1) {
 				int id = itemIDs.get(index);
 				String text = getText(id);
-				if (text != null && e.isControlDown())
-					Pastebin.save(text);
-				else
+				if (text != null && e.isControlDown() && clippy.textUpload != null) {
+					clippy.popup.hidePopup();
+					Upload.uploadText(text);
+				} else
 					pasteItem(id, text);
 			}
 			return;

@@ -24,37 +24,44 @@ import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.minlog.Log;
 
 /** @author Nathan Sweet */
 public class Config {
+	public boolean allowDuplicateClips;
+	public int maxLengthToStore = 1024 * 1024; // 1 MB
+	public String log = "info";
+	public String uploadHotkey = "ctrl shift V";
+
 	public int popupWidth = 640;
 	public int popupCount = 20;
 	public int popupSearchCount = 60;
 	public boolean popupDefaultNumbers;
 	public String popupHotkey = "ctrl shift INSERT";
-	public String plainTextHotkey = "ctrl shift V";
-	public boolean allowDuplicateClips;
-	public String log = "info";
 	public String font = "Consolas-14";
-	public int maxLengthToStore = 1024 * 512; // 0.5 MB
-
-	public String pastebinDevKey;
-	public String pastebinFormat = "java";
-	public String pastebinPrivate = "1";
-	public String pastebinExpire = "N";
-	public boolean pastebinRaw = true;
 
 	public String screenshotHotkey = null;
 	public String screenshotAppHotkey = "ctrl alt shift BACK_SLASH";
 	public String screenshotRegionHotkey = "ctrl alt BACK_SLASH";
 	public String screenshotLastRegionHotkey = "ctrl shift BACK_SLASH";
 
-	public ScreenshotUpload screenshotUpload = ScreenshotUpload.imgur;
+	public ImageUpload imageUpload = ImageUpload.imgur;
+	public TextUpload textUpload = TextUpload.pastebin;
+	public FileUpload fileUpload = null;
+
+	public String pastebinDevKey = "c835896db1ea7dea6dd60b1c4412f1c3";
+	public String pastebinFormat = "text";
+	public String pastebinPrivate = "1";
+	public String pastebinExpire = "N";
+	public boolean pastebinRaw = true;
 
 	public String ftpServer;
 	public int ftpPort;
@@ -73,7 +80,8 @@ public class Config {
 			try {
 				json.readFields(this, new JsonReader().parse(configFile));
 			} catch (Exception ex) {
-				if (WARN) warn("Unable to read config.json.", ex);
+				if (ERROR) error("Unable to read config.json.", ex);
+				Runtime.getRuntime().halt(0);
 			}
 		}
 
@@ -85,6 +93,7 @@ public class Config {
 		} catch (Exception ex) {
 			if (WARN) warn("Unable to set logging level.", ex);
 		}
+		if (TRACE) trace("Config file: " + configFile.getAbsolutePath());
 
 		configFile.getParentFile().mkdirs();
 		try {
@@ -96,7 +105,15 @@ public class Config {
 		}
 	}
 
-	static public enum ScreenshotUpload {
-		imgur, ftp, sftp
+	static public enum ImageUpload {
+		ftp, sftp, imgur
+	}
+
+	static public enum TextUpload {
+		ftp, sftp, pastebin
+	}
+
+	static public enum FileUpload {
+		ftp, sftp
 	}
 }

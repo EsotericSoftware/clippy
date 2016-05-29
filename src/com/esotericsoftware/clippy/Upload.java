@@ -2,15 +2,31 @@
 package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.clippy.util.Util.*;
+import static com.esotericsoftware.clippy.util.Util.readFile;
 import static com.esotericsoftware.minlog.Log.*;
 import static com.esotericsoftware.scar.Scar.*;
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
-import com.esotericsoftware.clippy.imgur.ImageResponse;
-import com.esotericsoftware.clippy.imgur.ImgurAPI;
-import com.esotericsoftware.clippy.imgur.ImgurUpload;
+import javax.imageio.ImageIO;
+
+import com.esotericsoftware.clippy.util.Imgur.ImageResponse;
+import com.esotericsoftware.clippy.util.Imgur.ImgurAPI;
+import com.esotericsoftware.clippy.util.Imgur.ImgurUpload;
+import com.esotericsoftware.clippy.util.Util;
+import com.esotericsoftware.minlog.Log;
+import com.esotericsoftware.scar.Scar;
+import com.esotericsoftware.wildcard.Paths;
 
 import retrofit.Callback;
 import retrofit.RestAdapter;
@@ -18,85 +34,215 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 import retrofit.mime.TypedFile;
 
-public interface Upload {
+// BOZO - Store upload history.
+
+public abstract class Upload {
 	static final Clippy clippy = Clippy.instance;
 
-	public void uploadFile (File file, UploadListener callback);
-
-	public interface UploadListener {
-		public void complete (String url);
-
-		public void failed ();
+	public void upload (final File file, final boolean deleteAfterUpload, final UploadListener callback) {
+		threadPool.submit(new Runnable() {
+			public void run () {
+				try {
+					String url = upload(file);
+					if (TRACE) trace("Upload success: " + url);
+					callback.complete(url);
+				} catch (Exception ex) {
+					if (ERROR) error("Upload failed.", ex);
+					callback.failed();
+				} finally {
+					if (deleteAfterUpload) file.delete();
+				}
+			}
+		});
 	}
 
-	static public class Imgur implements Upload {
-		public void uploadFile (File file, final UploadListener callback) {
+	abstract protected String upload (File file) throws Exception;
+
+	static public abstract class UploadListener {
+		public void complete (String url) {
+		}
+
+		public void failed () {
+		}
+	}
+
+	static public class Imgur extends Upload {
+		protected String upload (File file) {
 			if (TRACE) trace("Uploading to imgur: " + file);
-			final ImgurUpload upload = new ImgurUpload();
+			ImgurUpload upload = new ImgurUpload();
 			upload.image = file;
 			String clientID = "213cecec326ed89";
 			RestAdapter rest = new RestAdapter.Builder().setEndpoint(ImgurAPI.server).build();
 			// rest.setLogLevel(RestAdapter.LogLevel.FULL);
+			final CountDownLatch latch = new CountDownLatch(1);
+			final AtomicReference<String> url = new AtomicReference();
 			rest.create(ImgurAPI.class).postImage("Client-ID " + clientID, upload.title, upload.description, upload.albumId, null,
 				new TypedFile("image/*", upload.image), new Callback<ImageResponse>() {
 					public void success (ImageResponse imageResponse, Response response) {
 						if (TRACE) trace("Upload success: " + imageResponse.data.link);
-						callback.complete(imageResponse.data.link);
+						url.set(imageResponse.data.link);
+						latch.countDown();
 					}
 
 					public void failure (RetrofitError ex) {
 						if (ERROR) error("Error uploading to imgur: ", ex);
-						callback.failed();
+						latch.countDown();
 					}
 				});
+			try {
+				latch.await();
+			} catch (Exception ignored) {
+			}
+			return url.get();
 		}
 	}
 
-	static public class Sftp implements Upload {
-		public void uploadFile (final File file, final UploadListener callback) {
+	static public class Pastebin extends Upload {
+		protected String upload (File file) throws Exception {
+			if (clippy.config.pastebinDevKey == null) {
+				if (WARN) warn("Pastebin is not configured.");
+				return null;
+			}
+
+			String text = readFile(file.toPath());
+			if (TRACE) trace("Uploading to pastebin: " + text);
+
+			StringBuilder params = new StringBuilder();
+			params.append("api_option=paste&api_dev_key=");
+			params.append(URLEncoder.encode(clippy.config.pastebinDevKey, "UTF-8"));
+			params.append("&api_paste_format=");
+			params.append(URLEncoder.encode(clippy.config.pastebinFormat, "UTF-8"));
+			params.append("&api_paste_private=");
+			params.append(URLEncoder.encode(clippy.config.pastebinPrivate, "UTF-8"));
+			params.append("&api_paste_expire_date=");
+			params.append(URLEncoder.encode(clippy.config.pastebinExpire, "UTF-8"));
+			params.append("&api_paste_code=");
+			params.append(URLEncoder.encode(text, "UTF-8"));
+			byte[] bytes = params.toString().getBytes();
+
+			URL url = new URL("http://pastebin.com/api/api_post.php");
+			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setInstanceFollowRedirects(false);
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			conn.setRequestProperty("charset", "utf-8");
+			conn.setRequestProperty("Content-Length", "" + Integer.toString(bytes.length));
+			conn.setUseCaches(false);
+
+			OutputStream output = conn.getOutputStream();
+			output.write(bytes);
+			output.close();
+
+			BufferedInputStream input = new BufferedInputStream(conn.getInputStream(), 256);
+			ByteArrayOutputStream response = new ByteArrayOutputStream();
+			byte[] buffer = new byte[256];
+			while (true) {
+				int count = input.read(buffer);
+				if (count == -1) break;
+				response.write(buffer, 0, count);
+			}
+			input.close();
+
+			conn.disconnect();
+
+			String result = new String(response.toByteArray(), "UTF-8");
+			if (!result.startsWith("http://pastebin.com/")) throw new RuntimeException(result);
+			if (!clippy.config.pastebinRaw) return result;
+			return "http://pastebin.com/raw.php?i=" + result.substring(20);
+		}
+	}
+
+	static public class Sftp extends Upload {
+		protected String upload (File file) throws Exception {
 			if (clippy.config.ftpServer == null) {
 				if (WARN) warn("SFTP upload is not configured.");
-				return;
+				return null;
 			}
-			threadPool.submit(new Runnable() {
-				public void run () {
-					if (TRACE) trace("Uploading to SFTP: " + file);
-					try {
-						sftpUpload(clippy.config.ftpServer, clippy.config.ftpPort, clippy.config.ftpUser, clippy.config.ftpPassword,
-							clippy.config.ftpDir, path(file.getAbsolutePath()));
-						String url = clippy.config.ftpUrl + file.getName();
-						if (TRACE) trace("Upload success: " + url);
-						callback.complete(url);
-					} catch (IOException ex) {
-						if (ERROR) error("Error uploading to SFTP: ", ex);
-						callback.failed();
-					}
-				}
-			});
+			if (TRACE) trace("Uploading to SFTP: " + file);
+			sftpUpload(clippy.config.ftpServer, clippy.config.ftpPort, clippy.config.ftpUser, clippy.config.ftpPassword,
+				clippy.config.ftpDir, path(file.getAbsolutePath()));
+			return clippy.config.ftpUrl + file.getName();
 		}
 	}
 
-	static public class Ftp implements Upload {
-		public void uploadFile (final File file, final UploadListener callback) {
+	static public class Ftp extends Upload {
+		protected String upload (File file) throws Exception {
 			if (clippy.config.ftpServer == null) {
 				if (WARN) warn("FTP upload is not configured.");
-				return;
+				return null;
 			}
-			threadPool.submit(new Runnable() {
-				public void run () {
-					if (TRACE) trace("Uploading to FTP: " + file);
-					try {
-						ftpUpload(clippy.config.ftpServer, clippy.config.ftpUser, clippy.config.ftpPassword, clippy.config.ftpDir,
-							path(file.getAbsolutePath()), true);
-						String url = clippy.config.ftpUrl + file.getName();
-						if (TRACE) trace("Upload success: " + url);
-						callback.complete(url);
-					} catch (IOException ex) {
-						if (ERROR) error("Error uploading to FTP: ", ex);
-						callback.failed();
-					}
+			if (TRACE) trace("Uploading to FTP: " + file);
+			ftpUpload(clippy.config.ftpServer, clippy.config.ftpUser, clippy.config.ftpPassword, clippy.config.ftpDir,
+				path(file.getAbsolutePath()), true);
+			return clippy.config.ftpUrl + file.getName();
+		}
+	}
+
+	static public void uploadText (String text) {
+		if (clippy.textUpload == null) return;
+		File file = Util.nextUploadFile(".txt");
+		try {
+			if (TRACE) trace("Writing text file: " + file);
+			Util.writeFile(file.toPath(), text);
+			clippy.textUpload.upload(file, true, new UploadListener() {
+				public void complete (String url) {
+					clippy.paste(url);
+					clippy.store(url);
 				}
 			});
+		} catch (Exception ex) {
+			if (Log.ERROR) error("Error writing text file.", ex);
+		}
+	}
+
+	static public void uploadImage (BufferedImage image) {
+		if (clippy.imageUpload == null) return;
+		File file = null;
+		try {
+			file = Util.nextUploadFile(".png");
+			if (TRACE) trace("Writing image file: " + file);
+			ImageIO.write(image, "png", file);
+		} catch (IOException ex) {
+			if (ERROR) error("Error image file: " + file, ex);
+			if (file != null) file.delete();
+			return;
+		}
+		clippy.imageUpload.upload(file, true, new UploadListener() {
+			public void complete (String url) {
+				clippy.paste(url);
+				clippy.store(url);
+				// Doesn't work?!
+				// clippy.tray.message("Upload complete", url, 10000);
+			}
+		});
+	}
+
+	static public void uploadFile (File file, boolean deleteAfterUpload) {
+		if (clippy.fileUpload == null) return;
+		clippy.fileUpload.upload(file, deleteAfterUpload, new UploadListener() {
+			public void complete (String url) {
+				clippy.paste(url);
+				clippy.store(url);
+				// Doesn't work?!
+				// clippy.tray.message("Upload complete", url, 10000);
+			}
+		});
+	}
+
+	static public void uploadFiles (String[] files) {
+		if (clippy.fileUpload == null) return;
+		if (files.length == 1) uploadFile(new File(files[0]), false);
+		Paths paths = new Paths();
+		for (String file : files)
+			paths.addFile(file);
+		File zip = Util.nextUploadFile(new File(files[0]).getParentFile().getName() + ".zip");
+		try {
+			Scar.zip(paths, zip.getAbsolutePath());
+			uploadFile(zip, true);
+		} catch (IOException ex) {
+			if (ERROR) error("Error zipping files.", ex);
 		}
 	}
 }

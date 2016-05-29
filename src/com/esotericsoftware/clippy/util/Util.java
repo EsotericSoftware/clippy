@@ -20,10 +20,15 @@
 
 package com.esotericsoftware.clippy.util;
 
+import static com.esotericsoftware.minlog.Log.*;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -32,16 +37,19 @@ import java.util.concurrent.ThreadFactory;
 
 /** @author Nathan Sweet */
 public class Util {
+	static public final Random random = new Random();
+	static private final String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static private Charset ascii = Charset.forName("ASCII");
+	static private Path uploadFile = new File(System.getProperty("user.home"), ".clippy/upload").toPath();
+
 	static public final ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactory() {
 		public Thread newThread (Runnable runnable) {
 			return new Thread(runnable, "Util");
 		}
 	});
 
-	static public final Random random = new Random();
-
-	static public File extractFile (String sourcePath, String appName) throws IOException {
-		File extractedFile = getExtractPath(appName, new File(sourcePath).getName());
+	static public File extractFile (String sourcePath) throws IOException {
+		File extractedFile = getTempFile(new File(sourcePath).getName());
 		InputStream input = Util.class.getResourceAsStream("/" + sourcePath);
 		if (input == null) throw new IOException("Unable to read file for extraction: " + sourcePath);
 		try {
@@ -62,15 +70,14 @@ public class Util {
 	}
 
 	/** Returns a path to a file that can be written. Tries multiple locations and verifies writing succeeds. */
-	static private File getExtractPath (String appName, String fileName) {
+	static private File getTempFile (String fileName) {
 		// Temp directory with username in path.
-		File idealFile = new File(System.getProperty("java.io.tmpdir") + "/" + appName + "/" + System.getProperty("user.name"),
-			fileName);
+		File idealFile = new File(System.getProperty("java.io.tmpdir") + "/clippy/" + System.getProperty("user.name"), fileName);
 		if (canWrite(idealFile)) return idealFile;
 
 		// System provided temp directory.
 		try {
-			File file = File.createTempFile(appName, null);
+			File file = File.createTempFile("clippy", null);
 			if (file.delete()) {
 				file = new File(file, fileName);
 				if (canWrite(file)) return file;
@@ -79,11 +86,11 @@ public class Util {
 		}
 
 		// User home.
-		File file = new File(System.getProperty("user.home") + "/." + appName, fileName);
+		File file = new File(System.getProperty("user.home") + "/.clippy/temp", fileName);
 		if (canWrite(file)) return file;
 
 		// Relative directory.
-		file = new File(".temp/" + appName, fileName);
+		file = new File(".temp/clippy", fileName);
 		if (canWrite(file)) return file;
 
 		return idealFile; // Will likely fail, but we did our best.
@@ -112,11 +119,48 @@ public class Util {
 	}
 
 	static public String id (int length) {
-		String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-.~";
 		int alphabetLength = alphabet.length();
 		StringBuilder buffer = new StringBuilder();
 		for (int i = 0; i < length; i++)
 			buffer.append(alphabet.charAt(random.nextInt(alphabetLength)));
 		return buffer.toString();
+	}
+
+	static public String readFile (Path path) throws IOException {
+		return new String(Files.readAllBytes(path), ascii);
+	}
+
+	static public void writeFile (Path path, String contents) throws IOException {
+		Files.write(path, contents.getBytes(ascii));
+	}
+
+	static public File nextUploadFile (String name) {
+		int number;
+		try {
+			synchronized (uploadFile) {
+				if (Files.exists(uploadFile))
+					number = Integer.parseInt(Util.readFile(uploadFile));
+				else
+					number = 1;
+				Util.writeFile(uploadFile, Integer.toString(number + 1));
+			}
+		} catch (Exception ex) {
+			if (WARN) warn("Upload ID error.", ex);
+			number = 0;
+		}
+
+		if (number == 0) {
+			if (name.charAt(0) == '.') name = Util.id(8) + name;
+		} else {
+			if (name.charAt(0) == '.')
+				name = number + "-" + Util.id(4) + name;
+			else
+				name = number + "-" + name;
+		}
+
+		File file = getTempFile("clippy");
+		File idFile = new File(file.getParent(), name);
+		file.renameTo(idFile);
+		return idFile;
 	}
 }

@@ -25,7 +25,6 @@ import static com.esotericsoftware.minlog.Log.*;
 
 import java.awt.EventQueue;
 import java.awt.Font;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -36,7 +35,6 @@ import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
 import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
-import com.esotericsoftware.clippy.Config.ScreenshotUpload;
 import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.clippy.util.MultiplexOutputStream;
 import com.esotericsoftware.clippy.util.TextItem;
@@ -57,7 +55,7 @@ public class Clippy {
 	Keyboard keyboard;
 	Clipboard clipboard;
 	Screenshot screenshot;
-	Upload upload;
+	Upload textUpload, imageUpload, fileUpload;
 
 	public Clippy () {
 		instance = this;
@@ -81,10 +79,42 @@ public class Clippy {
 			}
 		}
 
-		if (config.screenshotUpload == ScreenshotUpload.imgur)
-			upload = new Upload.Imgur();
-		else
-			upload = new Upload.Sftp();
+		if (config.imageUpload != null) {
+			switch (config.imageUpload) {
+			case sftp:
+				imageUpload = new Upload.Sftp();
+				break;
+			case ftp:
+				imageUpload = new Upload.Ftp();
+				break;
+			case imgur:
+				imageUpload = new Upload.Imgur();
+				break;
+			}
+		}
+		if (config.textUpload != null) {
+			switch (config.textUpload) {
+			case sftp:
+				textUpload = new Upload.Sftp();
+				break;
+			case ftp:
+				textUpload = new Upload.Ftp();
+				break;
+			case pastebin:
+				textUpload = new Upload.Pastebin();
+				break;
+			}
+		}
+		if (config.fileUpload != null) {
+			switch (config.fileUpload) {
+			case sftp:
+				fileUpload = new Upload.Sftp();
+				break;
+			case ftp:
+				fileUpload = new Upload.Ftp();
+				break;
+			}
+		}
 
 		TextItem.font = Font.decode(config.font);
 
@@ -98,7 +128,7 @@ public class Clippy {
 		screenshot = new Screenshot();
 
 		final KeyStroke popupHotkey = KeyStroke.getKeyStroke(config.popupHotkey);
-		final KeyStroke plainTextHotkey = KeyStroke.getKeyStroke(config.plainTextHotkey);
+		final KeyStroke uploadHotkey = KeyStroke.getKeyStroke(config.uploadHotkey);
 		final KeyStroke imgurScreenshotHotkey = KeyStroke.getKeyStroke(config.screenshotHotkey);
 		final KeyStroke imgurScreenshotAppHotkey = KeyStroke.getKeyStroke(config.screenshotAppHotkey);
 		final KeyStroke imgurScreenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
@@ -107,8 +137,8 @@ public class Clippy {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(popupHotkey))
 					showPopup(keyStroke);
-				else if (keyStroke.equals(plainTextHotkey)) //
-					paste(clipboard.getContents());
+				else if (keyStroke.equals(uploadHotkey)) //
+					upload();
 				else if (keyStroke.equals(imgurScreenshotHotkey)) //
 					screenshot.screen();
 				else if (keyStroke.equals(imgurScreenshotAppHotkey)) //
@@ -120,7 +150,7 @@ public class Clippy {
 			}
 		};
 		if (popupHotkey != null) keyboard.registerHotkey(popupHotkey);
-		if (plainTextHotkey != null) keyboard.registerHotkey(plainTextHotkey);
+		if (uploadHotkey != null) keyboard.registerHotkey(uploadHotkey);
 		if (imgurScreenshotHotkey != null) keyboard.registerHotkey(imgurScreenshotHotkey);
 		if (imgurScreenshotAppHotkey != null) keyboard.registerHotkey(imgurScreenshotAppHotkey);
 		if (imgurScreenshotRegionHotkey != null) keyboard.registerHotkey(imgurScreenshotRegionHotkey);
@@ -149,6 +179,19 @@ public class Clippy {
 		if (text != null) store(text);
 
 		if (INFO) info("Started.");
+	}
+
+	void upload () {
+		String text = clipboard.getContents();
+		switch (clipboard.getDataType()) {
+		case text:
+			Upload.uploadText(text);
+			break;
+		case files:
+			String[] files = text.split("\n");
+			if (files.length > 0) Upload.uploadFiles(files);
+			break;
+		}
 	}
 
 	void showPopup (KeyStroke keyStroke) {

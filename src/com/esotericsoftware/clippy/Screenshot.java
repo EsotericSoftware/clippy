@@ -31,15 +31,10 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
-import java.io.File;
-import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import com.esotericsoftware.clippy.Upload.UploadListener;
 import com.esotericsoftware.clippy.Win.RECT;
-import com.esotericsoftware.clippy.util.Util;
 import com.sun.jna.Pointer;
 
 public class Screenshot {
@@ -59,39 +54,9 @@ public class Screenshot {
 		}
 	}
 
-	void upload (BufferedImage image) {
-		File file = null;
-		try {
-			file = File.createTempFile("clippy", null);
-			File idFile = new File(file.getParent(), Util.id(8) + ".png");
-			file.renameTo(idFile);
-			file = idFile;
-			if (TRACE) trace("Writing screenshot file: " + file);
-			ImageIO.write(image, "png", file);
-		} catch (IOException ex) {
-			if (ERROR) error("Error writing screenshot.", ex);
-			if (file != null) file.delete();
-			return;
-		}
-		final File uploadFile = file;
-		clippy.upload.uploadFile(file, new UploadListener() {
-			public void complete (String url) {
-				uploadFile.delete();
-				clippy.clipboard.setContents(url);
-				clippy.store(url);
-				// Doesn't work?!
-				// clippy.tray.message("Upload complete", url, 10000);
-			}
-
-			public void failed () {
-				uploadFile.delete();
-			}
-		});
-	}
-
 	public void screen () {
 		if (robot == null) return;
-		upload(robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())));
+		Upload.uploadImage(robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())));
 	}
 
 	public void app () {
@@ -103,8 +68,8 @@ public class Screenshot {
 		}
 
 		RECT rect = new RECT();
-		if (GetWindowRect(hwnd, rect))
-			upload(robot.createScreenCapture(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)));
+		if (GetWindowRect(hwnd, rect)) Upload.uploadImage(
+			robot.createScreenCapture(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)));
 	}
 
 	public void region () {
@@ -121,7 +86,8 @@ public class Screenshot {
 		image.getGraphics().drawImage(robotImage, 0, 0, null);
 
 		JFrame frame = new JFrame() {
-			int lastX, lastY, x, y, x1, y1;
+			int x1, y1;
+			float x, y, lastX, lastY;
 			int magX = -(magD + magOffsetX), magY = -(magD + magOffsetY);
 			boolean drag, lock, lockX, robotEvent;
 			final Ellipse2D.Float circle = new Ellipse2D.Float(0, 0, magD, magD);
@@ -146,10 +112,11 @@ public class Screenshot {
 							return;
 						}
 
-						int diffX = ex - lastX, diffY = ey - lastY;
+						float diffX = ex - lastX, diffY = ey - lastY;
 
 						// Shift to move slow.
-						if ((e.getModifiers() & InputEvent.SHIFT_MASK) != 0) {
+						boolean shift = (e.getModifiers() & InputEvent.SHIFT_MASK) != 0;
+						if (shift) {
 							diffX /= mag;
 							diffY /= mag;
 						}
@@ -172,6 +139,10 @@ public class Screenshot {
 
 						x += diffX;
 						y += diffY;
+						if (shift) {
+							robot.mouseMove((int)x, (int)y);
+							robotEvent = true;
+						}
 						if (x < 0)
 							x = 0;
 						else if (x > width) //
@@ -198,12 +169,6 @@ public class Screenshot {
 						}
 
 						repaint();
-
-						// Prevent mouse from getting stuck against screen edge.
-						if (ex < 10 || width - ex < 10 || ey < 10 || height - ey < 10) {
-							robot.mouseMove(width / 2, height / 2);
-							robotEvent = true;
-						}
 					}
 				});
 				addMouseListener(new MouseAdapter() {
@@ -211,13 +176,13 @@ public class Screenshot {
 						lastX = e.getX();
 						lastY = e.getY();
 						drag = true;
-						x1 = x - 1;
-						y1 = y - 1;
+						x1 = (int)x - 1;
+						y1 = (int)y - 1;
 					}
 
 					public void mouseReleased (MouseEvent e) {
 						dispose();
-						int x2 = x, y2 = y;
+						int x2 = (int)x, y2 = (int)y;
 						if (x2 == x1 || y2 == y1) return;
 						if (x2 < x1) {
 							int temp = x2;
@@ -254,13 +219,15 @@ public class Screenshot {
 					};
 
 					public void windowClosed (WindowEvent e) {
-						robot.mouseMove(x, y);
+						// robot.mouseMove(x, y);
 					}
 				});
 			}
 
 			public void paint (Graphics graphics) {
 				Graphics2D g = (Graphics2D)graphics;
+
+				int x = (int)this.x, y = (int)this.y;
 
 				// Keep within screen bounds.
 				if (x + magX < 0)
@@ -275,7 +242,7 @@ public class Screenshot {
 				// Draw whole screen image.
 				g.drawImage(image, 0, 0, width, height, null);
 				if (drag) {
-					g.setColor(new Color(0, 0, 0, 0.3f));
+					g.setColor(new Color(0, 0, 0, 0.6f));
 					g.fillRect(0, 0, width, height);
 					g.drawImage(image, x1, y1, x, y, x1, y1, x, y, null);
 				}
@@ -315,29 +282,28 @@ public class Screenshot {
 				g.drawRect(cx + cw + mag * 3, cy, cw + 1, mag + 1);
 
 				// Dotted guide lines.
-				g.setColor(Color.black);
-				g.drawLine(x - crosshair - 1, y, 0, y);
-				g.drawLine(x + crosshair + 1, y, width, y);
-				g.drawLine(x, y - crosshair - 1, x, 0);
-				g.drawLine(x, y + crosshair + 1, x, height);
-				g.setColor(Color.white);
-				Stroke solid = g.getStroke();
-				g.setStroke(dashed);
-				g.drawLine(x - crosshair, y, 0, y);
-				g.drawLine(x + crosshair, y, width, y);
-				g.drawLine(x, y - crosshair, x, 0);
-				g.drawLine(x, y + crosshair, x, height);
-				g.setXORMode(Color.white);
-				g.setColor(Color.black);
-				g.fillRect(x - 1, y - crosshair, 3, crosshair * 2 + 1);
-				g.fillRect(x - crosshair, y - 1, crosshair - 1, 3);
-				g.fillRect(x + 2, y - 1, crosshair - 1, 3);
+				// g.setColor(Color.black);
+				// g.drawLine(x - crosshair - 1, y, 0, y);
+				// g.drawLine(x + crosshair + 1, y, width, y);
+				// g.drawLine(x, y - crosshair - 1, x, 0);
+				// g.drawLine(x, y + crosshair + 1, x, height);
+				// g.setColor(Color.white);
+				// Stroke solid = g.getStroke();
+				// g.setStroke(dashed);
+				// g.drawLine(x - crosshair, y, 0, y);
+				// g.drawLine(x + crosshair, y, width, y);
+				// g.drawLine(x, y - crosshair, x, 0);
+				// g.drawLine(x, y + crosshair, x, height);
+				// g.setXORMode(Color.white);
+				// g.setColor(Color.black);
+				// g.fillRect(x - 1, y - crosshair, 3, crosshair * 2 + 1);
+				// g.fillRect(x - crosshair, y - 1, crosshair - 1, 3);
+				// g.fillRect(x + 2, y - 1, crosshair - 1, 3);
 			}
 		};
 		frame.setType(Frame.Type.UTILITY);
 		frame.setUndecorated(true);
 		frame.setBackground(new Color(0, 0, 0, 0));
-		frame.setCursor(toolkit.createCustomCursor(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), new Point(0, 0), "null"));
 		frame.setSize(width, height);
 		frame.setVisible(true);
 		frame.validate();
@@ -354,7 +320,7 @@ public class Screenshot {
 		Graphics2D g = subimage.createGraphics();
 		g.drawImage(image, 0, 0, subimage.getWidth(), subimage.getHeight(), x1, y1, x2, y2, null);
 		g.dispose();
-		upload(subimage);
+		Upload.uploadImage(subimage);
 	}
 
 	static public void main (String[] args) throws Exception {

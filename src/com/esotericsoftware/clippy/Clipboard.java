@@ -180,6 +180,13 @@ public class Clipboard {
 		}
 	}
 
+	public DataType getDataType () {
+		if (IsClipboardFormatAvailable(CF_UNICODETEXT)) return DataType.text;
+		if (IsClipboardFormatAvailable(CF_TEXT)) return DataType.text;
+		if (IsClipboardFormatAvailable(CF_HDROP)) return DataType.files;
+		return DataType.unknown;
+	}
+
 	public boolean setContents (String text) {
 		if (TRACE) trace("Setting clipboard text: " + text.trim());
 
@@ -215,5 +222,9 @@ public class Clipboard {
 				if (WARN) warn("Unable to close clipboard.");
 			}
 		}
+	}
+
+	static public enum DataType {
+		unknown, text, files
 	}
 }
