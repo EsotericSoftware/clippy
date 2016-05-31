@@ -28,6 +28,7 @@ import com.esotericsoftware.clippy.util.Imgur.ImgurUpload;
 import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.minlog.Log;
 import com.esotericsoftware.scar.Scar;
+import com.esotericsoftware.scar.Scar.ProgressMonitor;
 import com.esotericsoftware.wildcard.Paths;
 
 import retrofit.Callback;
@@ -271,15 +272,25 @@ public abstract class Upload {
 		});
 	}
 
-	static public void uploadFile (File file, boolean deleteAfterUpload) {
+	static public void uploadFile (final File file, final boolean deleteAfterUpload) {
 		if (clippy.fileUpload == null) return;
-		clippy.fileUpload.upload(file, deleteAfterUpload, new UploadListener() {
+
+		String path;
+		try {
+			path = copyFile(file.getAbsolutePath(), Util.nextUploadFile(file.getName()).getAbsolutePath());
+		} catch (IOException ex) {
+			if (ERROR) error("Error copying file: " + file.getAbsolutePath(), ex);
+			return;
+		}
+
+		clippy.fileUpload.upload(new File(path), true, new UploadListener() {
 			public void complete (String url) {
 				if (clippy.config.pasteAfterUpload)
 					clippy.paste(url);
 				else
 					clippy.clipboard.setContents(url);
 				clippy.store(url);
+				if (deleteAfterUpload) file.delete();
 			}
 		});
 	}
