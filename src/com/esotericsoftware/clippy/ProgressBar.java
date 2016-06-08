@@ -130,7 +130,7 @@ public class ProgressBar extends JDialog {
 				progressBar.setForeground(new Color(0xff341c));
 				Util.threadPool.submit(new Runnable() {
 					public void run () {
-						Util.sleep(10000);
+						Util.sleep(20000);
 						dispose();
 					}
 				});

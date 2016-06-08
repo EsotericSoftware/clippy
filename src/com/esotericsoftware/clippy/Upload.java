@@ -302,14 +302,26 @@ public abstract class Upload {
 			return;
 		}
 		Paths paths = new Paths();
-		for (String file : files)
-			paths.addFile(file);
+		for (String path : files) {
+			File file = new File(path);
+			paths.addFile(path);
+			paths.glob(file.getParent(), file.getName() + "/*");
+		}
 		File zip = Util.nextUploadFile(new File(files[0]).getParentFile().getName() + ".zip");
 		try {
 			Scar.zip(paths, zip.getAbsolutePath());
-			uploadFile(zip, true);
 		} catch (IOException ex) {
 			if (ERROR) error("Error zipping files.", ex);
+			return;
 		}
+		clippy.fileUpload.upload(zip, true, new UploadListener() {
+			public void complete (String url) {
+				if (clippy.config.pasteAfterUpload)
+					clippy.paste(url);
+				else
+					clippy.clipboard.setContents(url);
+				clippy.store(url);
+			}
+		});
 	}
 }
