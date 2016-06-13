@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -135,6 +137,12 @@ public class Util {
 	}
 
 	static public File nextUploadFile (String name) {
+		name = name.replaceAll(" ", "-");
+		try {
+			name = URLEncoder.encode(name, "UTF-8");
+		} catch (UnsupportedEncodingException ignored) {
+		}
+
 		int number;
 		try {
 			synchronized (uploadFile) {
