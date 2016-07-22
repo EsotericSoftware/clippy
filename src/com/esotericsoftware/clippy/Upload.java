@@ -49,13 +49,14 @@ public abstract class Upload {
 		threadPool.submit(new Runnable() {
 			public void run () {
 				try {
+					callback.prepare();
 					String url = upload(file);
 					if (TRACE) trace("Upload success: " + url);
-					if (progressBar != null) progressBar.done();
+					if (progressBar != null) progressBar.done("Done!");
 					callback.complete(url);
 				} catch (Exception ex) {
 					if (ERROR) error("Upload failed.", ex);
-					if (progressBar != null) progressBar.failed();
+					if (progressBar != null) progressBar.failed("Failed!");
 					callback.failed();
 				} finally {
 					if (deleteAfterUpload) file.delete();
@@ -99,6 +100,9 @@ public abstract class Upload {
 	}
 
 	static public abstract class UploadListener {
+		public void prepare () throws Exception {
+		}
+
 		public void complete (String url) {
 		}
 
@@ -272,49 +276,45 @@ public abstract class Upload {
 		});
 	}
 
-	static public void uploadFile (final File file, final boolean deleteAfterUpload) {
+	static public void uploadFiles (String[] files) {
 		if (clippy.fileUpload == null) return;
+		if (files.length == 1 && !new File(files[0]).isDirectory())
+			uploadFile(new File(files[0]), false);
+		else
+			uploadZip(files);
+	}
 
-		String path;
-		try {
-			path = copyFile(file.getAbsolutePath(), Util.nextUploadFile(file.getName()).getAbsolutePath());
-		} catch (IOException ex) {
-			if (ERROR) error("Error copying file: " + file.getAbsolutePath(), ex);
-			return;
-		}
+	static private void uploadZip (final String[] files) {
+		String zipName = (files.length == 1 ? new File(files[0]) : new File(files[0]).getParentFile()).getName();
+		final File zip = Util.nextUploadFile(zipName + ".zip");
+		clippy.fileUpload.upload(zip, true, new UploadListener() {
+			public void prepare () throws Exception {
+				Paths paths = new Paths();
+				for (String path : files) {
+					File file = new File(path);
+					paths.addFile(path);
+					paths.glob(file.getParent(), file.getName() + "/**");
+				}
+				Scar.zip(paths, zip.getAbsolutePath());
+			}
 
-		clippy.fileUpload.upload(new File(path), true, new UploadListener() {
 			public void complete (String url) {
 				if (clippy.config.pasteAfterUpload)
 					clippy.paste(url);
 				else
 					clippy.clipboard.setContents(url);
 				clippy.store(url);
-				if (deleteAfterUpload) file.delete();
 			}
 		});
 	}
 
-	static public void uploadFiles (String[] files) {
-		if (clippy.fileUpload == null) return;
-		if (files.length == 1) {
-			uploadFile(new File(files[0]), false);
-			return;
-		}
-		Paths paths = new Paths();
-		for (String path : files) {
-			File file = new File(path);
-			paths.addFile(path);
-			paths.glob(file.getParent(), file.getName() + "/*");
-		}
-		File zip = Util.nextUploadFile(new File(files[0]).getParentFile().getName() + ".zip");
-		try {
-			Scar.zip(paths, zip.getAbsolutePath());
-		} catch (IOException ex) {
-			if (ERROR) error("Error zipping files.", ex);
-			return;
-		}
-		clippy.fileUpload.upload(zip, true, new UploadListener() {
+	static private void uploadFile (final File file, final boolean deleteAfterUpload) {
+		final String path = Util.nextUploadFile(file.getName()).getAbsolutePath();
+		clippy.fileUpload.upload(new File(path), true, new UploadListener() {
+			public void prepare () throws Exception {
+				copyFile(file.getAbsolutePath(), path);
+			}
+
 			public void complete (String url) {
 				if (clippy.config.pasteAfterUpload)
 					clippy.paste(url);

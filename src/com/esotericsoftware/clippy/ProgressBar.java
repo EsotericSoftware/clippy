@@ -27,6 +27,7 @@ public class ProgressBar extends JDialog {
 	final JProgressBar progressBar;
 	volatile float progress;
 	boolean disposed;
+	boolean clickToDispose;
 
 	final Runnable updateProgress = new Runnable() {
 		public void run () {
@@ -76,17 +77,19 @@ public class ProgressBar extends JDialog {
 		setVisible(true);
 		setFocusableWindowState(false);
 
-		addMouseListener(new MouseAdapter() {
-			public void mouseClicked (MouseEvent e) {
-				dispose();
-				if (progressBar.getString().equals("Failed!")) {
-					try {
-						Desktop.getDesktop().open(Clippy.logFile);
-					} catch (IOException ex) {
+		if (clickToDispose) {
+			addMouseListener(new MouseAdapter() {
+				public void mouseClicked (MouseEvent e) {
+					dispose();
+					if (progressBar.getString().equals("Failed!")) {
+						try {
+							Desktop.getDesktop().open(Clippy.logFile);
+						} catch (IOException ex) {
+						}
 					}
 				}
-			}
-		});
+			});
+		}
 	}
 
 	public void dispose () {
@@ -104,12 +107,12 @@ public class ProgressBar extends JDialog {
 		EventQueue.invokeLater(updateProgress);
 	}
 
-	public void done () {
+	public void done (final String message) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(1000);
-				progressBar.setString("Done!");
+				progressBar.setString(message);
 				progressBar.setForeground(new Color(0x4bc841));
 				Util.threadPool.submit(new Runnable() {
 					public void run () {
@@ -121,12 +124,12 @@ public class ProgressBar extends JDialog {
 		});
 	}
 
-	public void failed () {
+	public void failed (final String message) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(1000);
-				progressBar.setString("Failed!");
+				progressBar.setString(message);
 				progressBar.setForeground(new Color(0xff341c));
 				Util.threadPool.submit(new Runnable() {
 					public void run () {
@@ -148,7 +151,7 @@ public class ProgressBar extends JDialog {
 		new Thread() {
 			public void run () {
 				Util.sleep(2000);
-				progressBar.done();
+				progressBar.done("Done!");
 				Util.sleep(2000);
 				System.exit(0);
 			}

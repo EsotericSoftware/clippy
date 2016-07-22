@@ -72,6 +72,9 @@ public class Config {
 	public String ftpDir;
 	public String ftpUrl;
 
+	public int breakWarningMinutes = 55;
+	public int breakResetMinutes = 5;
+
 	public Config () {
 		Json json = new Json();
 		json.setUsePrototypes(false);

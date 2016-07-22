@@ -61,6 +61,8 @@ public class Win {
 		static public native Pointer GlobalLock (Pointer hMem);
 
 		static public native boolean GlobalUnlock (Pointer hMem);
+
+		static public native int GetTickCount ();
 	}
 
 	static public class User32 {
@@ -166,6 +168,17 @@ public class Win {
 		static public native boolean GetGUIThreadInfo (int idThread, GUITHREADINFO lpgui);
 
 		static public native Pointer LoadImage (Pointer hinst, WString name, int type, int xDesired, int yDesired, int load);
+
+		static public native boolean GetLastInputInfo (LASTINPUTINFO result);
+	}
+
+	static public class LASTINPUTINFO extends Structure {
+		public int cbSize = size();
+		public int dwTime;
+
+		protected List getFieldOrder () {
+			return Arrays.asList(new String[] {"cbSize", "dwTime"});
+		}
 	}
 
 	static public class User32_64 {

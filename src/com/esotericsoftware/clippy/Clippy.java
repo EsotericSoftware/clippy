@@ -179,6 +179,8 @@ public class Clippy {
 		String text = clipboard.getContents();
 		if (text != null) store(text);
 
+		new BreakWarning();
+
 		if (INFO) info("Started.");
 	}
 
