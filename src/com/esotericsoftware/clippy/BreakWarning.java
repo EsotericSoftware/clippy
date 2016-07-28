@@ -43,6 +43,7 @@ public class BreakWarning {
 					}
 
 					public void run () {
+						float indeterminateMillis = 5000;
 						while (true) {
 							long inactiveMillis = getInactiveMillis();
 							long inactiveMinutes = inactiveMillis / 1000 / 60;
@@ -55,11 +56,19 @@ public class BreakWarning {
 							String message;
 							if (hours == 0)
 								message = "Active: " + minutesMessage;
+							else if (minutes == 0)
+								message = "Active: " + hoursMessage;
 							else
 								message = "Active: " + hoursMessage + ", " + minutesMessage;
 							progressBar.progressBar.setString(message);
 
-							progressBar.setProgress(1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000));
+							indeterminateMillis -= 16;
+							if (indeterminateMillis > 0) {
+								if (!progressBar.progressBar.isIndeterminate()) progressBar.progressBar.setIndeterminate(true);
+							} else {
+								if (indeterminateMillis < -clippy.config.breakResetMinutes * 60 * 1000) indeterminateMillis = 5000;
+								progressBar.setProgress(1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000));
+							}
 							Util.sleep(16);
 						}
 						lastBreakTime = System.currentTimeMillis();
