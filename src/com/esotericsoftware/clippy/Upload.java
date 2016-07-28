@@ -17,10 +17,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 
 import com.esotericsoftware.clippy.util.Imgur.ImageResponse;
 import com.esotericsoftware.clippy.util.Imgur.ImgurAPI;
@@ -255,16 +260,53 @@ public abstract class Upload {
 
 	static public void uploadImage (BufferedImage image) {
 		if (clippy.imageUpload == null) return;
-		File file = null;
+		int number = Util.nextUploadID();
+		File filePNG = null;
 		try {
-			file = Util.nextUploadFile(".png");
-			if (TRACE) trace("Writing image file: " + file);
-			ImageIO.write(image, "png", file);
+			filePNG = Util.nextUploadFile(number, ".png");
+			if (TRACE) trace("Writing PNG file: " + filePNG);
+			ImageIO.write(image, "png", filePNG);
 		} catch (IOException ex) {
-			if (ERROR) error("Error image file: " + file, ex);
-			if (file != null) file.delete();
-			return;
+			if (ERROR) error("Error writing PNG file: " + filePNG, ex);
+			if (filePNG != null) filePNG.delete();
+			filePNG = null;
 		}
+		
+		File fileJPG = null;
+		try {
+			fileJPG = Util.nextUploadFile(number, ".jpg");
+			if (TRACE) trace("Writing JPG file: " + fileJPG);
+			Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
+			ImageWriter writer = writers.next();
+			ImageWriteParam param = writer.getDefaultWriteParam();
+			param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+			param.setCompressionQuality(0.87f);
+			ImageOutputStream output = ImageIO.createImageOutputStream(fileJPG);
+			if (output == null) throw new RuntimeException("Unknown image format: " + fileJPG);
+			writer.setOutput(output);
+			writer.write(null, new IIOImage(image, null, null), param);
+			writer.dispose();
+			output.close();
+		} catch (IOException ex) {
+			if (ERROR) error("Error writing JPG file: " + fileJPG, ex);
+			if (fileJPG != null) fileJPG.delete();
+			fileJPG = null;
+		}
+
+		File file;
+		if (filePNG == null) {
+			if (fileJPG == null) return;
+			file = fileJPG;
+		} else if (fileJPG == null)
+			file = filePNG;
+		else if (fileJPG.length() < filePNG.length() * 0.9d) {
+			file = fileJPG;
+			filePNG.delete();
+		} else {
+			file = filePNG;
+			fileJPG.delete();
+		}
+
 		clippy.imageUpload.upload(file, true, new UploadListener() {
 			public void complete (String url) {
 				if (clippy.config.pasteAfterUpload)

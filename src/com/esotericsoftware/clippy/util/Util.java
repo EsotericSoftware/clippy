@@ -136,13 +136,7 @@ public class Util {
 		Files.write(path, contents.getBytes(ascii));
 	}
 
-	static public File nextUploadFile (String name) {
-		name = name.replaceAll(" ", "-");
-		try {
-			name = URLEncoder.encode(name, "UTF-8");
-		} catch (UnsupportedEncodingException ignored) {
-		}
-
+	static public int nextUploadID () {
 		int number;
 		try {
 			synchronized (uploadFile) {
@@ -155,6 +149,19 @@ public class Util {
 		} catch (Exception ex) {
 			if (WARN) warn("Upload ID error.", ex);
 			number = 0;
+		}
+		return number;
+	}
+
+	static public File nextUploadFile (String name) {
+		return nextUploadFile(nextUploadID(), name);
+	}
+
+	static public File nextUploadFile (int number, String name) {
+		name = name.replaceAll(" ", "-");
+		try {
+			name = URLEncoder.encode(name, "UTF-8");
+		} catch (UnsupportedEncodingException ignored) {
 		}
 
 		if (number == 0) {
