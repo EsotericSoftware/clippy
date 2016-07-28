@@ -42,6 +42,7 @@ public class TextItem extends JLabel {
 	public TextItem (String label) {
 		super(label);
 		this.label = label;
+		putClientProperty("html.disable", Boolean.TRUE);
 		setOpaque(true);
 		setFont(font);
 		setBorder(BorderFactory.createEmptyBorder(2, 7, 2, 7));
