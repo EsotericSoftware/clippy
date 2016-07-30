@@ -66,7 +66,7 @@ public class BreakWarning {
 							if (indeterminateMillis > 0) {
 								if (!progressBar.progressBar.isIndeterminate()) progressBar.progressBar.setIndeterminate(true);
 							} else {
-								if (indeterminateMillis < -clippy.config.breakResetMinutes * 60 * 1000) indeterminateMillis = 5000;
+								if (indeterminateMillis < -5 * 60 * 1000) indeterminateMillis = 5000;
 								progressBar.setProgress(1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000));
 							}
 							Util.sleep(16);
