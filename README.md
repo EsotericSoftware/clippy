@@ -84,7 +84,7 @@ Clippy has 3 settings for uploading:
 
 The default settings use pastebin for text, imagur for images, and disallow file upload. FTP and SFTP must be configured in the `config.json` file before use.
 
-### Gamma
+### Blue light reduction
 
 Clippy can adjust the Windows gamma based on the time of day. Gamma controls the amount of red, green, and blue displayed on the screen. The gamma changes are defined as a timeline:
 
@@ -109,6 +109,10 @@ The r, g, and b values are percentages where 0 means none of that color and 1 me
 ### Gamma limits
 
 By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot.
+
+### Gamma alternatives
+
+Other software such as [f.lux](http://justgetflux.com/) or [Sunset Screen](http://www.skytopia.com/software/sunsetscreen/) can also adjust the gamma, but they provide only day and night settings while Clippy's timeline allows for any number of transitions. Also, Clippy allows the red, green, and blue amounts to be set separately. By reducing the green slightly less than the blue, the red tint on the screen will be much less noticeable.
 
 ## Development details
 
