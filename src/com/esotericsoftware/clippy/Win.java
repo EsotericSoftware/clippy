@@ -135,6 +135,8 @@ public class Win {
 
 		static public native boolean GetMonitorInfo (Pointer hMonitor, MONITORINFO lpmi);
 
+		static public native Pointer GetDC (Pointer hWnd);
+
 		// Keyboard
 
 		static public native boolean RegisterHotKey (Pointer hWnd, int id, int fsModifiers, int vk);
@@ -324,6 +326,24 @@ public class Win {
 
 		protected List<String> getFieldOrder () {
 			return Arrays.asList("cbSize", "rcMonitor", "rcWork", "dwFlags");
+		}
+	}
+
+	static public class Gdi32 {
+		static {
+			Native.register(NativeLibrary.getInstance("gdi32", W32APIOptions.DEFAULT_OPTIONS));
+		}
+
+		static public native boolean SetDeviceGammaRamp (Pointer hDC, RAMP lpRamp);
+	}
+
+	static public class RAMP extends Structure {
+		public char[] Red = new char[256];
+		public char[] Green = new char[256];
+		public char[] Blue = new char[256];
+
+		protected List<String> getFieldOrder () {
+			return Arrays.asList("Red", "Green", "Blue");
 		}
 	}
 }

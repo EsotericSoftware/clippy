@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+import java.util.Timer;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,6 +44,8 @@ public class Util {
 	static private final String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	static private Charset ascii = Charset.forName("ASCII");
 	static private Path uploadFile = new File(System.getProperty("user.home"), ".clippy/upload").toPath();
+
+	static public Timer timer = new Timer("Clippy Timer", true);
 
 	static public final ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactory() {
 		public Thread newThread (Runnable runnable) {

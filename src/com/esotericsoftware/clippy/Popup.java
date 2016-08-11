@@ -36,7 +36,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -50,15 +49,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ToolTipManager;
 
-import com.esotericsoftware.clippy.Upload.UploadListener;
 import com.esotericsoftware.clippy.Win.GUITHREADINFO;
+import com.esotericsoftware.clippy.Win.Gdi32;
 import com.esotericsoftware.clippy.Win.MONITORINFO;
 import com.esotericsoftware.clippy.Win.POINT;
+import com.esotericsoftware.clippy.Win.RAMP;
 import com.esotericsoftware.clippy.Win.RECT;
+import com.esotericsoftware.clippy.Win.User32;
 import com.esotericsoftware.clippy.util.DocumentChangeListener;
 import com.esotericsoftware.clippy.util.PopupFrame;
 import com.esotericsoftware.clippy.util.TextItem;
-import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.minlog.Log;
 import com.sun.jna.Pointer;
 

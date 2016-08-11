@@ -180,6 +180,7 @@ public class Clippy {
 		if (text != null) store(text);
 
 		new BreakWarning();
+		new Gamma();
 
 		if (INFO) info("Started.");
 	}

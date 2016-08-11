@@ -24,14 +24,15 @@ import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
 
-import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonReader;
+import com.esotericsoftware.jsonbeans.JsonSerializable;
+import com.esotericsoftware.jsonbeans.JsonValue;
+import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
+import com.esotericsoftware.jsonbeans.OutputType;
 import com.esotericsoftware.minlog.Log;
 
 /** @author Nathan Sweet */
@@ -75,6 +76,8 @@ public class Config {
 	public int breakWarningMinutes = 55;
 	public int breakResetMinutes = 5;
 
+	public ArrayList<GammaTime> gamma;
+
 	public Config () {
 		Json json = new Json();
 		json.setUsePrototypes(false);
@@ -82,11 +85,14 @@ public class Config {
 
 		File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
 		if (configFile.exists()) {
-			try {
-				json.readFields(this, new JsonReader().parse(configFile));
-			} catch (Exception ex) {
-				if (ERROR) error("Unable to read config.json.", ex);
-				Runtime.getRuntime().halt(0);
+			JsonValue root = new JsonReader().parse(configFile);
+			if (root != null) {
+				try {
+					json.readFields(this, root);
+				} catch (Exception ex) {
+					if (ERROR) error("Unable to read config.json.", ex);
+					Runtime.getRuntime().halt(0);
+				}
 			}
 		}
 
@@ -102,8 +108,11 @@ public class Config {
 
 		configFile.getParentFile().mkdirs();
 		try {
+			PrettyPrintSettings pretty = new PrettyPrintSettings();
+			pretty.outputType = OutputType.minimal;
+			pretty.singleLineColumns = 130;
 			OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF8");
-			writer.write(json.prettyPrint(this));
+			writer.write(json.prettyPrint(this, pretty));
 			writer.close();
 		} catch (Exception ex) {
 			if (WARN) warn("Unable to write config.json.", ex);
@@ -120,5 +129,44 @@ public class Config {
 
 	static public enum FileUpload {
 		ftp, sftp
+	}
+
+	static public class GammaTime implements JsonSerializable {
+		String time;
+		float brightness, r, g, b;
+
+		transient int dayMinute;
+
+		public void write (Json json) {
+			json.writeFields(this);
+		}
+
+		public void read (Json json, JsonValue jsonData) {
+			json.readFields(this, jsonData);
+
+			boolean pm = time.contains("pm");
+			String[] values = time.replace("am", "").replace("pm", "").split(":");
+			if (values.length != 2) {
+				if (ERROR) error("Invalid gamma time: " + time);
+				return;
+			}
+			try {
+				int hour = Integer.parseInt(values[0]);
+				if (hour < 0 || hour >= 24) hour = 0;
+				if (pm) {
+					if (hour < 12) hour += 12;
+				} else if (hour == 12) //
+					hour = 0;
+				int minute = Integer.parseInt(values[1]);
+				if (minute < 0 || minute > 60) minute = 0;
+				dayMinute = hour * 60 + minute;
+			} catch (NumberFormatException ex) {
+				if (ERROR) error("Invalid gamma time: " + time, ex);
+			}
+		}
+
+		public String toString () {
+			return "[" + (dayMinute / 60) + ":" + (dayMinute % 60) + ", " + r + "," + g + "," + b + "]";
+		}
 	}
 }

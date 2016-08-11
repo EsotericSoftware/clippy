@@ -18,7 +18,7 @@ public class BreakWarning {
 	public BreakWarning () {
 		if (clippy.config.breakWarningMinutes <= 0) return;
 
-		new Timer("BreakWarning Timer", true).schedule(new TimerTask() {
+		Util.timer.schedule(new TimerTask() {
 			public void run () {
 				if (progressBar != null) return;
 
