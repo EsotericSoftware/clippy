@@ -8,7 +8,7 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 **Screenshots** Clippy can take screenshots and upload them, as well as easily upload files, zips, and text/pastes. Uploading can be done via FTP, SFTP, [imgur.com](http://imgur.com/), and/or [pastebin.com](http://pastebin.com/).
 
-**Break warnings** Clippy can display a warning when you have been at the computer too long and it disappears once you have taken a break. This helps to avoid being sedentary, which is very unhealthy. It's suggested to stand up for 5 minutes every hour. Damage done by sitting for long periods is not undone by being active at other times.
+**Break warnings** Clippy can display a warning when you have been at the computer too long. Once you have taken a break, it disappears. This helps to avoid being sedentary, which is very unhealthy. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
 
 **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interere with your sleep schedule and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm).
 
@@ -16,7 +16,7 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * It is very common to need to copy and paste a few different items. Since the Windows clipboard only holds a single item, without Clippy this means finding and copying the same text multiple times.
 
-* Clippy can be used simply to keep text safe, in case it is needed later. While writing an email or before refactoring a piece of code, you can select all the text and copy it, knowing that Clippy has stored it should you ever need it again in the future.
+* Clippy can be used simply to keep text safe, in case it is needed later. While writing an email or before refactoring code, you can select the text and copy it, knowing that Clippy has stored it should you ever need it again in the future.
 
 * Previously copied text can be browsed by hitting the history popup hotkey. Search your clipboard history by simply typing any portion of the text. Any text you've ever copied can be easily found later, which can be useful for phone numbers, passwords, etc.
 
