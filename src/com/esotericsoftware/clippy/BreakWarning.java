@@ -68,6 +68,8 @@ public class BreakWarning {
 							} else {
 								if (indeterminateMillis < -5 * 60 * 1000) indeterminateMillis = 5000;
 								progressBar.setProgress(1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000));
+								progressBar.toFront();
+								progressBar.setAlwaysOnTop(true);
 							}
 							Util.sleep(16);
 						}
