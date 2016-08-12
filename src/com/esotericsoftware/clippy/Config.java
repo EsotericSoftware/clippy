@@ -135,7 +135,7 @@ public class Config {
 		String time;
 		float brightness, r, g, b;
 
-		transient int dayMinute;
+		transient int daySecond;
 
 		public void write (Json json) {
 			json.writeFields(this);
@@ -159,14 +159,14 @@ public class Config {
 					hour = 0;
 				int minute = Integer.parseInt(values[1]);
 				if (minute < 0 || minute > 60) minute = 0;
-				dayMinute = hour * 60 + minute;
+				daySecond = (hour * 60 + minute) * 60;
 			} catch (NumberFormatException ex) {
 				if (ERROR) error("Invalid gamma time: " + time, ex);
 			}
 		}
 
 		public String toString () {
-			return "[" + (dayMinute / 60) + ":" + (dayMinute % 60) + ", " + r + "," + g + "," + b + "]";
+			return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + r + "," + g + "," + b + "]";
 		}
 	}
 }

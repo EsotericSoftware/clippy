@@ -2,6 +2,7 @@
 package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.minlog.Log.*;
+import static java.util.Calendar.*;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -16,9 +17,13 @@ import com.esotericsoftware.clippy.Win.User32;
 import com.esotericsoftware.clippy.util.Util;
 
 public class Gamma {
+	static private final float maxNoticeableChange = 0.005f;
+	static private final int minSeconds = 1, maxSeconds = 60;
+
 	final Clippy clippy = Clippy.instance;
 	ArrayList<GammaTime> times;
 	float r, g, b;
+	final Calendar calendar = Calendar.getInstance();
 
 	public Gamma () {
 		times = clippy.config.gamma;
@@ -26,35 +31,47 @@ public class Gamma {
 
 		Collections.sort(times, new Comparator<GammaTime>() {
 			public int compare (GammaTime o1, GammaTime o2) {
-				return o1.dayMinute - o2.dayMinute;
+				return o1.daySecond - o2.daySecond;
 			}
 		});
 
-		final Calendar calendar = Calendar.getInstance();
+		update();
+	}
+
+	void update () {
+		calendar.setTimeInMillis(System.currentTimeMillis());
+		int current = calendar.get(HOUR_OF_DAY) * 60 * 60 + calendar.get(MINUTE) * 60 + calendar.get(SECOND);
+
+		GammaTime fromTime = times.get(times.size() - 1);
+		GammaTime toTime = null;
+		for (int i = 0, n = times.size() - 1; i <= n; i++) {
+			toTime = times.get(i);
+			if (toTime.daySecond > current) break;
+			fromTime = toTime;
+			if (i == n) toTime = times.get(0);
+		}
+
+		float dr = toTime.r - fromTime.r;
+		float dg = toTime.g - fromTime.g;
+		float db = toTime.b - fromTime.b;
+		float dbrightness = toTime.brightness - fromTime.brightness;
+
+		int from = fromTime.daySecond, to = toTime.daySecond;
+		if (from > to) to += 24 * 60 * 60;
+		float duration = to - from;
+		float a = (current - from) / duration, ia = 1 - a;
+		set(fromTime.r + dr * a, fromTime.g + dg * a, fromTime.b + db * a, fromTime.brightness + dbrightness * a, false);
+
+		float maxChange = Math.max(dr, dg);
+		maxChange = Math.max(maxChange, db);
+		maxChange = Math.max(maxChange, dbrightness);
+		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
+		int seconds = changes == 0 ? maxSeconds : (int)Util.clamp(duration / changes, minSeconds, maxSeconds);
 		Util.timer.schedule(new TimerTask() {
 			public void run () {
-				calendar.setTimeInMillis(System.currentTimeMillis());
-				int current = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE);
-
-				GammaTime fromTime = times.get(times.size() - 1);
-				GammaTime toTime = null;
-				for (int i = 0, n = times.size() - 1; i <= n; i++) {
-					toTime = times.get(i);
-					if (toTime.dayMinute > current) break;
-					fromTime = toTime;
-					if (i == n) toTime = times.get(0);
-				}
-
-				int from = fromTime.dayMinute, to = toTime.dayMinute;
-				if (from > to) to += 24;
-				float a = (current - from) / (float)(to - from), ia = 1 - a;
-				float r = fromTime.r + (toTime.r - fromTime.r) * a;
-				float g = fromTime.g + (toTime.g - fromTime.g) * a;
-				float b = fromTime.b + (toTime.b - fromTime.b) * a;
-				float brightness = fromTime.brightness + (toTime.brightness - fromTime.brightness) * a;
-				set(r, g, b, brightness, false);
+				update();
 			}
-		}, 0, 60 * 1000);
+		}, seconds * 1000);
 	}
 
 	void set (float r, float g, float b, float brightness, boolean force) {

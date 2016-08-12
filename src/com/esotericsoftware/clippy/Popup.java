@@ -59,6 +59,7 @@ import com.esotericsoftware.clippy.Win.User32;
 import com.esotericsoftware.clippy.util.DocumentChangeListener;
 import com.esotericsoftware.clippy.util.PopupFrame;
 import com.esotericsoftware.clippy.util.TextItem;
+import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.minlog.Log;
 import com.sun.jna.Pointer;
 
@@ -401,8 +402,8 @@ public class Popup extends PopupFrame {
 		Pointer monitor = MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTONEAREST);
 		MONITORINFO monitorInfo = new MONITORINFO();
 		if (GetMonitorInfo(monitor, monitorInfo)) {
-			position.x = Math.min(Math.max(position.x, monitorInfo.rcMonitor.left), monitorInfo.rcMonitor.right - getWidth());
-			position.y = Math.min(Math.max(position.y, monitorInfo.rcMonitor.top), monitorInfo.rcMonitor.bottom - getHeight());
+			position.x = Util.clamp(position.x, monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.right - getWidth());
+			position.y = Util.clamp(position.y, monitorInfo.rcMonitor.top, monitorInfo.rcMonitor.bottom - getHeight());
 		} else if (TRACE) //
 			trace("Unable to get monitor info.");
 
