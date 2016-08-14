@@ -50,15 +50,24 @@ Clippy runs in the background as an icon in the system tray. It stores any text 
 
 ## Popup
 
-The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items. Items can be selected by pressing `up` or `down` and are put on the clipboard and pasted by pressing `enter` or by clicking. Pressing 'home' or 'end' selects the first or last item. Pressing `page up` or `page down` shows additional pages of items. Pressing `ctrl+shift+delete` deletes the selected item. The popup is hidden by pasting an item, pressing `escape`, or clicking outside the popup. Pressing `ctrl+shift+enter` uploads the item as text and puts a link on the clipboard.
+The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items. Begin typing to search the history. The following keys are available on the popup:
+- `up` or `down` selects an item.
+- `enter` puts the selected item on the clipboard, hides the popup, and pastes it.
+- `home` or `end` selects the first or last item.
+- `page up` or `page down` shows additional pages of items.
+- `escape` or clicking outside the popup hides the popup.
+- `ctrl+shift+delete` deletes the selected item.
+- `ctrl+shift+enter` uploads the item as text and puts a link on the clipboard.
 
 ### Search
 
-Items can be searched simply by typing while the popup is open. All items containing any of the typed text are shown. `%` can be used as a wildcard. Use `\%` to search for a percent sign.
+The entire search history can be searched simply by typing while the popup is open. All items containing any of the typed text are shown, sorted be most recently used first. `%` can be used as a wildcard. Use `\%` to search for a percent sign.
 
 ### Menu
 
-A menu is shown on the popup by pressing `alt`. The `Lock items` checkbox prevents the order of items from changing when an existing item is chosen. Numbers `0-9` can be pressed to choose an item.
+A menu is shown on the popup by pressing `alt`. Once shown, the numbers `0-9` can be pressed to choose an item. Pressing `alt` plus a number can be used as a shortcut. For example, `alt+2` will paste the second item in the list.
+
+The `Lock items` checkbox shown at the bottom of the popup when `alt` is pressed prevents the order of items from changing when an existing item is chosen. This can be useful when pasting a number of different entries using number keys.
 
 ## Screenshots
 
