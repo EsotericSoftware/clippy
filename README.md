@@ -108,7 +108,7 @@ The r, g, and b values are percentages where 0 means none of that color and 1 me
 
 ### Gamma limits
 
-By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot.
+By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot. Clippy still prevents gamma from being set so low that the screen is completely black.
 
 ### Gamma alternatives
 
