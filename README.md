@@ -163,6 +163,22 @@ If `name` is `null`, the section will control all lights. If `name` begins with 
 
 Each Philips Hue light model supports a specific [color gamut](http://www.developers.meethue.com/documentation/supported-lights). When setting the color of all lights or for a group, the `model` setting is used to convert the r, g, b into a color the specified light model can use. When setting the color of a single light, the light's actual model is used and the `model` setting is ignored.
 
+## Database
+
+The clipboard history is stored in a relational H2 database which can be opened using the H2 console:
+
+```
+java -cp Clippy.jar org.h2.tools.Console
+```
+
+This will open a browser to the H2 console interface. To connect to your Clippy database, set the JDBC URL to `jdbc:h2:file:~/.clippy/db/db` and the username and password to blank. You may then execute SQL queries, for example:
+
+```
+SELECT COUNT(*) FROM clips; -- Get total number of clips.
+SELECT MAX(id) FROM clips; -- Get highest clip ID.
+DELETE FROM clips WHERE id < 10000; -- Delete some old clips.
+```
+
 ## Development details
 
 Clippy's codebase is clean and straightforward. It is written in Java and uses [JNA](https://github.com/twall/jna/) to access the Windows APIs necessary to monitor and interact with the [clipboard](https://github.com/EsotericSoftware/clippy/blob/master/src/com/esotericsoftware/clippy/Clipboard.java), system-wide [hotkeys](https://github.com/EsotericSoftware/clippy/blob/master/src/com/esotericsoftware/clippy/Keyboard.java), the [system tray](https://github.com/EsotericSoftware/clippy/blob/master/src/com/esotericsoftware/clippy/Tray.java), and more.
