@@ -53,7 +53,6 @@ Clippy runs in the background as an icon in the system tray. It stores any text 
 ## Popup
 
 ![](http://i.imgur.com/WLVBl8g.gif)
-
 The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items and you may begin typing to search the entire history. The following keys are available on the popup:
 - `up` or `down` selects an item.
 - `enter` puts the selected item on the clipboard, hides the popup, and pastes it.
