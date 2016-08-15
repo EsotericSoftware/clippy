@@ -83,9 +83,9 @@ While taking a region screenshot, hold `shift` to move more slowly and `ctrl` to
 
 ## Configuration
 
-Clippy stores its configuration file and the database in user folder, under the `.clippy` subfolder. The `config.json` file can be edited to configure Clippy. Eg, change the popup hotkey, the number of items shown on the popup, and more.
+Clippy stores its configuration file and the database in user folder, under the `.clippy` subfolder. The `config.json` file can be edited to configure Clippy. For example, you can customize the popup and other hotkeys, the number of items shown on the popup, and more.
 
-Hotkeys are described using [these constants](https://docs.oracle.com/javase/8/docs/api/java/awt/event/KeyEvent.html), just omit the "VK_" prefix.
+Hotkeys are described using [these constants](https://docs.oracle.com/javase/8/docs/api/java/awt/event/KeyEvent.html) with the "VK_" prefix omitted.
 
 ### Uploading
 
