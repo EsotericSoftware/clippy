@@ -165,7 +165,6 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	public void createIndexes () throws SQLException {
 		if (defaultConn == null) throw new IllegalStateException("DataStore has not been opened.");
 		if (indexesCreated) throw new IllegalStateException("Indexes have already been created.");
-		if (!newTable) return;
 
 		StringBuffer buffer = new StringBuffer(100);
 
@@ -175,10 +174,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			for (int i = 0, n = indexes.size(); i < n; i++) {
 				List<String> columnNames = indexes.get(i);
 				buffer.setLength(0);
-				buffer.append("CREATE INDEX ix_:table:");
+				buffer.append("CREATE INDEX IF NOT EXISTS ix_:table:");
 				for (int ii = 0, nn = columnNames.size(); ii < nn; ii++) {
 					buffer.append('_');
-					buffer.append(columnNames.get(ii));
+					buffer.append(columnNames.get(ii).replace(" ", "_"));
 				}
 				buffer.append(" ON :table: (");
 				for (int ii = 0, nn = columnNames.size(); ii < nn; ii++) {
@@ -244,7 +243,8 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 	abstract protected T newConnection () throws SQLException;
 
-	/** Represents a connection to a DataStore. Each thread accessing a DataStore must do so through its own DataStoreConnection. */
+	/** Represents a connection to a DataStore. Each thread accessing a DataStore must do so through its own
+	 * DataStoreConnection. */
 	public class DataStoreConnection {
 		public final Connection conn;
 		private final Statement stmt;

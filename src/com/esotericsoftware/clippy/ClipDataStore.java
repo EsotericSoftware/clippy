@@ -39,9 +39,10 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		else
 			setSocketLocking(true);
 		addColumn("id INTEGER IDENTITY");
-		addColumn("text VARCHAR_IGNORECASE");
-		addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ")");
+		addColumn("text VARCHAR_IGNORECASE NOT NULL");
+		addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ") NOT NULL");
 		open();
+		addIndex("id DESC");
 		addIndex("snip");
 		addIndex("text");
 		createIndexes();
@@ -53,7 +54,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	}
 
 	public final class ClipConnection extends DataStore.DataStoreConnection {
-		private final PreparedStatement add, removeText, removeID, contains, makeLast, search, last, getText;
+		private final PreparedStatement add, removeText, removeID, contains, makeLast, searchRecent, search, last, getText;
 
 		ClipConnection () throws SQLException {
 			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?");
@@ -62,6 +63,8 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			contains = prepareStatement("SELECT COUNT(*) FROM :table: WHERE text=? LIMIT 1");
 			makeLast = prepareStatement("UPDATE :table: SET id=(SELECT MAX(id) + 1 FROM :table:) WHERE text=? LIMIT 1");
 			last = prepareStatement("SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ? OFFSET ?");
+			searchRecent = prepareStatement(
+				"SELECT id, snip FROM (SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ?) WHERE snip LIKE ? LIMIT ?");
 			search = prepareStatement("SELECT id, snip FROM :table: WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
 			getText = prepareStatement("SELECT text FROM :table: WHERE id=? LIMIT 1");
 		}
@@ -97,6 +100,20 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			ResultSet set = makeLast.getGeneratedKeys();
 			if (set.next()) return set.getInt(1);
 			return -1;
+		}
+
+		public void searchRecent (ArrayList<Integer> ids, ArrayList<String> snips, String text, int first, int max)
+			throws SQLException {
+			searchRecent.setInt(1, first);
+			searchRecent.setString(2, text);
+			searchRecent.setInt(3, max);
+			ResultSet set = searchRecent.executeQuery();
+			ids.clear();
+			snips.clear();
+			while (set.next()) {
+				ids.add(set.getInt(1));
+				snips.add(set.getString(2));
+			}
 		}
 
 		public void search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max) throws SQLException {

@@ -36,11 +36,13 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -49,6 +51,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ToolTipManager;
 
+import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
 import com.esotericsoftware.clippy.Win.GUITHREADINFO;
 import com.esotericsoftware.clippy.Win.Gdi32;
 import com.esotericsoftware.clippy.Win.MONITORINFO;
@@ -489,20 +492,49 @@ public class Popup extends PopupFrame {
 		}
 		searchExecutor.submit(new Runnable() {
 			public void run () {
+				if (abort()) return;
 				try {
-					clippy.db.getThreadConnection().search(searchIDs, searchSnips, "%" + text + "%", clippy.config.popupSearchCount);
-					EventQueue.invokeLater(new Runnable() {
-						public void run () {
-							itemSnips.clear();
-							itemSnips.addAll(searchSnips);
-							itemIDs.clear();
-							itemIDs.addAll(searchIDs);
-							populate();
-						}
-					});
+					ClipConnection conn = clippy.db.getThreadConnection();
+					int count = conn.getCount(), max = clippy.config.popupSearchCount;
+					int[] first = {1000, 10000, 50000, 100000};
+					for (int i = 0, n = first.length; i < n; i++) {
+						if (first[i] > count) break;
+						conn.searchRecent(searchIDs, searchSnips, "%" + text + "%", first[i], max);
+						if (searchIDs.size() > 0) populateSearch();
+						if (searchIDs.size() == max) return;
+						if (abort()) return;
+					}
+					conn.search(searchIDs, searchSnips, "%" + text + "%", max);
+					populateSearch();
 				} catch (SQLException ex) {
 					if (Log.ERROR) error("Unable to retrieve clips.", ex);
 				}
+			}
+
+			void populateSearch () {
+				EventQueue.invokeLater(new Runnable() {
+					public void run () {
+						itemSnips.clear();
+						itemSnips.addAll(searchSnips);
+						itemIDs.clear();
+						itemIDs.addAll(searchIDs);
+						populate();
+					}
+				});
+			}
+
+			boolean abort () {
+				try {
+					final AtomicBoolean abort = new AtomicBoolean();
+					EventQueue.invokeAndWait(new Runnable() {
+						public void run () {
+							if (!isVisible() || searchField.getParent() == null || !text.equals(searchField.getText())) abort.set(true);
+						}
+					});
+					return abort.get();
+				} catch (Exception ignored) {
+				}
+				return false;
 			}
 		});
 	}
