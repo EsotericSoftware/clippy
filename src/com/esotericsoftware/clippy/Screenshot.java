@@ -278,25 +278,25 @@ public class Screenshot {
 				g.drawRect(cx + cw + mag * 3, cy, cw + 1, mag + 1);
 
 				// Dotted guide lines.
-				if (!drag) {
-					g.setColor(Color.black);
-					g.drawLine(x - crosshair - 1, y, 0, y);
-					g.drawLine(x + crosshair + 1, y, width, y);
-					g.drawLine(x, y - crosshair - 1, x, 0);
-					g.drawLine(x, y + crosshair + 1, x, height);
-					g.setColor(Color.white);
-					Stroke solid = g.getStroke();
-					g.setStroke(dashed);
-					g.drawLine(x - crosshair, y, 0, y);
-					g.drawLine(x + crosshair, y, width, y);
-					g.drawLine(x, y - crosshair, x, 0);
-					g.drawLine(x, y + crosshair, x, height);
-					g.setXORMode(Color.white);
-					g.setColor(Color.black);
-					g.fillRect(x - 1, y - crosshair, 3, crosshair * 2 + 1);
-					g.fillRect(x - crosshair, y - 1, crosshair - 1, 3);
-					g.fillRect(x + 2, y - 1, crosshair - 1, 3);
-				}
+				// if (!drag) {
+				g.setColor(Color.black);
+				g.drawLine(x - crosshair - 1, y, 0, y);
+				g.drawLine(x + crosshair + 1, y, width, y);
+				g.drawLine(x, y - crosshair - 1, x, 0);
+				g.drawLine(x, y + crosshair + 1, x, height);
+				g.setColor(Color.white);
+				Stroke solid = g.getStroke();
+				g.setStroke(dashed);
+				g.drawLine(x - crosshair, y, 0, y);
+				g.drawLine(x + crosshair, y, width, y);
+				g.drawLine(x, y - crosshair, x, 0);
+				g.drawLine(x, y + crosshair, x, height);
+				g.setXORMode(Color.white);
+				g.setColor(Color.black);
+				g.fillRect(x - 1, y - crosshair, 3, crosshair * 2 + 1);
+				g.fillRect(x - crosshair, y - 1, crosshair - 1, 3);
+				g.fillRect(x + 2, y - 1, crosshair - 1, 3);
+				// }
 			}
 		};
 		frame.setType(Frame.Type.UTILITY);
