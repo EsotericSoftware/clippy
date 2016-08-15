@@ -119,13 +119,49 @@ The r, g, and b values are percentages where 0 means none of that color and 1 me
 5:30am to 6:00am: transition from 1, 1, 0.7, 0.6 to 1, 1, 1, 1
 ```
 
-### Gamma limits
+#### Gamma limits
 
 By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot. Clippy still prevents gamma from being set so low that the screen is completely black.
 
-### Gamma alternatives
+#### Gamma alternatives
 
 Other software such as [f.lux](http://justgetflux.com/) or [Sunset Screen](http://www.skytopia.com/software/sunsetscreen/) can also adjust the gamma, but they provide only day and night settings while Clippy's timeline allows for any number of transitions. Also, Clippy allows the red, green, and blue amounts to be set separately. By reducing the green slightly less than the blue, the red tint on the screen will be much less noticeable.
+
+### Philips Hue
+
+Clippy can connect to a Philips Hue bridge and adjust the color of any number of lights based on the time of day. An example configuration is as follows:
+
+```
+philipsHueEnabled: true
+philipsHueIP: 192.168.0.12:80
+philipsHueUser: 882c06f1e832a58f4a4e2a09b0b5bc2
+philipsHue: [
+	{
+		name: 1
+		model: null
+		timeline: [
+			{ time: 5:00am, brightness: 1, r: 1, g: 1, b: 1 }
+			{ time: 7:00pm, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
+			{ time: 4:30am, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
+		]
+	}
+	{
+		name: group:2
+		model: LCT001
+		timeline: [
+			{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+			{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
+			{ time: 3:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+		]
+	}
+]
+```
+
+`philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically. The `philipsHue` setting is a list of lights to change, each with their own timeline which works in the same way as the [gamma](#Blue-light-reduction) setting.
+
+If `name` is `null`, the section will control all lights. If `name` begins with `group:` then the section will control that group, for example `group:office` would control the group named `office`. Otherwise `name` is the ID of a single light which will be controlled by the section.
+
+Each Philips Hue light model supports a specific [color gamut](http://www.developers.meethue.com/documentation/supported-lights). When setting the color of all lights or for a group, the `model` setting is used to convert the r, g, b into a color the specified light model can use. When setting the color of a single light, the light's actual model is used and the `model` setting is ignored.
 
 ## Development details
 
