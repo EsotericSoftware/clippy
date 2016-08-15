@@ -8,7 +8,7 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * **Break warnings** Clippy can display a gentle reminder when you have been at the computer too long. This helps to avoid the unhealthy effects of being sedentary. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
 
-* **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interere with your sleep schedule and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
+* **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interere with your sleep schedule, [melatonin](https://en.wikipedia.org/wiki/Melatonin) production, and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
 
 * **Philips Hue** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
