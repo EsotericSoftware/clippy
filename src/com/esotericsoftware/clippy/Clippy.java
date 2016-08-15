@@ -181,6 +181,7 @@ public class Clippy {
 
 		new BreakWarning();
 		new Gamma();
+		new PhilipsHue();
 
 		if (INFO) info("Started.");
 	}

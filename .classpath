@@ -12,5 +12,7 @@
 	<classpathentry kind="lib" path="libs/gson-2.3.1.jar"/>
 	<classpathentry kind="lib" path="libs/jsonbeans-0.7.jar"/>
 	<classpathentry kind="lib" path="libs/scar-1.11a.jar"/>
+	<classpathentry kind="lib" path="libs/huelocalsdk.jar"/>
+	<classpathentry kind="lib" path="libs/huesdkresources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

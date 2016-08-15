@@ -1,36 +1,38 @@
 # Clippy
 
-Clippy is a small, multifunctional Windows productivity tool for programmers and other power users. Clippy runs in the background and provides a powerful clipboard history as well as a number of fantastic optional features.
+Clippy is a small, multifunctional Windows productivity tool for programmers and other power users. Clippy runs in the background and provides a powerful clipboard history, easy uploading of screenshots, files, and text, and optional features to improve your health when using a computer for long periods of time.
 
-**Clipboard history** Clippy's main purpose is to store in a database any text items that are copied to the Windows clipboard. The stored text items can be easily retrieved later.
+* **Clipboard history** Clippy's main purpose is to store in a database any text items that are copied to the Windows clipboard, which can later be easily retrieved. The usefulness of this for programming cannot be understated!
 
-![](http://i.imgur.com/4vEWhmX.png)
+* **Screenshots** Clippy can take screenshots and upload them, as well as easily upload files, zips, and text/pastes. Uploading can be done via FTP, SFTP, [imgur.com](http://imgur.com/), and/or [pastebin.com](http://pastebin.com/).
 
-**Screenshots** Clippy can take screenshots and upload them, as well as easily upload files, zips, and text/pastes. Uploading can be done via FTP, SFTP, [imgur.com](http://imgur.com/), and/or [pastebin.com](http://pastebin.com/).
+* **Break warnings** Clippy can display a gentle reminder when you have been at the computer too long. This helps to avoid the unhealthy effects of being sedentary. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
 
-**Break warnings** Clippy can display a warning when you have been at the computer too long. Once you have taken a break, it disappears. This helps to avoid being sedentary, which is very unhealthy. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
+* **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interere with your sleep schedule and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
 
-**Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interere with your sleep schedule and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm).
+* **Philips Hue** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
-## Features
+## Features and uses
 
-* It is very common to need to copy and paste a few different items. Since the Windows clipboard only holds a single item, without Clippy this means finding and copying the same text multiple times.
+* It is very common to copy multiple pieces of text. Since the Windows clipboard only holds a single item, without Clippy this means finding and copying the same text many times.
 
 * Clippy can be used simply to keep text safe, in case it is needed later. While writing an email or before refactoring code, you can select the text and copy it, knowing that Clippy has stored it should you ever need it again in the future.
 
-* Previously copied text can be browsed by hitting the history popup hotkey. Search your clipboard history by simply typing any portion of the text. Any text you've ever copied can be easily found later, which can be useful for phone numbers, passwords, etc.
+* Previously copied text can be browsed by pressing the history popup hotkey. Search the clipboard history by simply typing any portion of the text. Any text you've ever copied can be easily found later, which can be useful for phone numbers, passwords, etc. Clippy's database can efficiently store millions of clips.
 
 * Use a hotkey to take a screenshot of the whole screen, the foreground application, or draw a rectangle with the mouse. Clippy will upload the image and paste a URL to it.
 
-* Text pasted from Clippy's popup is always plain text. This means Clippy can be used to strip unwanted formatting from text.
+* Text pasted from Clippy's popup is always plain text. This means Clippy can be used to quickly strip unwanted formatting from text.
 
 * When files are copied, Clippy stores the file paths as text. This makes it easy to copy a file and paste its path to the command line, a file dialog, or elsehwere.
 
 * Uploading and sharing files is as easy as copying, then pressing the upload hotkey.
 
-* Losing track of time can mean sitting at the computer for many hours without noticing. Clippy provides a gentle reminder of how long you have been sitting without a break, helping to avoid abusing your body.
+* Losing track of time can mean sitting at the computer for many hours without noticing. Clippy provides a reminder of how long you have been using the computer without a break, helping to avoid abuse of your body.
 
-* Working in front of a bright screen at night can interfere with your sleep schedule, leading to [Delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder). In the evening hours, Clippy can reduce your monitor's brightness and filter out the blue light.
+* Working in front of a bright screen at night can interfere with your sleep schedule. In the evening hours, Clippy can reduce both your monitor's brightness and the lighting in your home or office, reducing blue light which would otherwise prevent melatonin production and make going to sleep more difficult.
+
+* Clippy is designed to make common tasks very easy, without the bloat and clutter of unnecessary features.
 
 ## Download
 
@@ -50,7 +52,9 @@ Clippy runs in the background as an icon in the system tray. It stores any text 
 
 ## Popup
 
-The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items. Begin typing to search the history. The following keys are available on the popup:
+![](http://i.imgur.com/4vEWhmX.png)
+
+The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items and you may begin typing to search the entire history. The following keys are available on the popup:
 - `up` or `down` selects an item.
 - `enter` puts the selected item on the clipboard, hides the popup, and pastes it.
 - `home` or `end` selects the first or last item.
@@ -61,7 +65,7 @@ The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the
 
 ### Search
 
-The entire search history can be searched simply by typing while the popup is open. All items containing any of the typed text are shown, sorted be most recently used first. `%` can be used as a wildcard. Use `\%` to search for a percent sign.
+The entire search history can be searched simply by typing while the popup is open. Items containing any of the typed text are shown, sorted be most recently used first. `%` can be used as a wildcard. Use `\%` to search for a percent sign.
 
 ### Menu
 
@@ -71,7 +75,7 @@ The `Lock items` checkbox shown at the bottom of the popup when `alt` is pressed
 
 ## Screenshots
 
-The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is uploaded to imgur and a link is placed on the clipboard when the upload is complete. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
+The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is uploaded to imgur and a link is placed on the clipboard when the upload is complete. Pressing `ctrl+shift+\` repeats the last region screenshot. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
 
 ![](http://i.imgur.com/Ld05ys6.png)
 

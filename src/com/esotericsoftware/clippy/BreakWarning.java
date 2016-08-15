@@ -36,7 +36,7 @@ public class BreakWarning {
 			public void run () {
 				progressBar = new ProgressBar("");
 				progressBar.clickToDispose = false;
-				progressBar.progressBar.setForeground(new Color(0xff341c));
+				progressBar.red("");
 				new Thread("BreakWarning Dialog") {
 					{
 						setDaemon(true);
@@ -74,7 +74,7 @@ public class BreakWarning {
 							Util.sleep(16);
 						}
 						lastBreakTime = System.currentTimeMillis();
-						progressBar.done("Break complete!");
+						progressBar.done("Break complete!", 2000);
 						progressBar = null;
 					}
 				}.start();

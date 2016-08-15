@@ -57,11 +57,11 @@ public abstract class Upload {
 					callback.prepare();
 					String url = upload(file);
 					if (TRACE) trace("Upload success: " + url);
-					if (progressBar != null) progressBar.done("Done!");
+					if (progressBar != null) progressBar.done("Done!", 1000);
 					callback.complete(url);
 				} catch (Exception ex) {
 					if (ERROR) error("Upload failed.", ex);
-					if (progressBar != null) progressBar.failed("Failed!");
+					if (progressBar != null) progressBar.failed("Failed!", 20000);
 					callback.failed();
 				} finally {
 					if (deleteAfterUpload) file.delete();
@@ -271,7 +271,7 @@ public abstract class Upload {
 			if (filePNG != null) filePNG.delete();
 			filePNG = null;
 		}
-		
+
 		File fileJPG = null;
 		try {
 			fileJPG = Util.nextUploadFile(number, ".jpg");

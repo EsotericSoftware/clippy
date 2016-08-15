@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonReader;
@@ -37,6 +39,13 @@ import com.esotericsoftware.minlog.Log;
 
 /** @author Nathan Sweet */
 public class Config {
+	static private final File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
+	static private final Json json = new Json();
+	static {
+		json.setUsePrototypes(false);
+		json.setIgnoreUnknownFields(true);
+	}
+
 	public boolean allowDuplicateClips;
 	public int maxLengthToStore = 1024 * 1024; // 1 MB
 	public String log = "info";
@@ -76,14 +85,14 @@ public class Config {
 	public int breakWarningMinutes = 55;
 	public int breakResetMinutes = 5;
 
-	public ArrayList<GammaTime> gamma;
+	public ArrayList<ColorTime> gamma;
+
+	public boolean philipsHueEnabled;
+	public String philipsHueIP;
+	public String philipsHueUser;
+	public ArrayList<PhilipsHueLights> philipsHue;
 
 	public Config () {
-		Json json = new Json();
-		json.setUsePrototypes(false);
-		json.setIgnoreUnknownFields(true);
-
-		File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
 		if (configFile.exists()) {
 			JsonValue root = new JsonReader().parse(configFile);
 			if (root != null) {
@@ -106,6 +115,21 @@ public class Config {
 		}
 		if (TRACE) trace("Config file: " + configFile.getAbsolutePath());
 
+		Comparator<ColorTime> colorTimeComparator = new Comparator<ColorTime>() {
+			public int compare (ColorTime o1, ColorTime o2) {
+				return o1.daySecond - o2.daySecond;
+			}
+		};
+		if (gamma != null) Collections.sort(gamma, colorTimeComparator);
+		if (philipsHue != null) {
+			for (PhilipsHueLights lights : philipsHue)
+				if (lights.timeline != null) Collections.sort(lights.timeline, colorTimeComparator);
+		}
+
+		save();
+	}
+
+	public void save () {
 		configFile.getParentFile().mkdirs();
 		try {
 			PrettyPrintSettings pretty = new PrettyPrintSettings();
@@ -131,7 +155,7 @@ public class Config {
 		ftp, sftp
 	}
 
-	static public class GammaTime implements JsonSerializable {
+	static public class ColorTime implements JsonSerializable {
 		String time;
 		float brightness, r, g, b;
 
@@ -168,5 +192,14 @@ public class Config {
 		public String toString () {
 			return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + r + "," + g + "," + b + "]";
 		}
+	}
+
+	static public class PhilipsHueLights {
+		/** May be null to specify all lights. Prefix with "group:" for a group name. */
+		public String name;
+		/** Ignored (may be null) if name is the name of a light.
+		 * http://www.developers.meethue.com/documentation/supported-lights */
+		public String model;
+		public ArrayList<ColorTime> timeline;
 	}
 }

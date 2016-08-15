@@ -107,36 +107,48 @@ public class ProgressBar extends JDialog {
 		EventQueue.invokeLater(updateProgress);
 	}
 
-	public void done (final String message) {
+	public void green (String message) {
+		progressBar.setString(message);
+		progressBar.setForeground(new Color(0x4bc841));
+	}
+
+	public void red (String message) {
+		progressBar.setString(message);
+		progressBar.setForeground(new Color(0xff341c));
+	}
+
+	public void done (final String message, final int delay) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(1000);
-				progressBar.setString(message);
-				progressBar.setForeground(new Color(0x4bc841));
-				Util.threadPool.submit(new Runnable() {
-					public void run () {
-						Util.sleep(1000);
-						dispose();
-					}
-				});
+				green(message);
+				if (delay != -1) {
+					Util.threadPool.submit(new Runnable() {
+						public void run () {
+							Util.sleep(delay);
+							dispose();
+						}
+					});
+				}
 			}
 		});
 	}
 
-	public void failed (final String message) {
+	public void failed (final String message, final int delay) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(1000);
-				progressBar.setString(message);
-				progressBar.setForeground(new Color(0xff341c));
-				Util.threadPool.submit(new Runnable() {
-					public void run () {
-						Util.sleep(20000);
-						dispose();
-					}
-				});
+				red(message);
+				if (delay != -1) {
+					Util.threadPool.submit(new Runnable() {
+						public void run () {
+							Util.sleep(20000);
+							dispose();
+						}
+					});
+				}
 			}
 		});
 	}
@@ -151,7 +163,7 @@ public class ProgressBar extends JDialog {
 		new Thread() {
 			public void run () {
 				Util.sleep(2000);
-				progressBar.done("Done!");
+				progressBar.done("Done!", 1000);
 				Util.sleep(2000);
 				System.exit(0);
 			}
