@@ -8,7 +8,7 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * **Break warnings** Clippy can display a gentle reminder when you have been at the computer too long. This helps to avoid the unhealthy effects of being sedentary. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
 
-* **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interere with your sleep schedule, [melatonin](https://en.wikipedia.org/wiki/Melatonin) production, and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
+* **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interfere with your sleep schedule, [melatonin](https://en.wikipedia.org/wiki/Melatonin) production, and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
 
 * **Philips Hue** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
@@ -24,7 +24,7 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * Text pasted from Clippy's popup is always plain text. This means Clippy can be used to quickly strip unwanted formatting from text.
 
-* When files are copied, Clippy stores the file paths as text. This makes it easy to copy a file and paste its path to the command line, a file dialog, or elsehwere.
+* When files are copied, Clippy stores the file paths as text. This makes it easy to copy a file and paste its path to the command line, a file dialog, or elsewhere.
 
 * Uploading and sharing files is as easy as copying, then pressing the upload hotkey.
 
@@ -75,7 +75,7 @@ The `Lock items` checkbox shown at the bottom of the popup when `alt` is pressed
 
 ## Screenshots
 
-The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is uploaded to imgur and a link is placed on the clipboard when the upload is complete. Pressing `ctrl+shift+\` repeats the last region screenshot. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
+The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is [uploaded](#uploading) and a link is placed on the clipboard when the upload is complete. Pressing `ctrl+shift+\` repeats the last region screenshot. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
 
 ![](http://i.imgur.com/Ld05ys6.png)
 
