@@ -52,7 +52,7 @@ Clippy runs in the background as an icon in the system tray. It stores any text 
 
 ## Popup
 
-![](http://i.imgur.com/4vEWhmX.png)
+![](http://i.imgur.com/WLVBl8g.gif)
 
 The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items and you may begin typing to search the entire history. The following keys are available on the popup:
 - `up` or `down` selects an item.
@@ -77,7 +77,7 @@ The `Lock items` checkbox shown at the bottom of the popup when `alt` is pressed
 
 The default hotkey to take a region screenshot is `ctrl+alt+\`. Once activated, click and drag to specify the rectangular region to screenshot. The resulting image is [uploaded](#uploading) and a link is placed on the clipboard when the upload is complete. Pressing `ctrl+shift+\` repeats the last region screenshot. The default hotkey to screenshot the foreground window is `ctrl+alt+shift+\`. The hotkey to screenshot the whole window is not mapped by default.
 
-![](http://i.imgur.com/Ld05ys6.png)
+![](http://i.imgur.com/1K00xlY.gif)
 
 While taking a region screenshot, hold `shift` to move more slowly and `ctrl` to lock to the X or Y axis.
 
