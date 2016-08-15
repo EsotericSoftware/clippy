@@ -157,7 +157,7 @@ philipsHue: [
 ]
 ```
 
-`philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically. The `philipsHue` setting is a list of lights to change, each with their own timeline which works in the same way as the [gamma](#Blue-light-reduction) setting.
+`philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically. The `philipsHue` setting is a list of lights to change, each with their own timeline which works in the same way as the [gamma](#blue-light-reduction) setting.
 
 If `name` is `null`, the section will control all lights. If `name` begins with `group:` then the section will control that group, for example `group:office` would control the group named `office`. Otherwise `name` is the ID of a single light which will be controlled by the section.
 
