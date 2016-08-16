@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.esotericsoftware.clippy.Config.PhilipsHueLights;
+import com.esotericsoftware.clippy.Config.ColorTime.Power;
 import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.philips.lighting.hue.listener.PHGroupListener;
 import com.philips.lighting.hue.listener.PHLightListener;
@@ -24,6 +25,7 @@ import com.philips.lighting.model.PHHueError;
 import com.philips.lighting.model.PHHueParsingError;
 import com.philips.lighting.model.PHLight;
 import com.philips.lighting.model.PHLightState;
+import com.philips.lighting.model.PHSchedule;
 
 public class PhilipsHue {
 	final Clippy clippy = Clippy.instance;
@@ -163,8 +165,8 @@ public class PhilipsHue {
 
 	void start (final PhilipsHueLights lights) {
 		if (lights.timeline == null || lights.timeline.isEmpty()) return;
-		new ColorTimeline("PhilipsHue", lights.timeline, 1, 0.25f, 65.5f, 0) {
-			public boolean set (float r, float g, float b, int millis) {
+		new ColorTimeline("PhilipsHue", lights.timeline, 5 * 1000, 0, 5 * 1000 - 250) {
+			public boolean set (float r, float g, float b, float brightness, Power power, int millis) {
 				PHHueSDK hue = PHHueSDK.getInstance();
 				PHBridge bridge = hue.getSelectedBridge();
 				if (bridge == null) return false;
@@ -182,11 +184,15 @@ public class PhilipsHue {
 					model = light.getModelNumber();
 				}
 
-				float[] xy = PHUtilities.calculateXYFromRGB(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), model);
 				PHLightState lightState = new PHLightState();
-				lightState.setX(xy[0]);
-				lightState.setY(xy[1]);
-				lightState.setTransitionTime(Math.min(millis, 65535));
+				if (power == Power.on || power == Power.off) lightState.setOn(power == Power.on);
+				if (power != Power.off) {
+					float[] xy = PHUtilities.calculateXYFromRGB(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), model);
+					lightState.setX(xy[0]);
+					lightState.setY(xy[1]);
+					lightState.setBrightness(Math.round(brightness * 254));
+					lightState.setTransitionTime(millis / 100);
+				}
 
 				if (name == null)
 					bridge.setLightStateForDefaultGroup(lightState);
@@ -195,7 +201,7 @@ public class PhilipsHue {
 				else {
 					name = name.substring(6);
 					PHGroup group = findResource(cache.getAllGroups(), name);
-					if (light == null) {
+					if (group == null) {
 						if (ERROR) error("Group not found: " + name);
 						stop();
 						return false;

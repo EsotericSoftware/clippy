@@ -7,27 +7,30 @@ import static java.util.Calendar.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-import com.esotericsoftware.clippy.Config;
 import com.esotericsoftware.clippy.Config.ColorTime;
+import com.esotericsoftware.clippy.Config.ColorTime.Power;
 
 abstract public class ColorTimeline {
 	static private final float[] rgb = new float[3];
+	static private final float maxNoticeableChange = 1 / 255f;
 
 	final String type;
 	protected final ArrayList<ColorTime> times;
-	final float maxNoticeableChange, minSeconds, maxSeconds, minTotal;
+	final int minSleepMillis, maxTransitionMillis;
+	final float minTotal;
 	final Calendar calendar = Calendar.getInstance();
 	volatile boolean running = true;
-	float r, g, b;
 
-	public ColorTimeline (String type, ArrayList<ColorTime> times, float maxNoticeableChange, float minSeconds, float maxSeconds,
-		float minTotal) {
+	float r, g, b, brightness;
+	Power power;
+	ColorTime lastFromTime;
+
+	public ColorTimeline (String type, ArrayList<ColorTime> times, int minSleepMillis, float minTotal, int maxTransitionMillis) {
 		this.type = type;
 		this.times = times;
-		this.maxNoticeableChange = maxNoticeableChange;
-		this.minSeconds = minSeconds;
-		this.maxSeconds = maxSeconds;
+		this.minSleepMillis = minSleepMillis;
 		this.minTotal = minTotal;
+		this.maxTransitionMillis = maxTransitionMillis;
 	}
 
 	public void start () {
@@ -45,23 +48,34 @@ abstract public class ColorTimeline {
 
 	void update () {
 		calendar.setTimeInMillis(System.currentTimeMillis());
-		int current = calendar.get(HOUR_OF_DAY) * 60 * 60 + calendar.get(MINUTE) * 60 + calendar.get(SECOND);
+		int current = calendar.get(HOUR_OF_DAY) * 60 * 60 * 1000 //
+			+ calendar.get(MINUTE) * 60 * 1000 //
+			+ calendar.get(SECOND) * 1000 //
+			+ calendar.get(MILLISECOND);
 
 		// Find from and to times which contain the current time.
 		ColorTime fromTime = times.get(times.size() - 1);
 		ColorTime toTime = null;
 		for (int i = 0, n = times.size() - 1; i <= n; i++) {
 			toTime = times.get(i);
-			if (toTime.daySecond > current) break;
+			if (toTime.dayMillis > current) break;
 			fromTime = toTime;
 			if (i == n) toTime = times.get(0);
 		}
-		int from = fromTime.daySecond, to = toTime.daySecond;
+		int from = fromTime.dayMillis, to = toTime.dayMillis;
 		if (from > to) {
-			to += 24 * 60 * 60;
-			if (current < from) current += 24 * 60 * 60;
+			to += 24 * 60 * 60 * 1000;
+			if (current < from) current += 24 * 60 * 60 * 1000;
 		}
-		float duration = to - from, elapsed = current - from, remaining = duration - elapsed;
+
+		int duration = to - from, elapsed = current - from;
+		int remaining;
+		if (toTime == fromTime)
+			remaining = 24 * 60 * 60 * 1000 - elapsed;
+		else if (duration > 0)
+			remaining = duration - elapsed;
+		else
+			remaining = 1;
 
 		// Find maximal change in RGB and brightness.
 		float dr = toTime.r - fromTime.r;
@@ -72,10 +86,14 @@ abstract public class ColorTimeline {
 		maxChange = Math.max(maxChange, Math.abs(db));
 		maxChange = Math.max(maxChange, Math.abs(dbrightness));
 
+		// Compute the delay between changes.
+		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
+		int millis = changes == 0 ? remaining : Util.clamp(Math.round(duration / (float)changes), minSleepMillis, remaining);
+
 		// Find target RGB and brightness.
 		float tr, tg, tb, tbrightness, kelvin = 0;
-		if (duration > 0.0001f) {
-			float a = elapsed / duration;
+		if (duration > 0) {
+			float a = elapsed / (float)duration;
 			if (fromTime.temp != 0 && toTime.temp != 0) {
 				kelvin = fromTime.temp + (toTime.temp - fromTime.temp) * a;
 				float[] rgb = kelvinToRGB(kelvin);
@@ -95,20 +113,20 @@ abstract public class ColorTimeline {
 			tbrightness = toTime.brightness;
 		}
 
-		// Compute the delay from this change to the next.
-		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
-		float seconds = changes == 0 ? remaining : Util.clamp(duration / changes, minSeconds, Math.min(remaining, maxSeconds));
-		int millis = Math.round(seconds * 1000);
+		Power power = null;
+		if (fromTime != lastFromTime) {
+			power = fromTime.power;
+			lastFromTime = fromTime;
+		}
 
-		set(tr, tg, tb, kelvin, tbrightness, millis);
+		set(tr, tg, tb, kelvin, tbrightness, power, Math.min(millis, maxTransitionMillis));
 
 		Util.sleep(millis);
 	}
 
-	void set (float red, float green, float blue, float kelvin, float brightness, int millis) {
-		float r = red * brightness;
-		float g = green * brightness;
-		float b = blue * brightness;
+	void set (float r, float g, float b, float kelvin, float brightness, Power power, int millis) {
+		if (Math.abs(r - this.r) <= 0.001f && Math.abs(g - this.g) <= 0.001f && Math.abs(b - this.b) <= 0.001f
+			&& Math.abs(brightness - this.brightness) <= 0.001f && this.power == power) return;
 
 		float total = r + g + b;
 		if (Float.isNaN(total) || Float.isInfinite(total)) {
@@ -119,7 +137,7 @@ abstract public class ColorTimeline {
 				if (kelvin != 0)
 					error(type + ", invalid color: " + kelvin + "K * " + brightness);
 				else
-					error(type + ", invalid color: " + red + ", " + green + ", " + blue + " * " + brightness);
+					error(type + ", invalid color: " + r + ", " + g + ", " + b + " * " + brightness);
 			}
 		} else if (total < 0.001f) {
 			r = minTotal / 3;
@@ -131,21 +149,24 @@ abstract public class ColorTimeline {
 			b = b / total * minTotal;
 		}
 
-		if (Math.abs(r - this.r) <= 0.001f && Math.abs(g - this.g) <= 0.001f && Math.abs(b - this.b) <= 0.001f) return;
 		if (DEBUG) {
-			if (kelvin != 0)
-				debug(type + ": " + kelvin + "K * " + brightness);
+			if (power == Power.off)
+				debug(type + ": off");
+			else if (kelvin != 0)
+				debug(type + ": " + (power != null ? "on, " : "") + kelvin + "K * " + brightness);
 			else
-				debug(type + ": " + red + ", " + green + ", " + blue + " * " + brightness);
+				debug(type + ": " + (power != null ? "on, " : "") + r + ", " + g + ", " + b + " * " + brightness);
 		}
-		if (set(r, g, b, millis)) {
+		if (set(r, g, b, brightness, power, millis)) {
 			this.r = r;
 			this.g = g;
 			this.b = b;
+			this.brightness = brightness;
+			this.power = power;
 		}
 	}
 
-	abstract public boolean set (float r, float g, float b, int millis);
+	abstract public boolean set (float r, float g, float b, float brightness, Power power, int millis);
 
 	/** From: https://github.com/neilbartlett/color-temperature
 	 * 

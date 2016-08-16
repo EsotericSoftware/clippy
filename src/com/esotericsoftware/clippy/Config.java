@@ -122,7 +122,7 @@ public class Config {
 
 		Comparator<ColorTime> colorTimeComparator = new Comparator<ColorTime>() {
 			public int compare (ColorTime o1, ColorTime o2) {
-				return o1.daySecond - o2.daySecond;
+				return o1.dayMillis - o2.dayMillis;
 			}
 		};
 		if (gamma != null) Collections.sort(gamma, colorTimeComparator);
@@ -165,11 +165,16 @@ public class Config {
 
 		String time;
 		public float brightness, r, g, b, temp;
+		public Power power;
 
-		public transient int daySecond, sunrise, sunset;
+		public transient int dayMillis, sunrise, sunset;
+
+		public ColorTime () {
+		}
 
 		public void write (Json json) {
 			json.writeField(this, "time");
+			if (power == Power.on || power == Power.off) json.writeField(this, "power");
 			json.writeField(this, "brightness");
 			if (temp == 0) {
 				json.writeField(this, "r");
@@ -224,7 +229,7 @@ public class Config {
 					hour = 0;
 				int minute = Integer.parseInt(values[1]);
 				if (minute < 0 || minute > 60) minute = 0;
-				daySecond = (hour * 60 + minute) * 60;
+				dayMillis = hour * 60 * 60 * 1000 + minute * 60 * 1000;
 			} catch (NumberFormatException ex) {
 				throw new RuntimeException("Invalid color time: " + time, ex);
 			}
@@ -232,9 +237,13 @@ public class Config {
 
 		public String toString () {
 			if (temp != 0)
-				return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + temp + "K]";
+				return "[" + (dayMillis / 3600000) + ":" + (dayMillis % 3600000) / 60000 + ", " + temp + "K]";
 			else
-				return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + r + "," + g + "," + b + "]";
+				return "[" + (dayMillis / 3600000) + ":" + (dayMillis % 3600000) / 60000 + ", " + r + "," + g + "," + b + "]";
+		}
+
+		static public enum Power {
+			on, off, unchanged
 		}
 	}
 
