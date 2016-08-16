@@ -145,7 +145,7 @@ gamma: [
 ]
 ```
 
-Time can also be describe using `sunrise:xxx` or `sunset:xxx` where `xxx` is your latitude. Time can also be relative to the sunrise or sunset by using `sunset+12:xxx` or `sunset-12:xxx` where `12` is the number of minutes to add or subtract.
+Time can also be describe using `sunrise:xxx` or `sunset:xxx` where `xxx` is your latitude. Time can be relative to the sunrise or sunset by using `sunset+12:xxx` or `sunset-12:xxx` where `12` is the number of minutes to add or subtract.
 
 ```
 gamma: [
