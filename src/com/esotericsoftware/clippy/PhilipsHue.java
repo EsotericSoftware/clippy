@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.esotericsoftware.clippy.Config.PhilipsHueLights;
+import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.philips.lighting.hue.listener.PHGroupListener;
 import com.philips.lighting.hue.listener.PHLightListener;
 import com.philips.lighting.hue.sdk.PHAccessPoint;

@@ -1,0 +1,205 @@
+
+package com.esotericsoftware.clippy.util;
+
+import static com.esotericsoftware.minlog.Log.*;
+import static java.util.Calendar.*;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+
+import com.esotericsoftware.clippy.Config;
+import com.esotericsoftware.clippy.Config.ColorTime;
+
+abstract public class ColorTimeline {
+	static private final float[] rgb = new float[3];
+
+	final String type;
+	protected final ArrayList<ColorTime> times;
+	final float maxNoticeableChange, minSeconds, maxSeconds, minTotal;
+	final Calendar calendar = Calendar.getInstance();
+	volatile boolean running = true;
+	float r, g, b;
+
+	public ColorTimeline (String type, ArrayList<ColorTime> times, float maxNoticeableChange, float minSeconds, float maxSeconds,
+		float minTotal) {
+		this.type = type;
+		this.times = times;
+		this.maxNoticeableChange = maxNoticeableChange;
+		this.minSeconds = minSeconds;
+		this.maxSeconds = maxSeconds;
+		this.minTotal = minTotal;
+	}
+
+	public void start () {
+		new Thread(type) {
+			public void run () {
+				while (running)
+					update();
+			}
+		}.start();
+	}
+
+	public void stop () {
+		running = false;
+	}
+
+	void update () {
+		calendar.setTimeInMillis(System.currentTimeMillis());
+		int current = calendar.get(HOUR_OF_DAY) * 60 * 60 + calendar.get(MINUTE) * 60 + calendar.get(SECOND);
+
+		// Find from and to times which contain the current time.
+		ColorTime fromTime = times.get(times.size() - 1);
+		ColorTime toTime = null;
+		for (int i = 0, n = times.size() - 1; i <= n; i++) {
+			toTime = times.get(i);
+			if (toTime.daySecond > current) break;
+			fromTime = toTime;
+			if (i == n) toTime = times.get(0);
+		}
+		int from = fromTime.daySecond, to = toTime.daySecond;
+		if (from > to) {
+			to += 24 * 60 * 60;
+			if (current < from) current += 24 * 60 * 60;
+		}
+		float duration = to - from, elapsed = current - from, remaining = duration - elapsed;
+
+		// Find maximal change in RGB and brightness.
+		float dr = toTime.r - fromTime.r;
+		float dg = toTime.g - fromTime.g;
+		float db = toTime.b - fromTime.b;
+		float dbrightness = toTime.brightness - fromTime.brightness;
+		float maxChange = Math.max(Math.abs(dr), Math.abs(dg));
+		maxChange = Math.max(maxChange, Math.abs(db));
+		maxChange = Math.max(maxChange, Math.abs(dbrightness));
+
+		// Find target RGB and brightness.
+		float tr, tg, tb, tbrightness, kelvin = 0;
+		if (duration > 0.0001f) {
+			float a = elapsed / duration;
+			if (fromTime.temp != 0 && toTime.temp != 0) {
+				kelvin = fromTime.temp + (toTime.temp - fromTime.temp) * a;
+				float[] rgb = kelvinToRGB(kelvin);
+				tr = rgb[0];
+				tg = rgb[1];
+				tb = rgb[2];
+			} else {
+				tr = fromTime.r + dr * a;
+				tg = fromTime.g + dg * a;
+				tb = fromTime.b + db * a;
+			}
+			tbrightness = fromTime.brightness + dbrightness * a;
+		} else {
+			tr = toTime.r;
+			tg = toTime.g;
+			tb = toTime.b;
+			tbrightness = toTime.brightness;
+		}
+
+		// Compute the delay from this change to the next.
+		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
+		float seconds = changes == 0 ? remaining : Util.clamp(duration / changes, minSeconds, Math.min(remaining, maxSeconds));
+		int millis = Math.round(seconds * 1000);
+
+		set(tr, tg, tb, kelvin, tbrightness, millis);
+
+		Util.sleep(millis);
+	}
+
+	void set (float red, float green, float blue, float kelvin, float brightness, int millis) {
+		float r = red * brightness;
+		float g = green * brightness;
+		float b = blue * brightness;
+
+		float total = r + g + b;
+		if (Float.isNaN(total) || Float.isInfinite(total)) {
+			r = 1;
+			g = 1;
+			b = 1;
+			if (ERROR) {
+				if (kelvin != 0)
+					error(type + ", invalid color: " + kelvin + "K * " + brightness);
+				else
+					error(type + ", invalid color: " + red + ", " + green + ", " + blue + " * " + brightness);
+			}
+		} else if (total < 0.001f) {
+			r = minTotal / 3;
+			g = minTotal / 3;
+			b = minTotal / 3;
+		} else if (total < minTotal) {
+			r = r / total * minTotal;
+			g = g / total * minTotal;
+			b = b / total * minTotal;
+		}
+
+		if (Math.abs(r - this.r) <= 0.001f && Math.abs(g - this.g) <= 0.001f && Math.abs(b - this.b) <= 0.001f) return;
+		if (DEBUG) {
+			if (kelvin != 0)
+				debug(type + ": " + kelvin + "K * " + brightness);
+			else
+				debug(type + ": " + red + ", " + green + ", " + blue + " * " + brightness);
+		}
+		if (set(r, g, b, millis)) {
+			this.r = r;
+			this.g = g;
+			this.b = b;
+		}
+	}
+
+	abstract public boolean set (float r, float g, float b, int millis);
+
+	/** From: https://github.com/neilbartlett/color-temperature
+	 * 
+	 * The MIT License (MIT)
+	 * 
+	 * Copyright (c) 2015 Neil Bartlett
+	 * 
+	 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
+	 * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
+	 * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+	 * Software is furnished to do so, subject to the following conditions:
+	 * 
+	 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+	 * Software.
+	 * 
+	 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+	 * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+	 * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+	 * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+	static public float[] kelvinToRGB (float kelvin) {
+		float temp = kelvin / 100f;
+		float r = 255;
+		if (temp >= 66) {
+			r = temp - 55;
+			r = (float)(351.97690566805693 + 0.114206453784165 * r - 40.25366309332127 * Math.log(r));
+			if (r < 0) r = 0;
+			if (r > 255) r = 255;
+		}
+		float g;
+		if (temp < 66) {
+			g = temp - 2;
+			g = (float)(-155.25485562709179 - 0.44596950469579133 * g + 104.49216199393888 * Math.log(g));
+			if (g < 0) g = 0;
+			if (g > 255) g = 255;
+		} else {
+			g = temp - 50;
+			g = (float)(325.4494125711974 + 0.07943456536662342 * g - 28.0852963507957 * Math.log(g));
+			if (g < 0) g = 0;
+			if (g > 255) g = 255;
+		}
+		float b = 255;
+		if (temp < 66) {
+			if (temp <= 20)
+				b = 0;
+			else {
+				b = temp - 10;
+				b = (float)(-254.76935184120902 + 0.8274096064007395 * b + 115.67994401066147 * Math.log(b));
+				if (b < 0) b = 0;
+				if (b > 255) b = 255;
+			}
+		}
+		rgb[0] = Math.round(r) / 255f;
+		rgb[1] = Math.round(g) / 255f;
+		rgb[2] = Math.round(b) / 255f;
+		return rgb;
+	}
+}

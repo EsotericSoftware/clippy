@@ -6,10 +6,11 @@ import static com.esotericsoftware.minlog.Log.*;
 import com.esotericsoftware.clippy.Win.Gdi32;
 import com.esotericsoftware.clippy.Win.RAMP;
 import com.esotericsoftware.clippy.Win.User32;
+import com.esotericsoftware.clippy.util.ColorTimeline;
 
 public class Gamma extends ColorTimeline {
 	public Gamma () {
-		super("Gamma", Clippy.instance.config.gamma, 0.003f, 0.25f, Integer.MAX_VALUE, 0.25f);
+		super("Gamma", Clippy.instance.config.gamma, 1 / 255f, 0.25f, Integer.MAX_VALUE, 0.25f);
 		if (times == null || times.isEmpty()) return;
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {

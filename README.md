@@ -119,6 +119,43 @@ The r, g, and b values are percentages where 0 means none of that color and 1 me
 5:30am to 6:00am: transition from 1, 1, 0.7, 0.6 to 1, 1, 1, 1
 ```
 
+#### Colors
+
+Colors can be described as RGB values, as shown above, or as a color temperature:
+
+```
+gamma: [
+	{ time: 6:00am, brightness: 1, temp: 6500 }
+	{ time: 6:00pm, brightness: 1, temp: 6500 }
+	{ time: 9:00pm, brightness: 0.8, temp: 3800 }
+	{ time: 5:30am, brightness: 0.8, temp: 3800 }
+]
+```
+
+#### Times
+
+Times can be described using 12 hour time, as shown above, or 24 hour time:
+
+```
+gamma: [
+	{ time: 06:00, brightness: 1, temp: 6500 }
+	{ time: 18:00, brightness: 1, temp: 6500 }
+	{ time: 21:00, brightness: 0.8, temp: 3800 }
+	{ time: 05:30, brightness: 0.8, temp: 3800 }
+]
+```
+
+Time can also be describe using `sunrise:xxx` or `sunset:xxx` where `xxx` is your latitude. Time can also be relative to the sunrise or sunset by using `sunset+12:xxx` or `sunset-12:xxx` where `12` is the number of minutes to add or subtract.
+
+```
+gamma: [
+	{ time: sunrise:43.4357, brightness: 1, temp: 6500 }
+	{ time: sunset-60:43.4357, brightness: 1, temp: 6500 }
+	{ time: sunset+120:43.4357, brightness: 0.8, temp: 3800 }
+	{ time: sunrise-30:43.4357, brightness: 0.8, temp: 3800 }
+]
+```
+
 #### Gamma limits
 
 By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot. Clippy still prevents gamma from being set so low that the screen is completely black.
@@ -140,7 +177,7 @@ philipsHue: [
 		name: 1
 		model: null
 		timeline: [
-			{ time: 5:00am, brightness: 1, r: 1, g: 1, b: 1 }
+			{ time: sunrise:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
 			{ time: 7:00pm, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
 			{ time: 4:30am, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
 		]
@@ -151,13 +188,13 @@ philipsHue: [
 		timeline: [
 			{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
 			{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
-			{ time: 3:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+			{ time: sunset:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
 		]
 	}
 ]
 ```
 
-`philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically. The `philipsHue` setting is a list of lights to change, each with their own timeline which works in the same way as the [gamma](#blue-light-reduction) setting.
+`philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically. The `philipsHue` setting is a list of lights to change, each with a timeline which works in the same way as the [gamma](#blue-light-reduction) setting.
 
 If `name` is `null`, the section will control all lights. If `name` begins with `group:` then the section will control that group, for example `group:office` would control the group named `office`. Otherwise `name` is the ID of a single light which will be controlled by the section.
 

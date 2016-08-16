@@ -25,10 +25,15 @@ import static com.esotericsoftware.minlog.Log.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 
+import com.esotericsoftware.clippy.util.ColorTimeline;
+import com.esotericsoftware.clippy.util.Sun;
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonSerializable;
@@ -156,24 +161,60 @@ public class Config {
 	}
 
 	static public class ColorTime implements JsonSerializable {
-		String time;
-		float brightness, r, g, b;
+		static private final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mma");
 
-		transient int daySecond;
+		String time;
+		public float brightness, r, g, b, temp;
+
+		public transient int daySecond, sunrise, sunset;
 
 		public void write (Json json) {
-			json.writeFields(this);
+			json.writeField(this, "time");
+			json.writeField(this, "brightness");
+			if (temp == 0) {
+				json.writeField(this, "r");
+				json.writeField(this, "g");
+				json.writeField(this, "b");
+			} else
+				json.writeField(this, "temp");
 		}
 
 		public void read (Json json, JsonValue jsonData) {
 			json.readFields(this, jsonData);
 
+			if (temp != 0) {
+				float[] rgb = ColorTimeline.kelvinToRGB(temp);
+				r = rgb[0];
+				g = rgb[1];
+				b = rgb[2];
+			}
+
+			String time = this.time;
+			if (time.startsWith("sunrise") || time.startsWith("sunset")) {
+				double latitude;
+				int add = 0;
+				try {
+					String[] values = time.split(":");
+					latitude = Double.parseDouble(values[1]);
+					if (values[0].contains("+")) add = Integer.parseInt(values[0].split("\\+")[1]);
+					if (values[0].contains("-")) add = -Integer.parseInt(values[0].split("\\-")[1]);
+				} catch (Exception ex) {
+					throw new RuntimeException("Invalid color time: " + time, ex);
+				}
+				Date date = new Date();
+				Calendar calendar = Calendar.getInstance();
+				if (time.startsWith("sunrise")) {
+					calendar.setTime(Sun.sunrise(latitude, date.getYear(), date.getMonth(), date.getDate()));
+				} else {
+					calendar.setTime(Sun.sunset(latitude, date.getYear(), date.getMonth(), date.getDate()));
+				}
+				calendar.add(Calendar.MINUTE, add);
+				time = dateFormat.format(calendar.getTime()).toLowerCase();
+			}
+
 			boolean pm = time.contains("pm");
 			String[] values = time.replace("am", "").replace("pm", "").split(":");
-			if (values.length != 2) {
-				if (ERROR) error("Invalid gamma time: " + time);
-				return;
-			}
+			if (values.length != 2) throw new RuntimeException("Invalid gamma time: " + time);
 			try {
 				int hour = Integer.parseInt(values[0]);
 				if (hour < 0 || hour >= 24) hour = 0;
@@ -185,12 +226,15 @@ public class Config {
 				if (minute < 0 || minute > 60) minute = 0;
 				daySecond = (hour * 60 + minute) * 60;
 			} catch (NumberFormatException ex) {
-				if (ERROR) error("Invalid gamma time: " + time, ex);
+				throw new RuntimeException("Invalid color time: " + time, ex);
 			}
 		}
 
 		public String toString () {
-			return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + r + "," + g + "," + b + "]";
+			if (temp != 0)
+				return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + temp + "K]";
+			else
+				return "[" + (daySecond / 3600) + ":" + (daySecond % 3600) / 60 + ", " + r + "," + g + "," + b + "]";
 		}
 	}
 
