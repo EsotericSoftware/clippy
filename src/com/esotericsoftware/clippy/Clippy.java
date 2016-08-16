@@ -61,15 +61,6 @@ public class Clippy {
 	public Clippy () {
 		instance = this;
 
-		Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-			public void uncaughtException (Thread thread, Throwable ex) {
-				if (ERROR) error("Uncaught exception, exiting.", ex);
-				System.exit(0);
-			}
-		});
-
-		config = new Config();
-
 		if (Log.ERROR) {
 			try {
 				FileOutputStream output = new FileOutputStream(logFile);
@@ -79,6 +70,15 @@ public class Clippy {
 				if (WARN) warn("Unable to write log file.", ex);
 			}
 		}
+
+		Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+			public void uncaughtException (Thread thread, Throwable ex) {
+				if (ERROR) error("Uncaught exception, exiting.", ex);
+				System.exit(0);
+			}
+		});
+
+		config = new Config();
 
 		if (config.imageUpload != null) {
 			switch (config.imageUpload) {
