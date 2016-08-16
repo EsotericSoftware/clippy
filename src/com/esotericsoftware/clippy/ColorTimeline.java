@@ -13,18 +13,18 @@ import com.esotericsoftware.clippy.util.Util;
 abstract public class ColorTimeline {
 	final String type;
 	final ArrayList<ColorTime> times;
-	final float maxNoticeableChange, minSeconds, minGamma;
+	final float maxNoticeableChange, minSeconds, maxSeconds, minGamma;
 	final Calendar calendar = Calendar.getInstance();
 	volatile boolean running = true;
-	ColorTime lastFromTime;
-	int delta;
 	float r, g, b;
 
-	public ColorTimeline (String type, ArrayList<ColorTime> times, float maxNoticeableChange, float minSeconds, float minGamma) {
+	public ColorTimeline (String type, ArrayList<ColorTime> times, float maxNoticeableChange, float minSeconds, float maxSeconds,
+		float minGamma) {
 		this.type = type;
 		this.times = times;
 		this.maxNoticeableChange = maxNoticeableChange;
 		this.minSeconds = minSeconds;
+		this.maxSeconds = maxSeconds;
 		this.minGamma = minGamma;
 	}
 
@@ -65,24 +65,24 @@ abstract public class ColorTimeline {
 			if (current < from) current += 24 * 60 * 60;
 		}
 		float duration = to - from, elapsed = current - from, remaining = duration - elapsed;
-		if (duration > 0.0001f) {
-			float a = elapsed / duration, ia = 1 - a;
-			set(fromTime.r + dr * a, fromTime.g + dg * a, fromTime.b + db * a, fromTime.brightness + dbrightness * a, delta);
-		} else
-			set(toTime.r, toTime.g, toTime.b, toTime.brightness, delta);
 
 		float maxChange = Math.max(dr, Math.abs(dg));
 		maxChange = Math.max(maxChange, Math.abs(db));
 		maxChange = Math.max(maxChange, Math.abs(dbrightness));
 		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
-		float seconds = changes == 0 ? remaining : Util.clamp(duration / changes, minSeconds, remaining);
+		float seconds = changes == 0 ? remaining : Util.clamp(duration / changes, minSeconds, Math.min(remaining, maxSeconds));
 		int millis = Math.round(seconds * 1000);
+
+		if (duration > 0.0001f) {
+			float a = elapsed / duration, ia = 1 - a;
+			set(fromTime.r + dr * a, fromTime.g + dg * a, fromTime.b + db * a, fromTime.brightness + dbrightness * a, millis);
+		} else
+			set(toTime.r, toTime.g, toTime.b, toTime.brightness, millis);
+
 		Util.sleep(millis);
-		delta = fromTime == lastFromTime ? millis : 0;
-		lastFromTime = fromTime;
 	}
 
-	void set (float red, float green, float blue, float brightness, int delta) {
+	void set (float red, float green, float blue, float brightness, int millis) {
 		float r = red * brightness;
 		float g = green * brightness;
 		float b = blue * brightness;
@@ -105,12 +105,12 @@ abstract public class ColorTimeline {
 
 		if (Math.abs(r - this.r) <= 0.001f && Math.abs(g - this.g) <= 0.001f && Math.abs(b - this.b) <= 0.001f) return;
 		if (DEBUG) debug(type + ": " + red + ", " + green + ", " + blue + " * " + brightness);
-		if (set(r, g, b, delta)) {
+		if (set(r, g, b, millis)) {
 			this.r = r;
 			this.g = g;
 			this.b = b;
 		}
 	}
 
-	abstract public boolean set (float r, float g, float b, int delta);
+	abstract public boolean set (float r, float g, float b, int millis);
 }

@@ -9,7 +9,7 @@ import com.esotericsoftware.clippy.Win.User32;
 
 public class Gamma extends ColorTimeline {
 	public Gamma () {
-		super("Gamma", Clippy.instance.config.gamma, 0.003f, 0.25f, 0.25f);
+		super("Gamma", Clippy.instance.config.gamma, 0.003f, 0.25f, Integer.MAX_VALUE, 0.25f);
 		if (times == null || times.isEmpty()) return;
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -21,7 +21,7 @@ public class Gamma extends ColorTimeline {
 		start();
 	}
 
-	public boolean set (float r, float g, float b, int delta) {
+	public boolean set (float r, float g, float b, int millis) {
 		RAMP ramp = new RAMP();
 		for (int i = 1; i < 256; i++) {
 			ramp.Red[i] = (char)(i * (r * 256));

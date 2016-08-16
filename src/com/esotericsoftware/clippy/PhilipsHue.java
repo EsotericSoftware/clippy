@@ -3,7 +3,6 @@ package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.minlog.Log.*;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 
@@ -163,8 +162,8 @@ public class PhilipsHue {
 
 	void start (final PhilipsHueLights lights) {
 		if (lights.timeline == null || lights.timeline.isEmpty()) return;
-		new ColorTimeline("PhilipsHue", lights.timeline, 0.005f, 0.25f, 0) {
-			public boolean set (float r, float g, float b, int delta) {
+		new ColorTimeline("PhilipsHue", lights.timeline, 1, 0.25f, 65.5f, 0) {
+			public boolean set (float r, float g, float b, int millis) {
 				PHHueSDK hue = PHHueSDK.getInstance();
 				PHBridge bridge = hue.getSelectedBridge();
 				if (bridge == null) return false;
@@ -172,33 +171,44 @@ public class PhilipsHue {
 				String name = lights.name, model = lights.model;
 				PHBridgeResourcesCache cache = hue.getSelectedBridge().getResourceCache();
 				PHLight light = null;
-				if (name != null) {
-					if (name.startsWith("group:"))
-						name = name.substring(6);
-					else {
-						light = cache.getLights().get(name);
-						if (light == null) {
-							if (ERROR) error("Light not found: " + name);
-							stop();
-							return false;
-						}
-						model = light.getModelNumber();
+				if (name != null && !name.startsWith("group:")) {
+					light = findResource(cache.getAllLights(), name);
+					if (light == null) {
+						if (ERROR) error("Light not found: " + name);
+						stop();
+						return false;
 					}
+					model = light.getModelNumber();
 				}
 
 				float[] xy = PHUtilities.calculateXYFromRGB(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), model);
 				PHLightState lightState = new PHLightState();
 				lightState.setX(xy[0]);
 				lightState.setY(xy[1]);
-				lightState.setTransitionTime(Math.min(delta, 65535));
+				lightState.setTransitionTime(Math.min(millis, 65535));
 
 				if (name == null)
 					bridge.setLightStateForDefaultGroup(lightState);
 				else if (light != null)
 					bridge.updateLightState(light, lightState, lightListener);
-				else
-					bridge.setLightStateForGroup(name, lightState, groupListener);
+				else {
+					name = name.substring(6);
+					PHGroup group = findResource(cache.getAllGroups(), name);
+					if (light == null) {
+						if (ERROR) error("Group not found: " + name);
+						stop();
+						return false;
+					}
+					bridge.setLightStateForGroup(group.getIdentifier(), lightState, groupListener);
+				}
 				return true;
+			}
+
+			/** @return May be null. */
+			<T extends PHBridgeResource> T findResource (List<T> list, String name) {
+				for (T resource : list)
+					if (name.equals(resource.getName())) return resource;
+				return null;
 			}
 		}.start();
 	}
