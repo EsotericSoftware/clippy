@@ -223,6 +223,25 @@ Colors are specified as described [above](#colors). Each Philips Hue light model
 
 ### Power
 
+Lights can be turned on or off by specifying the power state:
+
+```
+philipsHue: [
+	{
+		name: Desk lamp
+		model: null
+		switch: null
+		timelines: {
+			on: [
+				{ time: sunrise:43.4357, power: on, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 7:00pm, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
+				{ time: 4:30am, power: off, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
+			]
+		}
+	}
+]
+```
+
 ### Switches
 
 Clippy sends commands to the bridge as needed to change the lights. If the lights are dimmed using a switch, the next time Clippy sends a command it will overwrite the switch's changes. To overcome this problem, the `switch` setting can be set to the name of the Philips Hue Dimmer Switch used to control lights in that section. When the switch is used to dim or brighten, Clippy will cease controlling brightness for the number of minutes specified by `philipsHueDisableMinutes`. Clippy still controls colors.
