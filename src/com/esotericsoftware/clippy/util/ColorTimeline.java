@@ -14,9 +14,9 @@ abstract public class ColorTimeline {
 	static private final float[] rgb = new float[3];
 	static private final float maxNoticeableChange = 1 / 255f;
 
-	final String type;
-	protected final ArrayList<ColorTime> times;
-	final int minSleepMillis, maxTransitionMillis;
+	protected final String type;
+	protected ArrayList<ColorTime> times;
+	final int minSleepMillis, maxSleepMillis, maxTransitionMillis;
 	final float minTotal;
 	final Calendar calendar = Calendar.getInstance();
 	volatile boolean running = true;
@@ -25,10 +25,12 @@ abstract public class ColorTimeline {
 	Power power;
 	ColorTime lastFromTime;
 
-	public ColorTimeline (String type, ArrayList<ColorTime> times, int minSleepMillis, float minTotal, int maxTransitionMillis) {
+	public ColorTimeline (String type, ArrayList<ColorTime> times, int minSleepMillis, int maxSleepMillis, float minTotal,
+		int maxTransitionMillis) {
 		this.type = type;
 		this.times = times;
 		this.minSleepMillis = minSleepMillis;
+		this.maxSleepMillis = maxSleepMillis;
 		this.minTotal = minTotal;
 		this.maxTransitionMillis = maxTransitionMillis;
 	}
@@ -46,7 +48,14 @@ abstract public class ColorTimeline {
 		running = false;
 	}
 
-	void update () {
+	public void reset () {
+		r = -1;
+		g = -1;
+		b = -1;
+		brightness = -1;
+	}
+
+	protected void update () {
 		calendar.setTimeInMillis(System.currentTimeMillis());
 		int current = calendar.get(HOUR_OF_DAY) * 60 * 60 * 1000 //
 			+ calendar.get(MINUTE) * 60 * 1000 //
@@ -89,6 +98,7 @@ abstract public class ColorTimeline {
 		// Compute the delay between changes.
 		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
 		int millis = changes == 0 ? remaining : Util.clamp(Math.round(duration / (float)changes), minSleepMillis, remaining);
+		millis = Math.min(millis, maxSleepMillis);
 
 		// Find target RGB and brightness.
 		float tr, tg, tb, tbrightness, kelvin = 0;

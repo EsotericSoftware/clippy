@@ -11,7 +11,7 @@ import com.esotericsoftware.clippy.util.ColorTimeline;
 
 public class Gamma extends ColorTimeline {
 	public Gamma () {
-		super("Gamma", Clippy.instance.config.gamma, 100, 0.25f, 0);
+		super("Gamma", Clippy.instance.config.gamma, 100, Integer.MAX_VALUE, 0.25f, 0);
 		if (times == null || times.isEmpty()) return;
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {

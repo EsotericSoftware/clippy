@@ -1,9 +1,7 @@
 
 package com.esotericsoftware.clippy;
 
-import java.awt.Color;
 import java.awt.EventQueue;
-import java.util.Timer;
 import java.util.TimerTask;
 
 import com.esotericsoftware.clippy.Win.LASTINPUTINFO;

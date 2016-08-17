@@ -87,7 +87,7 @@ Clippy stores its configuration file and the database in user folder, under the 
 
 Hotkeys are described using [these constants](https://docs.oracle.com/javase/8/docs/api/java/awt/event/KeyEvent.html) with the "VK_" prefix omitted.
 
-### Uploading
+## Uploading
 
 Clippy has 3 settings for uploading:
 
@@ -97,7 +97,7 @@ Clippy has 3 settings for uploading:
 
 The default settings use pastebin for text, imagur for images, and disallow file upload. FTP and SFTP must be configured in the `config.json` file before use.
 
-### Blue light reduction
+## Blue light reduction
 
 Clippy can adjust the Windows gamma based on the time of day. Gamma controls the amount of red, green, and blue displayed on the screen. The gamma changes are defined as a timeline:
 
@@ -119,7 +119,7 @@ The r, g, and b values are percentages where 0 means none of that color and 1 me
 5:30am to 6:00am: transition from 1, 1, 0.7, 0.6 to 1, 1, 1, 1
 ```
 
-#### Colors
+### Colors
 
 Colors can be described as RGB values, as shown above, or as a color temperature:
 
@@ -132,7 +132,7 @@ gamma: [
 ]
 ```
 
-#### Times
+### Times
 
 Times can be described using 12 hour time, as shown above, or 24 hour time:
 
@@ -156,49 +156,109 @@ gamma: [
 ]
 ```
 
-#### Gamma limits
+### Gamma limits
 
 By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot. Clippy still prevents gamma from being set so low that the screen is completely black.
 
-#### Gamma alternatives
+### Gamma alternatives
 
 Other software such as [f.lux](http://justgetflux.com/) or [Sunset Screen](http://www.skytopia.com/software/sunsetscreen/) can also adjust the gamma, but they provide only day and night settings while Clippy's timeline allows for any number of transitions. Also, Clippy allows the red, green, and blue amounts to be set separately. By reducing the green slightly less than the blue, the red tint on the screen will be much less noticeable.
 
-### Philips Hue
+## Philips Hue
 
-Clippy can connect to a Philips Hue bridge and adjust the color of any number of lights based on the time of day. An example configuration is as follows:
+Clippy can connect to a Philips Hue bridge and adjust the color of lights based on the time of day. `philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically.
 
 ```
 philipsHueEnabled: true
-philipsHueIP: 192.168.0.12:80
-philipsHueUser: 882c06f1e832a58f4a4e2a09b0b5bc2
+philipsHueIP: null
+philipsHueUser: null
+```
+
+When Clippy is first run with these settings, it will prompt to press the link button of the Philips hue bridge. Afterward Clippy will store the bridge information and will connect automatically in the future.
+
+```
+philipsHueEnabled: true
+philipsHueIP: 192.168.1.12
+philipsHueUser: mqEFxXynUbikLs1VaKUrp1CdjCkK1lUYCGzopxA
+```
+
+### Timelines
+
+The `philipsHue` setting has a list of lights, each with 1 or more timelines which work in the same way as the [gamma](#blue-light-reduction) setting.
+
+```
 philipsHue: [
 	{
-		name: 1
+		name: Desk lamp
 		model: null
-		timeline: [
-			{ time: sunrise:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
-			{ time: 7:00pm, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
-			{ time: 4:30am, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
-		]
+		switch: null
+		timelines: {
+			on: [
+				{ time: sunrise:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 7:00pm, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
+				{ time: 4:30am, brightness: 0.8, r: 1, g: 0.8, b: 0.6 }
+			]
+		}
 	}
 	{
-		name: group:2
+		name: group:Bedroom
 		model: LCT001
-		timeline: [
-			{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
-			{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
-			{ time: sunset:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
-		]
+		switch: null
+		timelines: {
+			on: [
+				{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
+				{ time: sunset:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+		}
 	}
 ]
 ```
 
-`philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically. The `philipsHue` setting is a list of lights to change, each with a timeline which works in the same way as the [gamma](#blue-light-reduction) setting.
+`name` is the name of a single light which will be controlled by the section. If `name` is `null`, the section will control all lights. If `name` begins with `group:` then the section will control that group, for example `group:Office` would control the group named `Office`. Groups can be setup using the Hue mobile phone app, which calls them "rooms".
 
-If `name` is `null`, the section will control all lights. If `name` begins with `group:` then the section will control that group, for example `group:office` would control the group named `office`. Otherwise `name` is the ID of a single light which will be controlled by the section.
+The `on` timeline is used when the light is turned on normally. See [switches](#switches) below for switching to other timelines.
 
-Each Philips Hue light model supports a specific [color gamut](http://www.developers.meethue.com/documentation/supported-lights). When setting the color of all lights or for a group, the `model` setting is used to convert the r, g, b into a color the specified light model can use. When setting the color of a single light, the light's actual model is used and the `model` setting is ignored.
+Colors are specified as described [above](#colors). Each Philips Hue light model supports a specific [color gamut](http://www.developers.meethue.com/documentation/supported-lights). When setting the color of all lights or for a group, the `model` setting is used to convert the r, g, b into a color the specified light model can use. When setting the color of a single light, the light's actual model is used and the `model` setting is ignored.
+
+### Power
+
+### Switches
+
+Clippy sends commands to the bridge as needed to change the lights. If the lights are dimmed using a switch, the next time Clippy sends a command it will overwrite the switch's changes. To overcome this problem, the `switch` setting can be set to the name of the Philips Hue Dimmer Switch used to control lights in that section. When the switch is used to dim or brighten, Clippy will cease controlling brightness for the number of minutes specified by `philipsHueDisableMinutes`. Clippy still controls colors.
+
+If lights are changed using the Hue mobile app or other software, Clippy will overwrite the changes the next time it sends a command. To fix this Clippy would need to query every light to detect that it has changed, which is not really feasible when controlling groups of lights or all lights.
+
+#### Alternate timelines
+
+Specifying a switch name also enables alternate timelines by holding the on or off buttons:
+
+```
+philipsHue: [
+	{
+		name: group:Bedroom
+		model: LCT001
+		switch: Bedroom switch
+		timelines: {
+			on: [
+				{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
+				{ time: sunset:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			onHeld: [
+				{ time: 12:00am, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			offHeld: [
+				{ time: 12:00am, brightness: 0.15, r: 1, g: 0.7, b: 0.5 }
+			]
+		}
+	}
+]
+```
+
+The `on` timeline is used when the light is turned on normally. The `onHeld` and `offHeld` timelines are used after the respective on or off buttons are held down for a few seconds. To return to the `on` timeline, press the on button momentarily.
+
+When the Hue mobile phone app adds a new switch, it sets up rules for the 4 switch buttons. The rule it uses for the off button is to turn off the lights as soon as the button goes down, which would mean that the light is off by the time Clippy changes to the `offHeld` timeline. To fix this, Clippy modifies the off button rule when an `offHeld` timeline is defined to happen only when the off button is pressed momentarily. To restore the old behavior, run Clippy without an `offHeld` timeline defined.
 
 ## Database
 
@@ -222,7 +282,7 @@ Clippy's codebase is clean and straightforward. It is written in Java and uses [
 
 The clipboard history is stored in an [H2](http://www.h2database.com) relational database. A small [data store](https://github.com/EsotericSoftware/clippy/blob/master/src/com/esotericsoftware/clippy/ClipDataStore.java) API simplifies interaction with the database.
 
-While Clippy is written in Java and most of it is platform agnostic, a number of Windows specific APIs are needed: accessing the clipboard events and contents, global hotkeys, showing the history popup at the cursor location, and more. These could be abstracted so Clippy can be ported to other languages, but since Clippy's author uses Windows there is not much motivation for that effort.
+While Clippy is written in Java and most of it is platform agnostic, a number of Windows specific APIs are needed: accessing the clipboard events and contents, global hotkeys, showing the history popup at the cursor location, and more. These could be abstracted so Clippy can be ported to other languages, but since Clippy's author uses Windows there is not much motivation for such effort.
 
 ## License
 

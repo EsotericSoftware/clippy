@@ -14,5 +14,8 @@
 	<classpathentry kind="lib" path="libs/huelocalsdk.jar"/>
 	<classpathentry kind="lib" path="libs/huesdkresources.jar"/>
 	<classpathentry kind="lib" path="libs/h2-1.4.192.jar"/>
+	<classpathentry kind="lib" path="libs/commons-logging-1.2.jar"/>
+	<classpathentry kind="lib" path="libs/httpclient-4.5.2.jar"/>
+	<classpathentry kind="lib" path="libs/httpcore-4.4.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

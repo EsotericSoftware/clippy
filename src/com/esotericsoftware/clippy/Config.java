@@ -24,6 +24,7 @@ import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,10 +32,13 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.esotericsoftware.clippy.util.Sun;
 import com.esotericsoftware.jsonbeans.Json;
+import com.esotericsoftware.jsonbeans.JsonException;
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonSerializable;
 import com.esotericsoftware.jsonbeans.JsonValue;
@@ -95,6 +99,7 @@ public class Config {
 	public boolean philipsHueEnabled;
 	public String philipsHueIP;
 	public String philipsHueUser;
+	public int philipsHueDisableMinutes = 90;
 	public ArrayList<PhilipsHueLights> philipsHue;
 
 	public Config () {
@@ -127,8 +132,12 @@ public class Config {
 		};
 		if (gamma != null) Collections.sort(gamma, colorTimeComparator);
 		if (philipsHue != null) {
-			for (PhilipsHueLights lights : philipsHue)
-				if (lights.timeline != null) Collections.sort(lights.timeline, colorTimeComparator);
+			for (PhilipsHueLights lights : philipsHue) {
+				if (lights.timelines != null) {
+					for (ArrayList<ColorTime> timeline : lights.timelines.values())
+						if (timeline != null) Collections.sort(timeline, colorTimeComparator);
+				}
+			}
 		}
 
 		save();
@@ -247,12 +256,38 @@ public class Config {
 		}
 	}
 
-	static public class PhilipsHueLights {
+	static public class PhilipsHueLights implements JsonSerializable {
 		/** May be null to specify all lights. Prefix with "group:" for a group name. */
 		public String name;
-		/** Ignored (may be null) if name is the name of a light.
+		/** Ignored if name is the name of a light (may be null).
 		 * http://www.developers.meethue.com/documentation/supported-lights */
 		public String model;
-		public ArrayList<ColorTime> timeline;
+		/** May be null. */
+		public String switchName;
+		/** May be null. */
+		public HashMap<String, ArrayList<ColorTime>> timelines;
+
+		public void write (Json json) {
+			json.writeField(this, "name");
+			json.writeField(this, "model");
+			json.writeField(this, "switchName", "switch");
+			try {
+				json.getWriter().object("timelines");
+				for (Entry<String, ArrayList<ColorTime>> entry : timelines.entrySet())
+					json.writeValue(entry.getKey(), entry.getValue(), ArrayList.class, ColorTime.class);
+				json.getWriter().pop();
+			} catch (IOException ex) {
+				throw new JsonException(ex);
+			}
+		}
+
+		public void read (Json json, JsonValue data) {
+			json.readField(this, "name", data);
+			json.readField(this, "model", data);
+			json.readField(this, "switchName", "switch", null, data);
+			timelines = new HashMap();
+			for (JsonValue map = data.getChild("timelines"); map != null; map = map.next)
+				timelines.put(map.name, json.readValue(ArrayList.class, ColorTime.class, map));
+		}
 	}
 }
