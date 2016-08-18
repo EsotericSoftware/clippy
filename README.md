@@ -244,7 +244,9 @@ philipsHue: [
 
 ### Switches
 
-Clippy sends commands to the bridge as needed to change the lights. If the lights are dimmed using a switch, the next time Clippy sends a command it will overwrite the switch's changes. To overcome this problem, the `switch` setting can be set to the name of the Philips Hue Dimmer Switch used to control lights in that section. When the switch is used to dim or brighten, Clippy will cease controlling brightness for the number of minutes specified by `philipsHueDisableMinutes`. Clippy still controls colors.
+When setting up a Philips Hue Dimmer Switch to work with lights controlled by Clippy, be sure to change the on button in the Hue mobile app so it applies the last state (for all 5 presses).
+
+Clippy sends commands to the bridge as needed to change the lights. If the lights are dimmed using a switch, the next time Clippy sends a command it will overwrite the switch's changes. To overcome this problem, the `switch` setting can be set to the name of the dimmer switch used to control lights in that section. When the switch is used to dim or brighten, Clippy will cease controlling brightness (Clippy still controls colors) for the number of minutes specified by `philipsHueDisableMinutes`. To return control to Clippy sooner, press the on button momentarily.
 
 If lights are changed using the Hue mobile app or other software, Clippy will overwrite the changes the next time it sends a command. To fix this Clippy would need to query every light to detect that it has changed, which is not really feasible when controlling groups of lights or all lights.
 

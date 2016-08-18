@@ -468,34 +468,6 @@ public class PhilipsHue {
 			return null;
 		}
 
-		void changeOffRule (String id, PHBridge bridge, int from, int to) {
-			for (PHRule rule : bridge.getResourceCache().getAllRules()) {
-				// Ensure rule has an off action.
-				boolean offAction = false;
-				for (PHRuleAction action : rule.getActions()) {
-					if (action.getBody().equals("{\"on\":false}")) {
-						offAction = true;
-						break;
-					}
-				}
-				if (!offAction) continue;
-				// If rule is for the switch's off button press, change it.
-				boolean offInitialPress = false;
-				for (PHRuleCondition condition : rule.getConditions()) {
-					if (!(condition instanceof PHSimpleRuleCondition)) continue;
-					PHSimpleRuleCondition simple = (PHSimpleRuleCondition)condition;
-					if (!simple.getResourceIdentifier().equals(id)) continue;
-					if (!simple.getAddress().equals("/sensors/" + id + "/state/buttonevent")) continue;
-					if (!simple.getAttributeName().equals(PHSimpleRuleAttributeName.ATTRIBUTE_SENSOR_STATE_BUTTONEVENT)) continue;
-					if (!simple.getValue().equals(from)) continue;
-					if (WARN) warn(type + " switch off rule changed: " + lights.switchName);
-					simple.setValue(to);
-					bridge.updateRule(rule, updateRuleListener);
-					return;
-				}
-			}
-		}
-
 		boolean skipUntil (InputStreamReader reader, int until) throws IOException {
 			while (true) {
 				int c = reader.read();
@@ -511,6 +483,33 @@ public class PhilipsHue {
 				if (c == -1) return false;
 				if (c == until1 || c == until2) return true;
 				buffer.append((char)c);
+			}
+		}
+
+		void changeOffRule (String id, PHBridge bridge, int from, int to) {
+			for (PHRule rule : bridge.getResourceCache().getAllRules()) {
+				// Ensure rule has an off action.
+				boolean offAction = false;
+				for (PHRuleAction action : rule.getActions()) {
+					if (action.getBody().equals("{\"on\":false}")) {
+						offAction = true;
+						break;
+					}
+				}
+				if (!offAction) continue;
+				// If rule is for the switch's off button press, change it.
+				for (PHRuleCondition condition : rule.getConditions()) {
+					if (!(condition instanceof PHSimpleRuleCondition)) continue;
+					PHSimpleRuleCondition simple = (PHSimpleRuleCondition)condition;
+					if (!simple.getResourceIdentifier().equals(id)) continue;
+					if (!simple.getAddress().equals("/sensors/" + id + "/state/buttonevent")) continue;
+					if (!simple.getAttributeName().equals(PHSimpleRuleAttributeName.ATTRIBUTE_SENSOR_STATE_BUTTONEVENT)) continue;
+					if (!simple.getValue().equals(from)) continue;
+					if (WARN) warn(type + " switch off rule changed: " + lights.switchName);
+					simple.setValue(to);
+					bridge.updateRule(rule, updateRuleListener);
+					return;
+				}
 			}
 		}
 	}
