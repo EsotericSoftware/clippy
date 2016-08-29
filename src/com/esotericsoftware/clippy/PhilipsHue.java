@@ -341,9 +341,8 @@ public class PhilipsHue {
 			String name = lights.name, model = lights.model;
 			PHLight light = null;
 			if (name != null && !name.startsWith("group:")) {
-				light = findResource(cache.getAllLights(), name);
+				light = findResource(cache.getAllLights(), name, "light");
 				if (light == null) {
-					if (ERROR) error(type + " light not found: " + name);
 					stop();
 					return false;
 				}
@@ -380,9 +379,8 @@ public class PhilipsHue {
 				}
 			} else {
 				name = name.substring(6);
-				PHGroup group = findResource(cache.getAllGroups(), name);
+				PHGroup group = findResource(cache.getAllGroups(), name, "group");
 				if (group == null) {
-					if (ERROR) error(type + " group not found: " + name);
 					stop();
 					return false;
 				}
@@ -406,9 +404,16 @@ public class PhilipsHue {
 		}
 
 		/** @return May be null. */
-		<T extends PHBridgeResource> T findResource (List<T> list, String name) {
+		<T extends PHBridgeResource> T findResource (List<T> list, String name, String resourceType) {
 			for (T resource : list)
 				if (name.equals(resource.getName())) return resource;
+			if (ERROR) {
+				String message = type + " " + resourceType + " not found: " + name + "\n"//
+					+ "Available:\n";
+				for (PHBridgeResource resource : list)
+					message += resource.getName() + "\n";
+				error(message);
+			}
 			return null;
 		}
 
@@ -417,9 +422,15 @@ public class PhilipsHue {
 			try {
 				if (httpGetSensor == null) {
 					PHBridgeResourcesCache cache = bridge.getResourceCache();
-					PHSensor sensor = findResource(cache.getAllSensors(), lights.switchName);
+					PHSensor sensor = findResource(cache.getAllSensors(), lights.switchName, "switch");
 					if (sensor == null) {
-						if (ERROR) error(type + " switch not found: " + lights.switchName);
+						if (ERROR) {
+							error(type + " switch not found: " + lights.switchName);
+							String groups = "";
+							for (PHGroup other : cache.getAllGroups())
+								groups += other.getName() + "\n";
+							error("Groups available:\n" + groups);
+						}
 						lights.switchName = null;
 						return null;
 					}
