@@ -16,6 +16,7 @@ abstract public class ColorTimeline {
 
 	protected final String type;
 	protected ArrayList<ColorTime> times;
+	final Thread thread;
 	final int minSleepMillis, maxSleepMillis, maxTransitionMillis;
 	final float minTotal;
 	final Calendar calendar = Calendar.getInstance();
@@ -33,15 +34,16 @@ abstract public class ColorTimeline {
 		this.maxSleepMillis = maxSleepMillis;
 		this.minTotal = minTotal;
 		this.maxTransitionMillis = maxTransitionMillis;
-	}
-
-	public void start () {
-		new Thread(type) {
+		thread = new Thread(type) {
 			public void run () {
 				while (running)
 					update();
 			}
-		}.start();
+		};
+	}
+
+	public void start () {
+		thread.start();
 	}
 
 	public void stop () {
@@ -53,6 +55,10 @@ abstract public class ColorTimeline {
 		g = -1;
 		b = -1;
 		brightness = -1;
+	}
+
+	public void wake () {
+		thread.interrupt();
 	}
 
 	protected void update () {

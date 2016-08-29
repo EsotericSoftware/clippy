@@ -57,6 +57,7 @@ public class Clippy {
 	Clipboard clipboard;
 	Screenshot screenshot;
 	Upload textUpload, imageUpload, fileUpload;
+	Gamma gamma;
 
 	public Clippy () {
 		instance = this;
@@ -171,6 +172,8 @@ public class Clippy {
 
 		tray = new Tray() {
 			protected void mouseDown (POINT position, int button) {
+				gamma.reset();
+				gamma.wake();
 				menu.setLocation(position.x, position.y - menu.getHeight());
 				menu.showPopup();
 			}
@@ -180,7 +183,7 @@ public class Clippy {
 		if (text != null) store(text);
 
 		new BreakWarning();
-		new Gamma();
+		gamma = new Gamma();
 		new PhilipsHue();
 
 		if (INFO) info("Started.");
