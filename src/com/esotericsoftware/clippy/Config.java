@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import com.esotericsoftware.clippy.PhilipsHue.PhilipsHueTimeline;
 import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.esotericsoftware.clippy.util.Sun;
 import com.esotericsoftware.jsonbeans.Json;
@@ -133,8 +134,8 @@ public class Config {
 		if (gamma != null) Collections.sort(gamma, colorTimeComparator);
 		if (philipsHue != null) {
 			for (PhilipsHueLights lights : philipsHue) {
-				if (lights.timelines != null) {
-					for (ArrayList<ColorTime> timeline : lights.timelines.values())
+				if (lights.times != null) {
+					for (ArrayList<ColorTime> timeline : lights.times.values())
 						if (timeline != null) Collections.sort(timeline, colorTimeComparator);
 				}
 			}
@@ -169,7 +170,7 @@ public class Config {
 		ftp, sftp
 	}
 
-	static public class ColorTime implements JsonSerializable {
+	static public class ColorTime implements com.esotericsoftware.jsonbeans.JsonSerializable {
 		static private final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mma");
 
 		String time;
@@ -256,7 +257,7 @@ public class Config {
 		}
 	}
 
-	static public class PhilipsHueLights implements JsonSerializable {
+	static public class PhilipsHueLights implements com.esotericsoftware.jsonbeans.JsonSerializable {
 		/** May be null to specify all lights. Prefix with "group:" for a group name. */
 		public String name;
 		/** Ignored if name is the name of a light (may be null).
@@ -265,15 +266,17 @@ public class Config {
 		/** May be null. */
 		public String switchName;
 		/** May be null. */
-		public HashMap<String, ArrayList<ColorTime>> timelines;
+		public HashMap<String, ArrayList<ColorTime>> times;
 
+		public transient PhilipsHueTimeline timeline;
+		
 		public void write (Json json) {
 			json.writeField(this, "name");
 			json.writeField(this, "model");
 			json.writeField(this, "switchName", "switch");
 			try {
 				json.getWriter().object("timelines");
-				for (Entry<String, ArrayList<ColorTime>> entry : timelines.entrySet())
+				for (Entry<String, ArrayList<ColorTime>> entry : times.entrySet())
 					json.writeValue(entry.getKey(), entry.getValue(), ArrayList.class, ColorTime.class);
 				json.getWriter().pop();
 			} catch (IOException ex) {
@@ -285,9 +288,9 @@ public class Config {
 			json.readField(this, "name", data);
 			json.readField(this, "model", data);
 			json.readField(this, "switchName", "switch", null, data);
-			timelines = new HashMap();
+			times = new HashMap();
 			for (JsonValue map = data.getChild("timelines"); map != null; map = map.next)
-				timelines.put(map.name, json.readValue(ArrayList.class, ColorTime.class, map));
+				times.put(map.name, json.readValue(ArrayList.class, ColorTime.class, map));
 		}
 	}
 }

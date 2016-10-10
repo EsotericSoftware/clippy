@@ -244,15 +244,21 @@ philipsHue: [
 
 ### Switches
 
-When setting up a Philips Hue Dimmer Switch to work with lights controlled by Clippy, be sure to change the on button in the Hue mobile app so it applies the last state (for all 5 presses).
+Clippy has special support for Philips Hue Dimmer Switches, which make it very convenient to turn lights on and off, dim or brighten lights, and to switch between various lighting timelines while still allowing Clippy to control the lights color and brightness based on the time of day.
 
-Clippy sends commands to the bridge as needed to change the lights. If the lights are dimmed using a switch, the next time Clippy sends a command it will overwrite the switch's changes. To overcome this problem, the `switch` setting can be set to the name of the dimmer switch used to control lights in that section. When the switch is used to dim or brighten, Clippy will cease controlling brightness (Clippy still controls colors) for the number of minutes specified by `philipsHueDisableMinutes`. To return control to Clippy sooner, press the on button momentarily.
+If light colors are changed using the Hue mobile app or other software, Clippy will overwrite the changes the next time it sends a command based on the time of day. Clippy would need to query every light to detect that it has changed, which is not feasible when controlling groups of lights or all lights. Because of this, you will want to use one or more Philips Hue Dimmer Switches to control your lights.
 
-If lights are changed using the Hue mobile app or other software, Clippy will overwrite the changes the next time it sends a command. To fix this Clippy would need to query every light to detect that it has changed, which is not really feasible when controlling groups of lights or all lights.
+#### Setup
+
+The `switch` setting can be set to the name of the dimmer switch used to control lights in that section. When the switch is used to dim or brighten, Clippy will cease controlling brightness (but still controls color) for the number of minutes specified by `philipsHueDisableMinutes`. To return control to Clippy sooner, press the on button momentarily or hold the on or off buttons to change to an [alternate timeline](#alternate-timelines).
+
+In the Hue mobile phone app, edit the switch and set rooms for the on button to define which lights it will control. Next, set each of the 5 presses to "last state". This will avoid the lights from flashing, since when the on button is pressed you'd see the scene lighting briefly before Clippy applies its lighting.
+
+When the Hue mobile phone app adds a new switch, it sets up rules for the 4 switch buttons. The rule for the off button is to turn off the lights as soon as the button goes down, which would mean that the light is off by the time Clippy changes to the `offHeld` timeline. To fix this, Clippy automatically modifies the off button rule when an `offHeld` timeline is defined to happen only when the off button is pressed momentarily. To restore the old behavior, run Clippy without an `offHeld` timeline defined.
 
 #### Alternate timelines
 
-Specifying a switch name also enables alternate timelines by holding the on or off buttons:
+Specifying a switch name enables alternate timelines by holding the on or off buttons:
 
 ```
 philipsHue: [
@@ -271,6 +277,7 @@ philipsHue: [
 			]
 			offHeld: [
 				{ time: 12:00am, brightness: 0.15, r: 1, g: 0.7, b: 0.5 }
+				{ time: 4:00pm, brightness: 1, r: 1, g: 0, b: 0 }
 			]
 		}
 	}
@@ -279,7 +286,194 @@ philipsHue: [
 
 The `on` timeline is used when the light is turned on normally. The `onHeld` and `offHeld` timelines are used after the respective on or off buttons are held down for a few seconds. To return to the `on` timeline, press the on button momentarily.
 
-When the Hue mobile phone app adds a new switch, it sets up rules for the 4 switch buttons. The rule it uses for the off button is to turn off the lights as soon as the button goes down, which would mean that the light is off by the time Clippy changes to the `offHeld` timeline. To fix this, Clippy modifies the off button rule when an `offHeld` timeline is defined to happen only when the off button is pressed momentarily. To restore the old behavior, run Clippy without an `offHeld` timeline defined.
+#### Multiple switches
+
+Multiple switches can be used to control the same lights by defining multiple sections with the same name but different switches:
+
+```
+philipsHue: [
+	{
+		name: group:Office
+		model: LCT001
+		switch: Door switch
+		timelines: {
+			on: [
+				{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
+				{ time: sunset:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			onHeld: [
+				{ time: 12:00am, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			offHeld: [
+				{ time: 12:00am, brightness: 0.15, r: 1, g: 0.7, b: 0.5 }
+			]
+		}
+	}
+	{
+		name: group:Office
+		model: LCT001
+		switch: Desk switch
+		timelines: {
+			on: [
+				{ time: 1:00pm, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 2:00pm, brightness: 1, r: 0.6, g: 0, b: 0 }
+				{ time: sunset:43.4357, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			onHeld: [
+				{ time: 12:00am, brightness: 1, r: 1, g: 0, b: 0 }
+			]
+			offHeld: [
+				{ time: 12:00am, brightness: 1, r: 0, g: 1, b: 0 }
+			]
+		}
+	}
+]
+```
+
+In this example, the `on` timelines are identical but `onHeld` and `offHeld` differ.
+
+Similarly, a switch may appear in multiple sections.
+
+#### Example settings
+
+The settings below shows a real life configuration meant to both be convenient and to reduce blue light in the hours before bedtime. The room is a bedroom and has a computer desk. It has 2 lamps in the "Lights" group and a Philips Hue LightStrip+ named "Headboard" which is attached to the headboard behind the bed. There are two switches, one by the bed and one by the computer desk.
+
+The lamps start with a white color at 5AM. They don't turn on automatically at that time but if they are on, they will be a comfortable white. It stays relatively white during the day, getting a bit dimmer around 7PM which is near sunset in most places. From 9PM to midnight it gets dimmer and more red to reduce blue light exposure before bed, but is still quite reasonable to read or use the computer. At midnight the lamps turn bright red for 1 minute to indicate bedtime. By 1AM the lamps become quite dim and red. From 1AM to 4:30AM they transition to extremely dim and very red, but hopefully you have gone to bed long before this!
+
+The headboard light turns on automatically at 7AM using a dim red color. From 8AM to 8:30AM it transitions from red to yellow to white, emulating a sunrise. This way if you wake up and aren't sure of the time, if the headboard is off you know to just go back to sleep. If the headboard is red, you know it's early but not a terribly unreasonable time to wake up. If it's white, you know you should get out of bed.
+
+From 8PM to 11PM the headboard gets more red to match the lamps. From 11PM to midnight it gets even more red. At midnight it gets very red for 1 minute, then turns off to indicate bedtime.
+
+For the desk switch, on/off and dim/bright control the lamps. Holding on turns the lamps and headboard on full blast for cleaning, finding something, working on electronics, etc. Holding off turns the lamps and headboard to a dim red for eating while watching TV or a movie.
+
+For the bed switch, on/off and dim/bright control the lamps. Holding on turns off the lamps and sets the headboard light for reading at night. Holding off turns off the lamps and headboard.
+
+The computer monitor starts with full brightness at 5AM. From 5PM to 9PM it transitions to more red and a bit dimmer, to match the sunset. By about 11:30PM it is noticeably red and probably a good time to stop using it. From 12:30AM to 5AM it becomes even more dim and red.
+
+```
+philipsHue: [
+	{
+		name: group:Lights
+		model: LCT007
+		switch: Bed switch
+		timelines: {
+			offHeld: [
+				{ time: 12:00am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
+			]
+			onHeld: [
+				{ time: 12:00am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
+			]
+			on: [
+				{ time: 1:00am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
+				{ time: 4:30am, brightness: 0.25, r: 1, g: 0.4, b: 0.25 }
+				{ time: 5:00am, brightness: 1, r: 1, g: 0.94, b: 0.85 }
+				{ time: 5:00pm, brightness: 1, r: 1, g: 0.84, b: 0.6 }
+				{ time: 7:00pm, brightness: 0.74, r: 1, g: 0.75, b: 0.59 }
+				{ time: 9:00pm, brightness: 0.74, r: 1, g: 0.72, b: 0.54 }
+				{ time: 12:00am, brightness: 0.4, r: 1, g: 0.6, b: 0.42 }
+				{ time: 12:01am, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 12:02am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
+			]
+		}
+	}
+	{
+		name: group:Lights
+		model: LCT007
+		switch: Desk switch
+		timelines: {
+			offHeld: [
+				{ time: 12:00am, power: on, brightness: 0, r: 1, g: 0, b: 0 }
+			]
+			onHeld: [
+				{ time: 12:00am, power: on, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			on: [
+				{ time: 1:00am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
+				{ time: 4:30am, brightness: 0.25, r: 1, g: 0.4, b: 0.25 }
+				{ time: 5:00am, brightness: 1, r: 1, g: 0.94, b: 0.85 }
+				{ time: 5:00pm, brightness: 1, r: 1, g: 0.84, b: 0.6 }
+				{ time: 7:00pm, brightness: 0.74, r: 1, g: 0.75, b: 0.59 }
+				{ time: 9:00pm, brightness: 0.74, r: 1, g: 0.72, b: 0.54 }
+				{ time: 12:00am, brightness: 0.4, r: 1, g: 0.6, b: 0.42 }
+				{ time: 12:01am, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 12:02am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
+			]
+		}
+	}
+	{
+		name: Headboard
+		model: null
+		switch: Bed switch
+		timelines: {
+			offHeld: [
+				{ time: 12:00am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
+			]
+			onHeld: [
+				{ time: 12:00am, power: on, brightness: 0.35, r: 1, g: 0.5, b: 0.35 }
+			]
+			on: [
+				{ time: 12:00am, brightness: 0.6, r: 1, g: 0, b: 0 }
+				{ time: 12:01am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
+				{ time: 7:00am, power: on, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 8:00am, brightness: 0.35, r: 1, g: 0, b: 0 }
+				{ time: 8:05am, brightness: 0.5, r: 1, g: 0, b: 0 }
+				{ time: 8:10am, brightness: 0.5, r: 1, g: 0.5, b: 0 }
+				{ time: 8:15am, brightness: 1, r: 1, g: 1, b: 0 }
+				{ time: 8:20am, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 8:25am, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
+				{ time: 8:26am, brightness: 1, r: 0, g: 0, b: 1 }
+				{ time: 8:29am, brightness: 1, r: 0, g: 0, b: 1 }
+				{ time: 8:30am, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 6:00pm, brightness: 0.85, r: 1, g: 0.85, b: 0.65 }
+				{ time: 8:00pm, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
+				{ time: 11:00pm, brightness: 0.5, r: 1, g: 0.6, b: 0.4 }
+				{ time: 11:59pm, brightness: 0.35, r: 1, g: 0.5, b: 0.35 }
+			]
+		}
+	}
+	{
+		name: Headboard
+		model: null
+		switch: Desk switch
+		timelines: {
+			offHeld: [
+				{ time: 12:00am, brightness: 0, r: 1, g: 0, b: 0 }
+			]
+			onHeld: [
+				{ time: 12:00am, power: on, brightness: 1, r: 1, g: 1, b: 1 }
+			]
+			on: [
+				{ time: 12:00am, brightness: 0.6, r: 1, g: 0, b: 0 }
+				{ time: 12:01am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
+				{ time: 7:00am, power: on, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 8:00am, brightness: 0.35, r: 1, g: 0, b: 0 }
+				{ time: 8:05am, brightness: 0.5, r: 1, g: 0, b: 0 }
+				{ time: 8:10am, brightness: 0.5, r: 1, g: 0.5, b: 0 }
+				{ time: 8:15am, brightness: 1, r: 1, g: 1, b: 0 }
+				{ time: 8:20am, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 8:25am, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
+				{ time: 8:26am, brightness: 1, r: 0, g: 0, b: 1 }
+				{ time: 8:29am, brightness: 1, r: 0, g: 0, b: 1 }
+				{ time: 8:30am, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 6:00pm, brightness: 0.85, r: 1, g: 0.85, b: 0.65 }
+				{ time: 8:00pm, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
+				{ time: 11:00pm, brightness: 0.5, r: 1, g: 0.6, b: 0.4 }
+				{ time: 11:59pm, brightness: 0.35, r: 1, g: 0.5, b: 0.35 }
+			]
+		}
+	}
+]
+gamma: [
+	{ time: 12:30am, brightness: 0.67, r: 1, g: 0.56, b: 0.3 }
+	{ time: 4:59am, brightness: 0.65, r: 1, g: 0.48, b: 0.25 }
+	{ time: 5:00am, brightness: 1, r: 1, g: 1, b: 1 }
+	{ time: 5:00pm, brightness: 1, r: 1, g: 0.99, b: 0.96 }
+	{ time: 7:00pm, brightness: 0.9, r: 1, g: 0.97, b: 0.87 }
+	{ time: 9:00pm, brightness: 0.8, r: 1, g: 0.75, b: 0.5 }
+	{ time: 11:30pm, brightness: 0.7, r: 1, g: 0.64, b: 0.4 }
+]
+```
 
 ## Database
 

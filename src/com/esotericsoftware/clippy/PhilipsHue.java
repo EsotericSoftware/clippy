@@ -128,6 +128,8 @@ public class PhilipsHue {
 					started = true;
 					for (PhilipsHueLights lights : clippy.config.philipsHue)
 						start(lights);
+					for (PhilipsHueLights lights : clippy.config.philipsHue)
+						if (lights.timeline != null) lights.timeline.setTimeline(Timeline.on);
 				}
 			}
 
@@ -186,9 +188,9 @@ public class PhilipsHue {
 	}
 
 	void start (final PhilipsHueLights lights) {
-		if (lights.timelines == null || lights.timelines.isEmpty()) return;
+		if (lights.times == null || lights.times.isEmpty()) return;
 		boolean hasTimeline = false;
-		for (ArrayList<ColorTime> timeline : lights.timelines.values()) {
+		for (ArrayList<ColorTime> timeline : lights.times.values()) {
 			if (timeline != null && !timeline.isEmpty()) {
 				hasTimeline = true;
 				break;
@@ -277,12 +279,13 @@ public class PhilipsHue {
 		HttpGet httpGetSensor;
 		long brightnessDisabled;
 		String lastEventDate;
-		SwitchState lastState;
 		Timeline timeline;
 
 		PhilipsHueTimeline (PhilipsHueLights lights) {
-			super("PhilipsHue " + lights.name, lights.timelines.get(Timeline.on.name()), 5 * 1000, 1000, 0, 5 * 1000 - 250);
+			super("PhilipsHue " + (lights.switchName != null ? lights.switchName : lights.name), null, 5 * 1000, 1000, 0,
+				5 * 1000 - 250);
 			this.lights = lights;
+			lights.timeline = this;
 		}
 
 		protected void update () {
@@ -295,41 +298,56 @@ public class PhilipsHue {
 						if (lastEventDate == null) lastEventDate = event.date;
 						if (!lastEventDate.equals(event.date)) {
 							lastEventDate = event.date;
-							if (TRACE) trace(type + " switch: " + event.button + ", " + event.state + ", " + event.date);
-							// Change timeline.
-							switch (event.button) {
-							case on:
-								if (event.state == SwitchState.held || event.state == SwitchState.releasedLong) {
-									if (timeline != Timeline.onHeld) setTimeline(Timeline.onHeld);
-								} else if (event.state == SwitchState.releasedShort) //
-									setTimeline(Timeline.on);
-								break;
-							case off:
-								if (event.state == SwitchState.held || event.state == SwitchState.releasedLong) {
-									if (timeline != Timeline.offHeld) setTimeline(Timeline.offHeld);
-								}
-							}
-							// Disable/enable brightness.
-							switch (event.button) {
-							case on:
-							case off:
-								if (brightnessDisabled != 0) {
-									if (TRACE) trace(type + " brightness control: Clippy");
-									brightnessDisabled = 0;
-									reset();
-								}
-								break;
-							case up:
-							case down:
-								if (TRACE && brightnessDisabled == 0) trace(type + " brightness control: manual");
-								brightnessDisabled = System.currentTimeMillis();
-							}
-							lastState = event.state;
+							handleEvent(event, true);
 						}
 					}
 				}
 			}
 			super.update();
+		}
+
+		void handleEvent (SwitchEvent event, boolean forward) {
+			if (TRACE) trace(type + " switch: " + event.button + ", " + event.state + ", " + event.date);
+
+			// Change timeline.
+			switch (event.button) {
+			case on:
+				if (event.state == SwitchState.held || event.state == SwitchState.releasedLong) {
+					if (timeline != Timeline.onHeld) setTimeline(Timeline.onHeld);
+				} else if (event.state == SwitchState.releasedShort) {
+					setTimeline(Timeline.on);
+				}
+				break;
+			case off:
+				if (event.state == SwitchState.held || event.state == SwitchState.releasedLong) {
+					if (timeline != Timeline.offHeld) setTimeline(Timeline.offHeld);
+				}
+			}
+
+			// Disable/enable brightness.
+			switch (event.button) {
+			case on:
+			case off:
+				if (brightnessDisabled != 0) {
+					if (DEBUG) debug(type + " brightness control: Clippy");
+					brightnessDisabled = 0;
+					reset();
+				}
+				break;
+			case up:
+			case down:
+				if (DEBUG && brightnessDisabled == 0) debug(type + " brightness control: manual");
+				brightnessDisabled = System.currentTimeMillis();
+			}
+
+			if (forward && timeline == Timeline.none) {
+				// Forward to timelines for other lights with the same name.
+				for (PhilipsHueLights otherLights : clippy.config.philipsHue) {
+					if (otherLights == lights) continue;
+					if (!otherLights.name.equals(lights.name)) continue;
+					if (otherLights.timeline != null) otherLights.timeline.handleEvent(event, false);
+				}
+			}
 		}
 
 		public boolean set (float r, float g, float b, float brightness, Power power, int millis) {
@@ -394,13 +412,28 @@ public class PhilipsHue {
 		}
 
 		void setTimeline (Timeline timeline) {
-			ArrayList<ColorTime> times = lights.timelines.get(timeline.name());
+			if (timeline == Timeline.none) {
+				reset();
+				if (DEBUG) debug(type + " timeline: none");
+				this.times = null;
+				this.timeline = timeline;
+				return;
+			}
+
+			ArrayList<ColorTime> times = lights.times.get(timeline.name());
 			if (times == null) return;
 			reset(); // Ensure a missed update is easily fixed by changing the timeline again.
 			if (times == this.times) return;
 			if (DEBUG) debug(type + " timeline: " + timeline.name());
 			this.times = times;
 			this.timeline = timeline;
+
+			// Clear any timelines for other lights with the same name.
+			for (PhilipsHueLights otherLights : clippy.config.philipsHue) {
+				if (otherLights == lights) continue;
+				if (!otherLights.name.equals(lights.name)) continue;
+				if (otherLights.timeline != null) otherLights.timeline.setTimeline(Timeline.none);
+			}
 		}
 
 		/** @return May be null. */
@@ -437,7 +470,7 @@ public class PhilipsHue {
 					String id = sensor.getIdentifier();
 					httpGetSensor = new HttpGet(
 						"http://" + clippy.config.philipsHueIP + "/api/" + clippy.config.philipsHueUser + "/sensors/" + id);
-					if (lights.timelines.containsKey(Timeline.offHeld.name()))
+					if (lights.times.containsKey(Timeline.offHeld.name()))
 						changeOffRule(id, bridge, 4000, 4002);
 					else
 						changeOffRule(id, bridge, 4002, 4000);
@@ -552,6 +585,6 @@ public class PhilipsHue {
 	}
 
 	static enum Timeline {
-		on, onHeld, offHeld
+		on, onHeld, offHeld, none
 	}
 }

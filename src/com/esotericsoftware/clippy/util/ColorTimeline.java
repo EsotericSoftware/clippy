@@ -62,6 +62,8 @@ abstract public class ColorTimeline {
 	}
 
 	protected void update () {
+		if (times == null) return;
+
 		calendar.setTimeInMillis(System.currentTimeMillis());
 		int current = calendar.get(HOUR_OF_DAY) * 60 * 60 * 1000 //
 			+ calendar.get(MINUTE) * 60 * 1000 //
