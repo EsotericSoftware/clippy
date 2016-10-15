@@ -10,6 +10,8 @@ import com.esotericsoftware.clippy.Win.User32;
 import com.esotericsoftware.clippy.util.ColorTimeline;
 
 public class Gamma extends ColorTimeline {
+	volatile boolean disabled;
+
 	public Gamma () {
 		super("Gamma", Clippy.instance.config.gamma, 100, Integer.MAX_VALUE, 0.25f, 0);
 		if (times == null || times.isEmpty()) return;
@@ -24,6 +26,7 @@ public class Gamma extends ColorTimeline {
 	}
 
 	public boolean set (float r, float g, float b, float brightness, Power power, int millis) {
+		if (disabled) return true;
 		RAMP ramp = new RAMP();
 		for (int i = 1; i < 256; i++) {
 			ramp.Red[i] = (char)(i * (r * brightness * 256));
@@ -31,8 +34,17 @@ public class Gamma extends ColorTimeline {
 			ramp.Blue[i] = (char)(i * (b * brightness * 256));
 		}
 		if (!Gdi32.SetDeviceGammaRamp(User32.GetDC(null), ramp)) {
-			if (DEBUG) debug("Unable to set gamma ramp: " + r + ", " + g + ", " + b + " * " + brightness);
+			if (WARN) warn("Unable to set gamma ramp: " + r + ", " + g + ", " + b + " * " + brightness);
 		}
 		return true;
+	}
+
+	public void toggle () {
+		if (!disabled) set(1, 1, 1, 1, null, 0);
+		disabled = !disabled;
+		if (!disabled) {
+			reset();
+			wake();
+		}
 	}
 }

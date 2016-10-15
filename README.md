@@ -156,6 +156,18 @@ gamma: [
 ]
 ```
 
+### Gamma toggle
+
+The `toggleHotkey` toggles the gamma between Clippy's gamma and 100%. This can be useful when watching videos or doing tasks that require seeing correct colors.
+
+```
+toggleHotkey: ctrl shift alt Z
+```
+
+### Gamma reset
+
+Some applications may interfere with the Windows gamma. For example, some OpenGL applications reset the gamma to 100% when they close. This is relatively rare, but if this happens, clicking the Clippy icon in the system tray will reapply Clippy's gamma setting. You could also use the toggle hotkey twice to toggle gamma off and then back on.
+
 ### Gamma limits
 
 By default, Windows limits the range of gamma values from 0.5 to 1. This is a safeguard against software setting the gamma to 0 so you only see a black screen. To remove these limits, apply this [registry file](https://github.com/EsotericSoftware/clippy/blob/master/build/gamma.reg) and reboot. Clippy still prevents gamma from being set so low that the screen is completely black.
@@ -163,6 +175,33 @@ By default, Windows limits the range of gamma values from 0.5 to 1. This is a sa
 ### Gamma alternatives
 
 Other software such as [f.lux](http://justgetflux.com/) or [Sunset Screen](http://www.skytopia.com/software/sunsetscreen/) can also adjust the gamma, but they provide only day and night settings while Clippy's timeline allows for any number of transitions. Also, Clippy allows the red, green, and blue amounts to be set separately. By reducing the green slightly less than the blue, the red tint on the screen will be much less noticeable.
+
+## Break warnings
+
+Research shows that sitting for long periods of time is detrimental to your health and is not mitigated by extended activity at other times. Clippy can monitor keyboard and mouse access and provide a warning when the computer has been used without a break for too long. A popup is shown in the bottom right corner of the screen which displays the number of minutes without a break. Set `breakWarningMinutes` to zero to disable. `breakResetMinutes` sets the duration of the break, after which the popup is hidden.
+
+```
+breakWarningMinutes: 55
+breakResetMinutes: 5
+```
+
+### Warning sounds
+
+By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable.
+
+```
+breakStartSound: breakStart
+breakFlashSound: breakFlash
+breakEndSound: breakEnd
+```
+
+### Warning toggle
+
+The `toggleHotkey` toggles the break warning dialog. This can be useful when watching videos or accessing something the dialog covers. When toggled back on, the break time is remembered.
+
+```
+toggleHotkey: ctrl shift alt Z
+```
 
 ## Philips Hue
 
@@ -286,6 +325,27 @@ philipsHue: [
 
 The `on` timeline is used when the light is turned on normally. The `onHeld` and `offHeld` timelines are used after the respective on or off buttons are held down for a few seconds. To return to the `on` timeline, press the on button momentarily.
 
+If an `onHeld` or `offHeld` timeline has only one entry and that entry does not have a time, then after the one entry is applied the `on` timeline is set as the active timeline. Using this sort of "momentary" timeline allows holding a button to turn everything off but without staying on that timeline, which gives another timeline the ability to turn the lights back on. For example, this configuration allows holding off to turn off everything, but the `on` timeline will still turn the lights on in the morning.
+
+```
+{
+	name: group:Bedroom
+	model: LCT001
+	switch: Bed switch
+	timelines: {
+		offHeld: [
+			{ power: off, brightness: 0, r: 0, g: 0, b: 0 }
+		]
+		on: [
+			{ time: 7:00am, power: on, brightness: 0, r: 1, g: 0, b: 0 }
+			{ time: 7:30am, brightness: 1, r: 1, g: 1, b: 1 }
+			{ time: 10:59pm, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
+			{ time: 11:00pm, brightness: 0.6, r: 1, g: 0, b: 0 }
+		]
+	}
+}
+```
+
 #### Multiple switches
 
 Multiple switches can be used to control the same lights by defining multiple sections with the same name but different switches:
@@ -365,15 +425,15 @@ philipsHue: [
 				{ time: 12:00am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
 			]
 			on: [
+				{ time: 12:00am, brightness: 0.4, r: 1, g: 0.6, b: 0.42 }
+				{ time: 12:01am, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 12:02am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
 				{ time: 1:00am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
 				{ time: 4:30am, brightness: 0.25, r: 1, g: 0.4, b: 0.25 }
 				{ time: 5:00am, brightness: 1, r: 1, g: 0.94, b: 0.85 }
 				{ time: 5:00pm, brightness: 1, r: 1, g: 0.84, b: 0.6 }
 				{ time: 7:00pm, brightness: 0.74, r: 1, g: 0.75, b: 0.59 }
 				{ time: 9:00pm, brightness: 0.74, r: 1, g: 0.72, b: 0.54 }
-				{ time: 12:00am, brightness: 0.4, r: 1, g: 0.6, b: 0.42 }
-				{ time: 12:01am, brightness: 0, r: 1, g: 0, b: 0 }
-				{ time: 12:02am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
 			]
 		}
 	}
@@ -389,15 +449,15 @@ philipsHue: [
 				{ time: 12:00am, power: on, brightness: 1, r: 1, g: 1, b: 1 }
 			]
 			on: [
+				{ time: 12:00am, brightness: 0.4, r: 1, g: 0.6, b: 0.42 }
+				{ time: 12:01am, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 12:02am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
 				{ time: 1:00am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
 				{ time: 4:30am, brightness: 0.25, r: 1, g: 0.4, b: 0.25 }
 				{ time: 5:00am, brightness: 1, r: 1, g: 0.94, b: 0.85 }
 				{ time: 5:00pm, brightness: 1, r: 1, g: 0.84, b: 0.6 }
 				{ time: 7:00pm, brightness: 0.74, r: 1, g: 0.75, b: 0.59 }
 				{ time: 9:00pm, brightness: 0.74, r: 1, g: 0.72, b: 0.54 }
-				{ time: 12:00am, brightness: 0.4, r: 1, g: 0.6, b: 0.42 }
-				{ time: 12:01am, brightness: 0, r: 1, g: 0, b: 0 }
-				{ time: 12:02am, brightness: 0.37, r: 1, g: 0.55, b: 0.37 }
 			]
 		}
 	}
@@ -407,7 +467,7 @@ philipsHue: [
 		switch: Bed switch
 		timelines: {
 			offHeld: [
-				{ time: 12:00am, power: off, brightness: 0, r: 0, g: 0, b: 0 }
+				{ power: off, brightness: 0, r: 0, g: 0, b: 0 }
 			]
 			onHeld: [
 				{ time: 12:00am, power: on, brightness: 0.35, r: 1, g: 0.5, b: 0.35 }
@@ -425,6 +485,7 @@ philipsHue: [
 				{ time: 8:26am, brightness: 1, r: 0, g: 0, b: 1 }
 				{ time: 8:29am, brightness: 1, r: 0, g: 0, b: 1 }
 				{ time: 8:30am, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 1:52pm, power: on, brightness: 1, r: 1, g: 0, b: 0 }
 				{ time: 6:00pm, brightness: 0.85, r: 1, g: 0.85, b: 0.65 }
 				{ time: 8:00pm, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
 				{ time: 11:00pm, brightness: 0.5, r: 1, g: 0.6, b: 0.4 }
@@ -438,7 +499,7 @@ philipsHue: [
 		switch: Desk switch
 		timelines: {
 			offHeld: [
-				{ time: 12:00am, brightness: 0, r: 1, g: 0, b: 0 }
+				{ time: 12:00am, brightness: 0.2, r: 1, g: 0, b: 0 }
 			]
 			onHeld: [
 				{ time: 12:00am, power: on, brightness: 1, r: 1, g: 1, b: 1 }
@@ -456,6 +517,7 @@ philipsHue: [
 				{ time: 8:26am, brightness: 1, r: 0, g: 0, b: 1 }
 				{ time: 8:29am, brightness: 1, r: 0, g: 0, b: 1 }
 				{ time: 8:30am, brightness: 1, r: 1, g: 1, b: 1 }
+				{ time: 1:52pm, power: on, brightness: 1, r: 1, g: 0, b: 0 }
 				{ time: 6:00pm, brightness: 0.85, r: 1, g: 0.85, b: 0.65 }
 				{ time: 8:00pm, brightness: 0.74, r: 1, g: 0.7, b: 0.5 }
 				{ time: 11:00pm, brightness: 0.5, r: 1, g: 0.6, b: 0.4 }

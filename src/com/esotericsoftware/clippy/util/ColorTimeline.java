@@ -112,8 +112,8 @@ abstract public class ColorTimeline {
 		float tr, tg, tb, tbrightness, kelvin = 0;
 		if (duration > 0) {
 			float a = elapsed / (float)duration;
-			if (fromTime.temp != 0 && toTime.temp != 0) {
-				kelvin = fromTime.temp + (toTime.temp - fromTime.temp) * a;
+			if (fromTime.kelvin != 0 && toTime.kelvin != 0) {
+				kelvin = fromTime.kelvin + (toTime.kelvin - fromTime.kelvin) * a;
 				float[] rgb = kelvinToRGB(kelvin);
 				tr = rgb[0];
 				tg = rgb[1];

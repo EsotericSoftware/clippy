@@ -41,7 +41,6 @@ import com.esotericsoftware.clippy.util.Sun;
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonException;
 import com.esotericsoftware.jsonbeans.JsonReader;
-import com.esotericsoftware.jsonbeans.JsonSerializable;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
 import com.esotericsoftware.jsonbeans.OutputType;
@@ -59,6 +58,7 @@ public class Config {
 	public boolean allowDuplicateClips;
 	public int maxLengthToStore = 1024 * 1024; // 1 MB
 	public String log = "info";
+	public String toggleHotkey = "ctrl shift alt Z";
 	public String uploadHotkey = "ctrl shift V";
 
 	public int popupWidth = 640;
@@ -93,6 +93,9 @@ public class Config {
 	public String ftpUrl;
 
 	public int breakWarningMinutes = 55;
+	public String breakStartSound = "breakStart";
+	public String breakFlashSound = "breakFlash";
+	public String breakEndSound = "breakEnd";
 	public int breakResetMinutes = 5;
 
 	public ArrayList<ColorTime> gamma;
@@ -174,19 +177,19 @@ public class Config {
 		static private final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mma");
 
 		String time;
-		public float brightness, r, g, b, temp;
+		public float brightness, r, g, b, kelvin;
 		public Power power;
 
-		public transient int dayMillis, sunrise, sunset;
+		public transient int dayMillis = -1, sunrise, sunset;
 
 		public ColorTime () {
 		}
 
 		public void write (Json json) {
-			json.writeField(this, "time");
+			if (time != null) json.writeField(this, "time");
 			if (power == Power.on || power == Power.off) json.writeField(this, "power");
 			json.writeField(this, "brightness");
-			if (temp == 0) {
+			if (kelvin == 0) {
 				json.writeField(this, "r");
 				json.writeField(this, "g");
 				json.writeField(this, "b");
@@ -197,14 +200,15 @@ public class Config {
 		public void read (Json json, JsonValue jsonData) {
 			json.readFields(this, jsonData);
 
-			if (temp != 0) {
-				float[] rgb = ColorTimeline.kelvinToRGB(temp);
+			if (kelvin != 0) {
+				float[] rgb = ColorTimeline.kelvinToRGB(kelvin);
 				r = rgb[0];
 				g = rgb[1];
 				b = rgb[2];
 			}
 
 			String time = this.time;
+			if (time == null) return;
 			if (time.startsWith("sunrise") || time.startsWith("sunset")) {
 				double latitude;
 				int add = 0;
@@ -246,10 +250,15 @@ public class Config {
 		}
 
 		public String toString () {
-			if (temp != 0)
-				return "[" + (dayMillis / 3600000) + ":" + (dayMillis % 3600000) / 60000 + ", " + temp + "K]";
+			String timeString;
+			if (dayMillis < 0)
+				timeString = "";
 			else
-				return "[" + (dayMillis / 3600000) + ":" + (dayMillis % 3600000) / 60000 + ", " + r + "," + g + "," + b + "]";
+				timeString = (dayMillis / 3600000) + ":" + (dayMillis % 3600000) / 60000 + ", ";
+			if (kelvin != 0)
+				return "[" + timeString + kelvin + "K]";
+			else
+				return "[" + timeString + r + "," + g + "," + b + "]";
 		}
 
 		static public enum Power {
@@ -269,7 +278,7 @@ public class Config {
 		public HashMap<String, ArrayList<ColorTime>> times;
 
 		public transient PhilipsHueTimeline timeline;
-		
+
 		public void write (Json json) {
 			json.writeField(this, "name");
 			json.writeField(this, "model");

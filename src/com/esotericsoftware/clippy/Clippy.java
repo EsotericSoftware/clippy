@@ -48,16 +48,17 @@ public class Clippy {
 	static public Clippy instance;
 	static public final File logFile = new File(System.getProperty("user.home"), ".clippy/clippy.log");
 
-	Config config;
+	final Config config;
 	ClipDataStore db;
-	Popup popup;
-	Menu menu;
-	Tray tray;
-	Keyboard keyboard;
-	Clipboard clipboard;
-	Screenshot screenshot;
+	final Popup popup;
+	final Menu menu;
+	final Tray tray;
+	final Keyboard keyboard;
+	final Clipboard clipboard;
+	final Screenshot screenshot;
 	Upload textUpload, imageUpload, fileUpload;
-	Gamma gamma;
+	final Gamma gamma;
+	final BreakWarning breakWarning;
 
 	public Clippy () {
 		instance = this;
@@ -129,6 +130,7 @@ public class Clippy {
 
 		screenshot = new Screenshot();
 
+		final KeyStroke toggleHotkey = KeyStroke.getKeyStroke(config.toggleHotkey);
 		final KeyStroke popupHotkey = KeyStroke.getKeyStroke(config.popupHotkey);
 		final KeyStroke uploadHotkey = KeyStroke.getKeyStroke(config.uploadHotkey);
 		final KeyStroke imgurScreenshotHotkey = KeyStroke.getKeyStroke(config.screenshotHotkey);
@@ -137,7 +139,11 @@ public class Clippy {
 		final KeyStroke imgurScreenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
-				if (keyStroke.equals(popupHotkey))
+				if (keyStroke.equals(toggleHotkey)) {
+					if (INFO) info("Toggle gamma and break warning.");
+					gamma.toggle();
+					breakWarning.toggle();
+				} else if (keyStroke.equals(popupHotkey))
 					showPopup(keyStroke);
 				else if (keyStroke.equals(uploadHotkey)) //
 					upload();
@@ -151,6 +157,7 @@ public class Clippy {
 					screenshot.lastRegion();
 			}
 		};
+		if (toggleHotkey != null) keyboard.registerHotkey(toggleHotkey);
 		if (popupHotkey != null) keyboard.registerHotkey(popupHotkey);
 		if (uploadHotkey != null) keyboard.registerHotkey(uploadHotkey);
 		if (imgurScreenshotHotkey != null) keyboard.registerHotkey(imgurScreenshotHotkey);
@@ -182,7 +189,7 @@ public class Clippy {
 		String text = clipboard.getContents();
 		if (text != null) store(text);
 
-		new BreakWarning();
+		breakWarning = new BreakWarning();
 		gamma = new Gamma();
 		new PhilipsHue();
 

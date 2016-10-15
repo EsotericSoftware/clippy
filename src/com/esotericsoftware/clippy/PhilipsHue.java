@@ -304,6 +304,10 @@ public class PhilipsHue {
 				}
 			}
 			super.update();
+
+			// If timeline has 1 entry and it has no time, go back to the on timeline after first update.
+			// This allows holding a button to turn everything off without staying on the offHeld timeline.
+			if (timeline != Timeline.on && times != null && times.size() == 1 && times.get(0).time == null) setTimeline(Timeline.on);
 		}
 
 		void handleEvent (SwitchEvent event, boolean forward) {
