@@ -40,9 +40,9 @@ public class BreakWarning {
 				if (inactiveMinutes >= clippy.config.breakResetMinutes) lastBreakTime = System.currentTimeMillis();
 
 				long activeMinutes = (System.currentTimeMillis() - lastBreakTime) / 1000 / 60;
-				if (activeMinutes >= clippy.config.breakWarningMinutes || true) showBreakDialog();
+				if (activeMinutes >= clippy.config.breakWarningMinutes) showBreakDialog();
 			}
-		}, 1000, 60 * 1000);
+		}, clippy.config.breakWarningMinutes * 60 * 1000, 60 * 1000);
 	}
 
 	void showBreakDialog () {
@@ -66,7 +66,7 @@ public class BreakWarning {
 
 							float percent = 1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000);
 							String message;
-							if (percent < 0.99f) {
+							if (percent < 0.75f) {
 								indeterminateMillis = 0;
 								long breakSeconds = clippy.config.breakResetMinutes * 60 - inactiveMillis / 1000;
 								long minutes = breakSeconds / 60, seconds = breakSeconds - minutes * 60;
