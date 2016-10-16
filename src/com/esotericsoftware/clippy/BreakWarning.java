@@ -20,6 +20,8 @@ import com.esotericsoftware.clippy.util.Util;
 public class BreakWarning {
 	final Clippy clippy = Clippy.instance;
 	final LASTINPUTINFO lastInputInfo = new LASTINPUTINFO();
+	long inactiveTime, lastInactiveTime;
+	int inactiveCount;
 	long lastBreakTime = System.currentTimeMillis();
 	volatile ProgressBar progressBar;
 	Clip startClip, flashClip, endClip;
@@ -36,7 +38,7 @@ public class BreakWarning {
 			public void run () {
 				if (progressBar != null) return;
 
-				long inactiveMinutes = getInactiveMillis() / 1000 / 60;
+				long inactiveMinutes = getInactiveMillis(true) / 1000 / 60;
 				if (inactiveMinutes >= clippy.config.breakResetMinutes) lastBreakTime = System.currentTimeMillis();
 
 				long activeMinutes = (System.currentTimeMillis() - lastBreakTime) / 1000 / 60;
@@ -60,7 +62,7 @@ public class BreakWarning {
 					public void run () {
 						float indeterminateMillis = 5000;
 						while (true) {
-							long inactiveMillis = getInactiveMillis();
+							long inactiveMillis = getInactiveMillis(false);
 							long inactiveMinutes = inactiveMillis / 1000 / 60;
 							if (inactiveMinutes >= clippy.config.breakResetMinutes) break;
 
@@ -90,19 +92,19 @@ public class BreakWarning {
 							}
 							progressBar.progressBar.setString(message);
 
-							indeterminateMillis -= 16;
+							indeterminateMillis -= 100;
 							if (indeterminateMillis > 0) {
 								if (!progressBar.progressBar.isIndeterminate()) {
 									playClip(flashClip);
 									progressBar.progressBar.setIndeterminate(true);
 								}
 							} else {
-								if (indeterminateMillis < -5 * 60 * 1000) indeterminateMillis = 5000;
+								if (indeterminateMillis < -5 * 60 * 1000 && percent >= 0.99f) indeterminateMillis = 5000;
 								progressBar.setProgress(percent);
 								progressBar.toFront();
 								progressBar.setAlwaysOnTop(true);
 							}
-							Util.sleep(16);
+							Util.sleep(100);
 						}
 						lastBreakTime = System.currentTimeMillis();
 						playClip(endClip);
@@ -149,9 +151,22 @@ public class BreakWarning {
 		}
 	}
 
-	long getInactiveMillis () {
+	long getInactiveMillis (boolean sensitive) {
 		Win.User32.GetLastInputInfo(lastInputInfo);
-		return Win.Kernel32.GetTickCount() - lastInputInfo.dwTime;
+		long time = lastInputInfo.dwTime;
+		if (sensitive)
+			inactiveTime = time;
+		else {
+			if (time != lastInactiveTime) {
+				if (time - lastInactiveTime < 4000) {
+					inactiveCount++;
+					if (inactiveCount > 6) inactiveTime = time;
+				} else
+					inactiveCount = 0;
+				lastInactiveTime = time;
+			}
+		}
+		return Win.Kernel32.GetTickCount() - inactiveTime;
 	}
 
 	public void toggle () {
