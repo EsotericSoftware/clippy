@@ -45,6 +45,7 @@ public class Screenshot {
 	Robot robot;
 	final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {4}, 0);
 	int lastX1 = -1, lastY1, lastX2, lastY2, lastType;
+	private boolean lastForcePNG;
 
 	public Screenshot () {
 		try {
@@ -56,7 +57,7 @@ public class Screenshot {
 
 	public void screen () {
 		if (robot == null) return;
-		Upload.uploadImage(robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())));
+		Upload.uploadImage(robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())), false);
 	}
 
 	public void app () {
@@ -69,7 +70,7 @@ public class Screenshot {
 
 		RECT rect = new RECT();
 		if (GetWindowRect(hwnd, rect)) Upload.uploadImage(
-			robot.createScreenCapture(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)));
+			robot.createScreenCapture(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)), false);
 	}
 
 	public void region () {
@@ -199,7 +200,7 @@ public class Screenshot {
 						lastX2 = x2;
 						lastY2 = y2;
 						lastType = type;
-						uploadRegion(image, x1, y1, x2, y2, type);
+						uploadRegion(image, x1, y1, x2, y2, type, (e.getModifiers() & InputEvent.CTRL_MASK) != 0);
 					}
 				});
 				addKeyListener(new KeyAdapter() {
@@ -310,15 +311,16 @@ public class Screenshot {
 	public void lastRegion () {
 		if (lastX1 == -1) return;
 		BufferedImage robotImage = robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-		uploadRegion(robotImage, lastX1, lastY1, lastX2, lastY2, robotImage.getType());
+		uploadRegion(robotImage, lastX1, lastY1, lastX2, lastY2, robotImage.getType(), lastForcePNG);
 	}
 
-	void uploadRegion (Image image, int x1, int y1, int x2, int y2, int type) {
+	void uploadRegion (Image image, int x1, int y1, int x2, int y2, int type, boolean forcePNG) {
+		lastForcePNG = forcePNG;
 		BufferedImage subimage = new BufferedImage(x2 - x1, y2 - y1, type);
 		Graphics2D g = subimage.createGraphics();
 		g.drawImage(image, 0, 0, subimage.getWidth(), subimage.getHeight(), x1, y1, x2, y2, null);
 		g.dispose();
-		Upload.uploadImage(subimage);
+		Upload.uploadImage(subimage, forcePNG);
 	}
 
 	static public void main (String[] args) throws Exception {
