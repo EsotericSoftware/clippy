@@ -13,6 +13,7 @@ import java.util.TimerTask;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 
 import com.esotericsoftware.clippy.Win.LASTINPUTINFO;
 import com.esotericsoftware.clippy.util.Util;
@@ -50,7 +51,7 @@ public class BreakWarning {
 	void showBreakDialog () {
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
-				playClip(startClip);
+				playClip(startClip, 1);
 				progressBar = new ProgressBar("");
 				progressBar.clickToDispose = false;
 				progressBar.red("");
@@ -61,6 +62,7 @@ public class BreakWarning {
 
 					public void run () {
 						float indeterminateMillis = 5000;
+						float volume = 0.05f;
 						while (true) {
 							long inactiveMillis = getInactiveMillis(false);
 							long inactiveMinutes = inactiveMillis / 1000 / 60;
@@ -95,7 +97,8 @@ public class BreakWarning {
 							indeterminateMillis -= 100;
 							if (indeterminateMillis > 0) {
 								if (!progressBar.progressBar.isIndeterminate()) {
-									playClip(flashClip);
+									playClip(flashClip, volume);
+									volume += 0.1f;
 									progressBar.progressBar.setIndeterminate(true);
 								}
 							} else {
@@ -107,7 +110,7 @@ public class BreakWarning {
 							Util.sleep(100);
 						}
 						lastBreakTime = System.currentTimeMillis();
-						playClip(endClip);
+						playClip(endClip, 1);
 						progressBar.done("Break complete!", 2000);
 						progressBar = null;
 					}
@@ -116,9 +119,12 @@ public class BreakWarning {
 		});
 	}
 
-	void playClip (Clip clip) {
+	void playClip (Clip clip, float volume) {
+		if (volume < 0) volume = 0;
+		if (volume > 1) volume = 1;
 		clip.stop();
 		clip.setFramePosition(0);
+		((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(volume));
 		clip.start();
 	}
 
