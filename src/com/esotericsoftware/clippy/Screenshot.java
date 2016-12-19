@@ -284,8 +284,6 @@ public class Screenshot {
 				g.drawLine(x + crosshair, y, width, y);
 				g.drawLine(x, y - crosshair, x, 0);
 				g.drawLine(x, y + crosshair, x, height);
-				g.setXORMode(Color.white);
-				g.setColor(Color.black);
 				g.fillRect(x - 1, y - crosshair, 3, crosshair * 2 + 1);
 				g.fillRect(x - crosshair, y - 1, crosshair - 1, 3);
 				g.fillRect(x + 2, y - 1, crosshair - 1, 3);
