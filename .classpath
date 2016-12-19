@@ -16,5 +16,6 @@
 	<classpathentry kind="lib" path="libs/commons-logging-1.2.jar"/>
 	<classpathentry kind="lib" path="libs/httpclient-4.5.2.jar"/>
 	<classpathentry kind="lib" path="libs/httpcore-4.4.4.jar"/>
+	<classpathentry kind="lib" path="libs/clippy-natives.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -3,6 +3,7 @@ package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.clippy.Win.User32.*;
 import static com.esotericsoftware.minlog.Log.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -42,18 +43,9 @@ public class Screenshot {
 	static final int crosshair = 16;
 
 	final Clippy clippy = Clippy.instance;
-	Robot robot;
 	final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {4}, 0);
 	int lastX1 = -1, lastY1, lastX2, lastY2, lastType;
 	private boolean lastForcePNG;
-
-	public Screenshot () {
-		try {
-			robot = new Robot(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice());
-		} catch (Exception ex) {
-			if (ERROR) error("Error creating robot.", ex);
-		}
-	}
 
 	public void screen () {
 		if (robot == null) return;

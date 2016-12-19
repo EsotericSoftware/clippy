@@ -145,6 +145,10 @@ public class Win {
 
 		static public native void keybd_event (byte bVk, byte bScan, int dwFlags, Pointer dwExtraInfo);
 
+		static public native short GetAsyncKeyState (int vKey);
+
+		static public native short GetKeyState (int nVirtKey);
+
 		// Clipboard
 
 		static public native boolean AddClipboardFormatListener (Pointer hWnd);

@@ -26,6 +26,7 @@ import static java.awt.event.KeyEvent.*;
 
 import java.awt.EventQueue;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -135,6 +136,14 @@ public class Keyboard {
 
 	public void sendKeyUp (byte vk) {
 		keybd_event(vk, (byte)0, KEYEVENTF_KEYUP, null);
+	}
+
+	public boolean isKeyDown (int vk) {
+		return (GetAsyncKeyState(vk) & (1 << 15)) != 0;
+	}
+
+	public boolean getCapslock () {
+		return (GetKeyState(KeyEvent.VK_CAPS_LOCK) & 0x0001) != 0;
 	}
 
 	static public int getVK (KeyStroke keyStroke) {

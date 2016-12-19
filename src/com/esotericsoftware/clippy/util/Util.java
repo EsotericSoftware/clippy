@@ -22,6 +22,8 @@ package com.esotericsoftware.clippy.util;
 
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.awt.GraphicsEnvironment;
+import java.awt.Robot;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -46,6 +48,15 @@ public class Util {
 	static private Path uploadFile = new File(System.getProperty("user.home"), ".clippy/upload").toPath();
 
 	static public Timer timer = new Timer("Clippy Timer", true);
+
+	static public Robot robot;
+	static {
+		try {
+			robot = new Robot(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice());
+		} catch (Exception ex) {
+			if (ERROR) error("Error creating robot.", ex);
+		}
+	}
 
 	static public final ExecutorService threadPool = Executors.newCachedThreadPool(new ThreadFactory() {
 		public Thread newThread (Runnable runnable) {
@@ -196,6 +207,12 @@ public class Util {
 	}
 
 	static public float clamp (float value, float min, float max) {
+		if (value < min) return min;
+		if (value > max) return max;
+		return value;
+	}
+	
+	static public double clamp (double value, double min, double max) {
 		if (value < min) return min;
 		if (value > max) return max;
 		return value;

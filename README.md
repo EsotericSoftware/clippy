@@ -10,7 +10,9 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interfere with your sleep schedule, [melatonin](https://en.wikipedia.org/wiki/Melatonin) production, and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
 
-* **Philips Hue** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
+* **Eye tracking** Clippy can use a [Tobii Eye Tracker 4C](https://tobiigaming.com/eye-tracker-4c/) to control the mouse. Just look at the screen where you want to click and press a hotkey.
+
+* **Lighting control** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
 ## Features and uses
 
@@ -187,7 +189,7 @@ breakResetMinutes: 5
 
 ### Warning sounds
 
-By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable.
+By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The warning sound is played periodically at increasing volume if a break is not taken. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable.
 
 ```
 breakStartSound: breakStart
@@ -203,9 +205,31 @@ The `toggleHotkey` toggles the break warning dialog. This can be useful when wat
 toggleHotkey: ctrl shift alt Z
 ```
 
-## Philips Hue
+## Eye tracking
 
-Clippy can connect to a Philips Hue bridge and adjust the color of lights based on the time of day. `philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically.
+Clippy enables control of the mouse using your eyes and a [Tobii Eye Tracker 4C](https://tobiigaming.com/eye-tracker-4c/). Look where you want to click, then press the hotkey to click at that position.
+
+```
+tobiiEnabled: true
+tobiiClickHotkey: CAPS_LOCK
+```
+
+When eye tracking is accurate, mouse control is unreal -- it feels like your brain is controlling the computer! However, often it is not perfectly accurate and can be off the target by 1-2" (2.5-5cm). Clippy solves this by using head tracking when you hold down the hotkey. Head tracking is much more accurate, but not suitable for moving the mouse across the entire screen. Clippy uses eye tracking to move the mouse large distances and head tracking to make fine adjustments.
+
+When the hotkey is pressed, the mouse is placed at (or near) the position on the screen where you are looking. While holding the hotkey, move your head left, right, up, or down slightly to move the mouse. This allows you to adjust for any eye tracking inaccuracy. The mouse is clicked when you release the hotkey. Press shift while holding the hotkey to cancel head tracking without clicking.
+
+If the mouse is moved while the hotkey is pressed, head tracking is cancelled without clicking. This enables eye tracking to teleport the mouse cursor near where you want it, and then you can use the mouse to adjust the position rather than head tracking. This is similar to Tobii's "mouse warp", but is triggered only when you press the hotkey rather than all the time.
+
+The sensitivity settings control how head movement (millimeters) is translated to mouse cursor movement (pixels). Higher numbers cause head movement to move the mouse cursor more. It can be helpful to use a higher sensitivity for the Y axis, since it's more difficult to move your head up and down.
+
+```
+tobiiHeadSensitivityX: 5
+tobiiHeadSensitivityY: 7
+```
+
+## Lighting control
+
+Clippy can connect to a [Philips Hue](http://meethue.com) bridge and adjust the color of lights based on the time of day. `philipsHueEnabled` must be set to true to enable connecting to the Philips Hue bridge. Most users won't configure `philipsHueIP` and `philipsHueUser` manually. Instead, leave them set to `null` and Clippy will search for your Philips Hue bridge and configure the two settings automatically.
 
 ```
 philipsHueEnabled: true

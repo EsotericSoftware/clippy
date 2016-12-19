@@ -496,7 +496,9 @@ public class PhilipsHue {
 						if (value.equals("buttonevent")) {
 							if (!skipUntil(reader, ':')) break;
 							if (!collectUntil(reader, ',', '}', buffer)) break;
-							event = Integer.parseInt(buffer.toString());
+							value = buffer.toString();
+							if (value.equals("null")) continue; // Button has never been pressed.
+							event = Integer.parseInt(value);
 						} else if (value.equals("lastupdated")) {
 							if (!skipUntil(reader, '\"')) break;
 							if (!collectUntil(reader, '\"', -1, buffer)) break;

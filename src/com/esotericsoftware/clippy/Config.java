@@ -106,6 +106,11 @@ public class Config {
 	public int philipsHueDisableMinutes = 90;
 	public ArrayList<PhilipsHueLights> philipsHue;
 
+	public boolean tobiiEnabled;
+	public String tobiiClickHotkey = "CAPS_LOCK";
+	public float tobiiHeadSensitivityX = 5;
+	public float tobiiHeadSensitivityY = 7;
+
 	public Config () {
 		if (configFile.exists()) {
 			JsonValue root = new JsonReader().parse(configFile);

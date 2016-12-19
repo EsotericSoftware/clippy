@@ -25,11 +25,14 @@ import static com.esotericsoftware.minlog.Log.*;
 
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
@@ -59,6 +62,7 @@ public class Clippy {
 	Upload textUpload, imageUpload, fileUpload;
 	final Gamma gamma;
 	final BreakWarning breakWarning;
+	final Tobii tobii;
 
 	public Clippy () {
 		instance = this;
@@ -133,10 +137,13 @@ public class Clippy {
 		final KeyStroke toggleHotkey = KeyStroke.getKeyStroke(config.toggleHotkey);
 		final KeyStroke popupHotkey = KeyStroke.getKeyStroke(config.popupHotkey);
 		final KeyStroke uploadHotkey = KeyStroke.getKeyStroke(config.uploadHotkey);
-		final KeyStroke imgurScreenshotHotkey = KeyStroke.getKeyStroke(config.screenshotHotkey);
-		final KeyStroke imgurScreenshotAppHotkey = KeyStroke.getKeyStroke(config.screenshotAppHotkey);
-		final KeyStroke imgurScreenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
-		final KeyStroke imgurScreenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
+		final KeyStroke screenshotHotkey = KeyStroke.getKeyStroke(config.screenshotHotkey);
+		final KeyStroke screenshotAppHotkey = KeyStroke.getKeyStroke(config.screenshotAppHotkey);
+		final KeyStroke screenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
+		final KeyStroke screenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
+		final KeyStroke tobiiPressedHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiClickHotkey) : null;
+		List<KeyStroke> keys = Arrays.asList(toggleHotkey, popupHotkey, uploadHotkey, screenshotHotkey, screenshotAppHotkey,
+			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiPressedHotkey);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(toggleHotkey)) {
@@ -147,23 +154,27 @@ public class Clippy {
 					showPopup(keyStroke);
 				else if (keyStroke.equals(uploadHotkey)) //
 					upload();
-				else if (keyStroke.equals(imgurScreenshotHotkey)) //
+				else if (keyStroke.equals(screenshotHotkey)) //
 					screenshot.screen();
-				else if (keyStroke.equals(imgurScreenshotAppHotkey)) //
+				else if (keyStroke.equals(screenshotAppHotkey)) //
 					screenshot.app();
-				else if (keyStroke.equals(imgurScreenshotRegionHotkey)) //
+				else if (keyStroke.equals(screenshotRegionHotkey)) //
 					screenshot.region();
-				else if (keyStroke.equals(imgurScreenshotLastRegionHotkey)) //
+				else if (keyStroke.equals(screenshotLastRegionHotkey)) //
 					screenshot.lastRegion();
+				else if (keyStroke.equals(tobiiPressedHotkey)) //
+					tobii.hotkeyPressed(tobiiPressedHotkey.getKeyCode());
 			}
 		};
-		if (toggleHotkey != null) keyboard.registerHotkey(toggleHotkey);
-		if (popupHotkey != null) keyboard.registerHotkey(popupHotkey);
-		if (uploadHotkey != null) keyboard.registerHotkey(uploadHotkey);
-		if (imgurScreenshotHotkey != null) keyboard.registerHotkey(imgurScreenshotHotkey);
-		if (imgurScreenshotAppHotkey != null) keyboard.registerHotkey(imgurScreenshotAppHotkey);
-		if (imgurScreenshotRegionHotkey != null) keyboard.registerHotkey(imgurScreenshotRegionHotkey);
-		if (imgurScreenshotLastRegionHotkey != null) keyboard.registerHotkey(imgurScreenshotLastRegionHotkey);
+		for (KeyStroke key : keys) {
+			if (key != null) {
+				if (key.getKeyCode() == KeyEvent.VK_CAPS_LOCK && keyboard.getCapslock()) {
+					keyboard.sendKeyDown((byte)KeyEvent.VK_CAPS_LOCK);
+					keyboard.sendKeyUp((byte)KeyEvent.VK_CAPS_LOCK);
+				}
+				keyboard.registerHotkey(key);
+			}
+		}
 		keyboard.start();
 
 		clipboard = new Clipboard(config.maxLengthToStore) {
@@ -192,6 +203,7 @@ public class Clippy {
 		breakWarning = new BreakWarning();
 		gamma = new Gamma();
 		new PhilipsHue();
+		tobii = new Tobii();
 
 		if (INFO) info("Started.");
 	}
