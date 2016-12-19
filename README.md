@@ -14,6 +14,8 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * **Lighting control** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
+* **Dyanmic DNS** Clippy can keep your IP in sync with [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
+
 ## Features and uses
 
 * It is very common to copy multiple pieces of text. Since the Windows clipboard only holds a single item, without Clippy this means finding and copying the same text many times.
@@ -560,6 +562,19 @@ gamma: [
 	{ time: 11:30pm, brightness: 0.7, r: 1, g: 0.64, b: 0.4 }
 ]
 ```
+
+## Dyanmic DNS
+
+When your IP changes, Clippy can update your dynamic DNS entry at [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
+
+```
+dnsUser: Meow
+dnsPassword: password123
+dnsID: 1738294
+dnsMinutes: 30
+```
+
+The user and password settings are your DnsMadeEasy account credentials. You may optionally configure DnsMadeEasy to have a password per record, so you don't need to use your account password. Record ID identifies the record to update. Minutes is the number of minutes between IP checks.
 
 ## Database
 
