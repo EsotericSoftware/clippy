@@ -48,7 +48,7 @@ import com.esotericsoftware.minlog.Log;
 
 /** @author Nathan Sweet */
 public class Config {
-	static private final File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
+	static final File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
 	static private final Json json = new Json();
 	static {
 		json.setUsePrototypes(false);
@@ -110,6 +110,11 @@ public class Config {
 	public String tobiiClickHotkey = "CAPS_LOCK";
 	public float tobiiHeadSensitivityX = 5;
 	public float tobiiHeadSensitivityY = 7;
+
+	public String dnsUser;
+	public String dnsPassword;
+	public String dnsID;
+	public int dnsMinutes = 30;
 
 	public Config () {
 		if (configFile.exists()) {

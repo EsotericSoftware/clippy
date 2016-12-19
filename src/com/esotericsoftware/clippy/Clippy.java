@@ -167,13 +167,10 @@ public class Clippy {
 			}
 		};
 		for (KeyStroke key : keys) {
-			if (key != null) {
-				if (key.getKeyCode() == KeyEvent.VK_CAPS_LOCK && keyboard.getCapslock()) {
-					keyboard.sendKeyDown((byte)KeyEvent.VK_CAPS_LOCK);
-					keyboard.sendKeyUp((byte)KeyEvent.VK_CAPS_LOCK);
-				}
-				keyboard.registerHotkey(key);
-			}
+			if (key == null) continue;
+			if (key.getKeyCode() == KeyEvent.VK_CAPS_LOCK && keyboard.getCapslock())
+				keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
+			keyboard.registerHotkey(key);
 		}
 		keyboard.start();
 
@@ -204,6 +201,7 @@ public class Clippy {
 		gamma = new Gamma();
 		new PhilipsHue();
 		tobii = new Tobii();
+		new DnsMadeEasy();
 
 		if (INFO) info("Started.");
 	}
