@@ -20,6 +20,7 @@ public class Tobii {
 	double startGazeX, startGazeY, startHeadX, startHeadY;
 	volatile int lastMouseX, lastMouseY;
 	final Object mouseLock = new Object();
+	volatile int ignore;
 
 	public Tobii () {
 		if (!clippy.config.tobiiEnabled) return;
@@ -119,6 +120,10 @@ public class Tobii {
 	}
 
 	public void hotkeyPressed (final int vk) {
+		if (ignore > 0) {
+			ignore--;
+			return;
+		}
 		if (!connected) return;
 		if (hotkeyPressed) return;
 
@@ -149,6 +154,11 @@ public class Tobii {
 					}
 
 					sleep(16);
+				}
+
+				if (vk == KeyEvent.VK_CAPS_LOCK && clippy.keyboard.getCapslock()) {
+					ignore++;
+					clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
 				}
 
 				hotkeyPressed = false;
