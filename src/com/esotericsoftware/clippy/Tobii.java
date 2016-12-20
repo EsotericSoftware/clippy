@@ -158,8 +158,10 @@ public class Tobii {
 
 				if (vk == KeyEvent.VK_CAPS_LOCK && clippy.keyboard.getCapslock()) {
 					ignore++;
-					clippy.keyboard.sendKeyUp((byte)KeyEvent.VK_CAPS_LOCK);
-					clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
+					if (clippy.keyboard.isKeyDown(vk))
+						clippy.keyboard.sendKeyUp((byte)KeyEvent.VK_CAPS_LOCK);
+					else
+						clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
 				}
 
 				hotkeyPressed = false;
