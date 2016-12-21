@@ -17,10 +17,11 @@ public class Tobii {
 	EyeX eyeX;
 	volatile boolean connected, hotkeyPressed;
 	volatile double gazeX, gazeY, headX, headY;
-	double startGazeX, startGazeY, startHeadX, startHeadY;
+	double startGazeX, startGazeY, startGazeCalibratedX, startGazeCalibratedY, startHeadX, startHeadY;
 	volatile int lastMouseX, lastMouseY;
 	final Object mouseLock = new Object();
 	volatile int ignore;
+	Buffer calibration = new Buffer(50 * 4);
 
 	public Tobii () {
 		if (!clippy.config.tobiiEnabled) return;
@@ -35,8 +36,8 @@ public class Tobii {
 		}
 
 		eyeX = new EyeX("clippy") {
-			private double[] samples = new double[6 * 2];
-			private int sampleIndex, sampleSize, samplesSkipped;
+			private Buffer samples = new Buffer(6 * 2);
+			private int samplesSkipped;
 
 			protected void event (Event event) {
 				switch (event) {
@@ -72,8 +73,10 @@ public class Tobii {
 			}
 
 			protected void gazeEvent (double timestamp, double x, double y) {
-				gazeX = x;
-				gazeY = y;
+				synchronized (eyeX) {
+					gazeX = x;
+					gazeY = y;
+				}
 			}
 
 			protected void eyeEvent (double timestamp, boolean hasLeftEyePosition, boolean hasRightEyePosition, double leftEyeX,
@@ -81,34 +84,20 @@ public class Tobii {
 				double rightEyeX, double rightEyeY, double rightEyeZ, double rightEyeXNormalized, double rightEyeYNormalized,
 				double rightEyeZNormalized) {
 				if (hasLeftEyePosition) {
-					int capacity = samples.length;
-
 					// Discard samples too far from the average.
-					if (sampleSize > 0 && (Math.abs(leftEyeX - headX) > 50 || Math.abs(leftEyeY - headY) > 50)) {
+					if (samples.size > 0 && (Math.abs(leftEyeX - headX) > 50 || Math.abs(leftEyeY - headY) > 50)) {
 						samplesSkipped++;
-						if (samplesSkipped < capacity) return;
-						sampleIndex = 0;
-						sampleSize = 0;
+						if (samplesSkipped < 12) return;
+						samples.clear();
 					}
 					samplesSkipped = 0;
 
-					// Store samples in circular buffer.
-					samples[sampleIndex] = leftEyeX;
-					samples[sampleIndex + 1] = leftEyeY;
-					sampleIndex += 2;
-					if (sampleSize < capacity) sampleSize = sampleIndex;
-					if (sampleIndex >= capacity) sampleIndex = 0;
-
-					// Use sample average as head position.
-					int n = sampleSize;
-					float x = 0, y = 0;
-					for (int i = 0; i < n; i += 2) {
-						x += samples[i];
-						y += samples[i + 1];
+					samples.add(leftEyeX);
+					samples.add(leftEyeY);
+					synchronized (eyeX) {
+						headX = samples.average(0, 2);
+						headY = samples.average(1, 2);
 					}
-					n /= 2;
-					headX = x / n;
-					headY = y / n;
 
 					if (hotkeyPressed) headMoved();
 				}
@@ -127,19 +116,65 @@ public class Tobii {
 		if (!connected) return;
 		if (hotkeyPressed) return;
 
-		startGazeX = gazeX;
-		startGazeY = gazeY;
-		startHeadX = headX;
-		startHeadY = headY;
-		setMouse(gazeX, gazeY);
+		synchronized (eyeX) {
+			startGazeX = gazeX;
+			startGazeY = gazeY;
+			startHeadX = headX;
+			startHeadY = headY;
+		}
+		double x = startGazeX, y = startGazeY;
+
+		// Find two closest calibration points.
+		int best1 = -1, best2 = -1;
+		double bestDist1 = Double.MAX_VALUE, bestDist2 = Double.MAX_VALUE;
+		for (int i = 0, n = calibration.size; i < n; i += 4) {
+			double px = calibration.values[i], py = calibration.values[i + 1];
+			double dist = Point.distance(x, y, px, py);
+			if (dist > 400) continue;
+			if (dist < bestDist1) {
+				bestDist2 = bestDist1;
+				best2 = best1;
+				bestDist1 = dist;
+				best1 = i;
+			} else if (dist < bestDist2) {
+				bestDist2 = dist;
+				best2 = i;
+			}
+		}
+
+		// Bilinear interpolation to determine amount to shift gaze point.
+		if (best1 != -1 && best2 != -1) {
+			double p1x = calibration.values[best1];
+			double p1y = calibration.values[best1 + 1];
+			double v1x = calibration.values[best1 + 2];
+			double v1y = calibration.values[best1 + 3];
+
+			double p2x = calibration.values[best2];
+			double p2y = calibration.values[best2 + 1];
+			double v2x = calibration.values[best2 + 2];
+			double v2y = calibration.values[best2 + 3];
+
+			double shiftX = (p2x - x) / (p2x - p1x) * v1x + (x - p1x) / (p2x - p1x) * v2x;
+			shiftX = v1x < v2x ? clamp(shiftX, v1x, v2x) : clamp(shiftX, v2x, v1x);
+			double shiftY = (p2y - y) / (p2y - p1y) * v1y + (y - p1y) / (p2y - p1y) * v2y;
+			shiftY = v1y < v2y ? clamp(shiftY, v1y, v2y) : clamp(shiftY, v2y, v1y);
+
+			x += shiftX;
+			y += shiftY;
+		}
+		startGazeCalibratedX = x;
+		startGazeCalibratedY = y;
+
+		setMouse(x, y);
 		hotkeyPressed = true;
 
 		threadPool.submit(new Runnable() {
 			public void run () {
 				while (true) {
 					// If mouse was moved manually, abort without clicking.
+					Point mouse;
 					synchronized (mouseLock) {
-						Point mouse = MouseInfo.getPointerInfo().getLocation();
+						mouse = MouseInfo.getPointerInfo().getLocation();
 						if (lastMouseX != mouse.x || lastMouseY != mouse.y) break;
 					}
 
@@ -148,6 +183,12 @@ public class Tobii {
 
 					// Click when hotkey is released.
 					if (!clippy.keyboard.isKeyDown(vk)) {
+						if (mouse.distance(startGazeCalibratedX, startGazeCalibratedY) > 10) {
+							calibration.add(startGazeX);
+							calibration.add(startGazeY);
+							calibration.add(mouse.x - startGazeCalibratedX);
+							calibration.add(mouse.y - startGazeCalibratedY);
+						}
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 						break;
@@ -170,9 +211,12 @@ public class Tobii {
 	}
 
 	void headMoved () {
-		double shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
-		double shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
-		setMouse(startGazeX + shiftX, startGazeY + shiftY);
+		double shiftX, shiftY;
+		synchronized (eyeX) {
+			shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
+			shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
+		}
+		setMouse(startGazeCalibratedX + shiftX, startGazeCalibratedY + shiftY);
 	}
 
 	void setMouse (double xd, double yd) {
@@ -182,6 +226,35 @@ public class Tobii {
 			Point mouse = MouseInfo.getPointerInfo().getLocation();
 			lastMouseX = mouse.x;
 			lastMouseY = mouse.y;
+		}
+	}
+
+	static private class Buffer {
+		final double[] values;
+		int index, size;
+
+		public Buffer (int size) {
+			values = new double[size];
+		}
+
+		public void add (double value) {
+			values[index++] = value;
+			int capacity = values.length;
+			if (size < capacity) size = index;
+			if (index >= capacity) index = 0;
+		}
+
+		public double average (int offset, int stride) {
+			int n = size;
+			double sum = 0;
+			for (int i = offset; i < n; i += stride)
+				sum += values[i];
+			return sum / (n >> 1);
+		}
+
+		public void clear () {
+			index = 0;
+			size = 0;
 		}
 	}
 }
