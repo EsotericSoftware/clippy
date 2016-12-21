@@ -11,8 +11,6 @@ import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
-import org.h2.util.MathUtils;
-
 import com.esotericsoftware.clippy.tobii.EyeX;
 import com.esotericsoftware.clippy.util.SharedLibraryLoader;
 
@@ -21,12 +19,12 @@ public class Tobii {
 	EyeX eyeX;
 	volatile boolean connected, hotkeyPressed;
 	volatile double gazeX, gazeY, headX, headY;
-	double startGazeX, startGazeY, startGazeCalibratedX, startGazeCalibratedY, startHeadX, startHeadY;
+	double startGazeX, startGazeY, snappedGazeX, snappedGazeY, startHeadX, startHeadY;
 	volatile int lastMouseX, lastMouseY;
 	final Object mouseLock = new Object();
 	volatile int ignore;
 	Buffer snapping = new Buffer(50 * 2);
-	boolean recordSnap;
+	boolean storeSnap;
 	Dimension screen;
 
 	public Tobii () {
@@ -97,7 +95,7 @@ public class Tobii {
 						if (Point.distance(x, y, lastMouseX, lastMouseY) > 250) {
 							gazeSamples.clear();
 							setMouseToGaze();
-							recordSnap = false;
+							storeSnap = false;
 						}
 					}
 				}
@@ -143,7 +141,7 @@ public class Tobii {
 		screen = Toolkit.getDefaultToolkit().getScreenSize();
 
 		setMouseToGaze();
-		recordSnap = true;
+		storeSnap = true;
 		hotkeyPressed = true;
 
 		threadPool.submit(new Runnable() {
@@ -161,7 +159,7 @@ public class Tobii {
 
 					// Click when hotkey is released.
 					if (!clippy.keyboard.isKeyDown(vk)) {
-						if (recordSnap && mouse.distance(startGazeCalibratedX, startGazeCalibratedY) > 10) {
+						if (storeSnap && mouse.distance(snappedGazeX, snappedGazeY) > 12) {
 							snapping.add(startGazeX);
 							snapping.add(startGazeY);
 							snapping.add(mouse.x);
@@ -210,8 +208,8 @@ public class Tobii {
 			x = snapping.values[best + 2];
 			y = snapping.values[best + 3];
 		}
-		startGazeCalibratedX = x;
-		startGazeCalibratedY = y;
+		snappedGazeX = x;
+		snappedGazeY = y;
 
 		setMouse(x, y);
 	}
@@ -222,7 +220,7 @@ public class Tobii {
 			shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
 			shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
 		}
-		setMouse(startGazeCalibratedX + shiftX, startGazeCalibratedY + shiftY);
+		setMouse(snappedGazeX + shiftX, snappedGazeY + shiftY);
 	}
 
 	void setMouse (double xd, double yd) {
