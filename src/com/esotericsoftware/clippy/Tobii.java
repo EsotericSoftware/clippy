@@ -22,6 +22,7 @@ public class Tobii {
 	final Object mouseLock = new Object();
 	volatile int ignore;
 	Buffer calibration = new Buffer(50 * 4);
+	boolean calibrate;
 
 	public Tobii () {
 		if (!clippy.config.tobiiEnabled) return;
@@ -36,8 +37,9 @@ public class Tobii {
 		}
 
 		eyeX = new EyeX("clippy") {
-			private Buffer samples = new Buffer(6 * 2);
-			private int samplesSkipped;
+			private Buffer headSamples = new Buffer(15 * 2);
+			private Buffer gazeSamples = new Buffer(100 * 2);
+			private int headSamplesSkipped;
 
 			protected void event (Event event) {
 				switch (event) {
@@ -77,6 +79,19 @@ public class Tobii {
 					gazeX = x;
 					gazeY = y;
 				}
+				gazeSamples.add(x);
+				gazeSamples.add(y);
+				if (hotkeyPressed && gazeSamples.size > gazeSamples.values.length / 2) {
+					x = gazeSamples.average(0, 2); // Prevent jumpiness.
+					y = gazeSamples.average(1, 2);
+					synchronized (mouseLock) {
+						if (Point.distance(x, y, lastMouseX, lastMouseY) > 250) {
+							gazeSamples.clear();
+							setMouseToGaze();
+							calibrate = false;
+						}
+					}
+				}
 			}
 
 			protected void eyeEvent (double timestamp, boolean hasLeftEyePosition, boolean hasRightEyePosition, double leftEyeX,
@@ -85,18 +100,18 @@ public class Tobii {
 				double rightEyeZNormalized) {
 				if (hasLeftEyePosition) {
 					// Discard samples too far from the average.
-					if (samples.size > 0 && (Math.abs(leftEyeX - headX) > 50 || Math.abs(leftEyeY - headY) > 50)) {
-						samplesSkipped++;
-						if (samplesSkipped < 12) return;
-						samples.clear();
+					if (headSamples.size > 0 && (Math.abs(leftEyeX - headX) > 50 || Math.abs(leftEyeY - headY) > 50)) {
+						headSamplesSkipped++;
+						if (headSamplesSkipped < 12) return;
+						headSamples.clear();
 					}
-					samplesSkipped = 0;
+					headSamplesSkipped = 0;
 
-					samples.add(leftEyeX);
-					samples.add(leftEyeY);
+					headSamples.add(leftEyeX);
+					headSamples.add(leftEyeY);
 					synchronized (eyeX) {
-						headX = samples.average(0, 2);
-						headY = samples.average(1, 2);
+						headX = headSamples.average(0, 2);
+						headY = headSamples.average(1, 2);
 					}
 
 					if (hotkeyPressed) headMoved();
@@ -116,6 +131,52 @@ public class Tobii {
 		if (!connected) return;
 		if (hotkeyPressed) return;
 
+		setMouseToGaze();
+		calibrate = true;
+		hotkeyPressed = true;
+
+		threadPool.submit(new Runnable() {
+			public void run () {
+				while (true) {
+					// If mouse was moved manually, abort without clicking.
+					Point mouse;
+					synchronized (mouseLock) {
+						mouse = MouseInfo.getPointerInfo().getLocation();
+						if (lastMouseX != mouse.x || lastMouseY != mouse.y) break;
+					}
+
+					// Shift aborts without clicking.
+					if (clippy.keyboard.isKeyDown(KeyEvent.VK_SHIFT)) break;
+
+					// Click when hotkey is released.
+					if (!clippy.keyboard.isKeyDown(vk)) {
+						if (calibrate && mouse.distance(startGazeCalibratedX, startGazeCalibratedY) > 10) {
+							calibration.add(startGazeX);
+							calibration.add(startGazeY);
+							calibration.add(mouse.x - startGazeCalibratedX);
+							calibration.add(mouse.y - startGazeCalibratedY);
+						}
+						robot.mousePress(InputEvent.BUTTON1_MASK);
+						robot.mouseRelease(InputEvent.BUTTON1_MASK);
+						break;
+					}
+
+					sleep(16);
+				}
+
+				hotkeyPressed = false;
+
+				if (vk == KeyEvent.VK_CAPS_LOCK) {
+					while (clippy.keyboard.isKeyDown(vk))
+						sleep(16);
+					ignore++;
+					clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
+				}
+			}
+		});
+	}
+
+	void setMouseToGaze () {
 		synchronized (eyeX) {
 			startGazeX = gazeX;
 			startGazeY = gazeY;
@@ -166,55 +227,13 @@ public class Tobii {
 		startGazeCalibratedY = y;
 
 		setMouse(x, y);
-		hotkeyPressed = true;
-
-		threadPool.submit(new Runnable() {
-			public void run () {
-				while (true) {
-					// If mouse was moved manually, abort without clicking.
-					Point mouse;
-					synchronized (mouseLock) {
-						mouse = MouseInfo.getPointerInfo().getLocation();
-						if (lastMouseX != mouse.x || lastMouseY != mouse.y) break;
-					}
-
-					// Shift aborts without clicking.
-					if (clippy.keyboard.isKeyDown(KeyEvent.VK_SHIFT)) break;
-
-					// Click when hotkey is released.
-					if (!clippy.keyboard.isKeyDown(vk)) {
-						if (mouse.distance(startGazeCalibratedX, startGazeCalibratedY) > 10) {
-							calibration.add(startGazeX);
-							calibration.add(startGazeY);
-							calibration.add(mouse.x - startGazeCalibratedX);
-							calibration.add(mouse.y - startGazeCalibratedY);
-						}
-						robot.mousePress(InputEvent.BUTTON1_MASK);
-						robot.mouseRelease(InputEvent.BUTTON1_MASK);
-						break;
-					}
-
-					sleep(16);
-				}
-
-				if (vk == KeyEvent.VK_CAPS_LOCK && clippy.keyboard.getCapslock()) {
-					ignore++;
-					if (clippy.keyboard.isKeyDown(vk))
-						clippy.keyboard.sendKeyUp((byte)KeyEvent.VK_CAPS_LOCK);
-					else
-						clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
-				}
-
-				hotkeyPressed = false;
-			}
-		});
 	}
 
 	void headMoved () {
 		double shiftX, shiftY;
 		synchronized (eyeX) {
-			shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
-			shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
+			shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX * 2;
+			shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY * 2;
 		}
 		setMouse(startGazeCalibratedX + shiftX, startGazeCalibratedY + shiftY);
 	}
