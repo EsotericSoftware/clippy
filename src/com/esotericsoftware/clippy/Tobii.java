@@ -201,7 +201,7 @@ public class Tobii {
 		for (int i = 0, n = snapping.size; i < n; i += 4) {
 			double px = snapping.values[i], py = snapping.values[i + 1];
 			double dist = Point.distance(x, y, px, py);
-			if (dist < 40 && dist < bestDist) {
+			if (dist < 75 && dist < bestDist) {
 				bestDist = dist;
 				best = i;
 			}

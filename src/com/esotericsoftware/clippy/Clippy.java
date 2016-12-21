@@ -142,8 +142,10 @@ public class Clippy {
 		final KeyStroke screenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
 		final KeyStroke screenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
 		final KeyStroke tobiiPressedHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiClickHotkey) : null;
+		final KeyStroke tobiiPressedHotkey2 = tobiiPressedHotkey != null && tobiiPressedHotkey.getKeyCode() == KeyEvent.VK_CAPS_LOCK
+			? KeyStroke.getKeyStroke("ctrl CAPS_LOCK") : null; // Enables ctrl + click.
 		List<KeyStroke> keys = Arrays.asList(toggleHotkey, popupHotkey, uploadHotkey, screenshotHotkey, screenshotAppHotkey,
-			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiPressedHotkey);
+			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiPressedHotkey, tobiiPressedHotkey2);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(toggleHotkey)) {
@@ -162,7 +164,7 @@ public class Clippy {
 					screenshot.region();
 				else if (keyStroke.equals(screenshotLastRegionHotkey)) //
 					screenshot.lastRegion();
-				else if (keyStroke.equals(tobiiPressedHotkey)) //
+				else if (keyStroke.equals(tobiiPressedHotkey) || keyStroke.equals(tobiiPressedHotkey2)) //
 					tobii.hotkeyPressed(tobiiPressedHotkey.getKeyCode());
 			}
 		};
