@@ -4,10 +4,14 @@ package com.esotericsoftware.clippy;
 import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.awt.Dimension;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+
+import org.h2.util.MathUtils;
 
 import com.esotericsoftware.clippy.tobii.EyeX;
 import com.esotericsoftware.clippy.util.SharedLibraryLoader;
@@ -21,8 +25,9 @@ public class Tobii {
 	volatile int lastMouseX, lastMouseY;
 	final Object mouseLock = new Object();
 	volatile int ignore;
-	Buffer calibration = new Buffer(50 * 4);
-	boolean calibrate;
+	Buffer snapping = new Buffer(50 * 2);
+	boolean recordSnap;
+	Dimension screen;
 
 	public Tobii () {
 		if (!clippy.config.tobiiEnabled) return;
@@ -79,6 +84,10 @@ public class Tobii {
 					gazeX = x;
 					gazeY = y;
 				}
+				if (screen != null) {
+					x = clamp(x, 0, screen.width);
+					y = clamp(y, 0, screen.height);
+				}
 				gazeSamples.add(x);
 				gazeSamples.add(y);
 				if (hotkeyPressed && gazeSamples.size > gazeSamples.values.length / 2) {
@@ -88,7 +97,7 @@ public class Tobii {
 						if (Point.distance(x, y, lastMouseX, lastMouseY) > 250) {
 							gazeSamples.clear();
 							setMouseToGaze();
-							calibrate = false;
+							recordSnap = false;
 						}
 					}
 				}
@@ -131,8 +140,10 @@ public class Tobii {
 		if (!connected) return;
 		if (hotkeyPressed) return;
 
+		screen = Toolkit.getDefaultToolkit().getScreenSize();
+
 		setMouseToGaze();
-		calibrate = true;
+		recordSnap = true;
 		hotkeyPressed = true;
 
 		threadPool.submit(new Runnable() {
@@ -150,11 +161,11 @@ public class Tobii {
 
 					// Click when hotkey is released.
 					if (!clippy.keyboard.isKeyDown(vk)) {
-						if (calibrate && mouse.distance(startGazeCalibratedX, startGazeCalibratedY) > 10) {
-							calibration.add(startGazeX);
-							calibration.add(startGazeY);
-							calibration.add(mouse.x - startGazeCalibratedX);
-							calibration.add(mouse.y - startGazeCalibratedY);
+						if (recordSnap && mouse.distance(startGazeCalibratedX, startGazeCalibratedY) > 10) {
+							snapping.add(startGazeX);
+							snapping.add(startGazeY);
+							snapping.add(mouse.x);
+							snapping.add(mouse.y);
 						}
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
@@ -185,43 +196,19 @@ public class Tobii {
 		}
 		double x = startGazeX, y = startGazeY;
 
-		// Find two closest calibration points.
-		int best1 = -1, best2 = -1;
-		double bestDist1 = Double.MAX_VALUE, bestDist2 = Double.MAX_VALUE;
-		for (int i = 0, n = calibration.size; i < n; i += 4) {
-			double px = calibration.values[i], py = calibration.values[i + 1];
+		int best = -1;
+		double bestDist = Double.MAX_VALUE;
+		for (int i = 0, n = snapping.size; i < n; i += 4) {
+			double px = snapping.values[i], py = snapping.values[i + 1];
 			double dist = Point.distance(x, y, px, py);
-			if (dist > 400) continue;
-			if (dist < bestDist1) {
-				bestDist2 = bestDist1;
-				best2 = best1;
-				bestDist1 = dist;
-				best1 = i;
-			} else if (dist < bestDist2) {
-				bestDist2 = dist;
-				best2 = i;
+			if (dist < 40 && dist < bestDist) {
+				bestDist = dist;
+				best = i;
 			}
 		}
-
-		// Bilinear interpolation to determine amount to shift gaze point.
-		if (best1 != -1 && best2 != -1) {
-			double p1x = calibration.values[best1];
-			double p1y = calibration.values[best1 + 1];
-			double v1x = calibration.values[best1 + 2];
-			double v1y = calibration.values[best1 + 3];
-
-			double p2x = calibration.values[best2];
-			double p2y = calibration.values[best2 + 1];
-			double v2x = calibration.values[best2 + 2];
-			double v2y = calibration.values[best2 + 3];
-
-			double shiftX = (p2x - x) / (p2x - p1x) * v1x + (x - p1x) / (p2x - p1x) * v2x;
-			shiftX = v1x < v2x ? clamp(shiftX, v1x, v2x) : clamp(shiftX, v2x, v1x);
-			double shiftY = (p2y - y) / (p2y - p1y) * v1y + (y - p1y) / (p2y - p1y) * v2y;
-			shiftY = v1y < v2y ? clamp(shiftY, v1y, v2y) : clamp(shiftY, v2y, v1y);
-
-			x += shiftX;
-			y += shiftY;
+		if (best != -1) {
+			x = snapping.values[best + 2];
+			y = snapping.values[best + 3];
 		}
 		startGazeCalibratedX = x;
 		startGazeCalibratedY = y;
@@ -232,8 +219,8 @@ public class Tobii {
 	void headMoved () {
 		double shiftX, shiftY;
 		synchronized (eyeX) {
-			shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX * 2;
-			shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY * 2;
+			shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
+			shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
 		}
 		setMouse(startGazeCalibratedX + shiftX, startGazeCalibratedY + shiftY);
 	}

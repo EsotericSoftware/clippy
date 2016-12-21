@@ -108,8 +108,8 @@ public class Config {
 
 	public boolean tobiiEnabled;
 	public String tobiiClickHotkey = "CAPS_LOCK";
-	public float tobiiHeadSensitivityX = 5;
-	public float tobiiHeadSensitivityY = 7;
+	public float tobiiHeadSensitivityX = 6;
+	public float tobiiHeadSensitivityY = 8;
 
 	public String dnsUser;
 	public String dnsPassword;
