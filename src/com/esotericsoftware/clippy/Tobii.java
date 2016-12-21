@@ -26,8 +26,12 @@ public class Tobii {
 	int lastMouseX, lastMouseY;
 
 	Buffer snapping = new Buffer(50 * 2);
-	boolean storeSnap;
+	boolean storeAdjustment;
 	Dimension screen;
+
+	final int gridRows = 20, gridColumns = Math.round(gridRows * 1.77f);
+	final double[] grid = new double[gridColumns * gridRows * 2];
+	final double[] gridOffset = new double[2];
 
 	public Tobii () {
 		if (!clippy.config.tobiiEnabled) return;
@@ -89,13 +93,15 @@ public class Tobii {
 					}
 					gazeSamples.add(x);
 					gazeSamples.add(y);
+
+					// If hotkey is held and gaze has moved far enough, jump the mouse to gaze.
 					if (hotkeyPressed && gazeSamples.size > gazeSamples.values.length / 2) {
 						x = gazeSamples.average(0, 2); // Prevent jumpiness.
 						y = gazeSamples.average(1, 2);
 						if (Point.distance(x, y, lastMouseX, lastMouseY) > 250) {
 							gazeSamples.clear();
 							setMouseToGaze();
-							storeSnap = false;
+							storeAdjustment = false;
 						}
 					}
 				}
@@ -121,7 +127,13 @@ public class Tobii {
 					headX = headSamples.average(0, 2);
 					headY = headSamples.average(1, 2);
 
-					if (hotkeyPressed) headMoved();
+					// Move mouse with head.
+					if (hotkeyPressed) {
+						double shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
+						double shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
+						setMouse(snappedGazeX + shiftX, snappedGazeY + shiftY);
+						getOffset(snappedGazeX + shiftX, snappedGazeY + shiftY);
+					}
 				}
 			}
 		};
@@ -142,7 +154,7 @@ public class Tobii {
 			screen = Toolkit.getDefaultToolkit().getScreenSize();
 
 			setMouseToGaze();
-			storeSnap = true;
+			storeAdjustment = true;
 			hotkeyPressed = true;
 		}
 
@@ -159,11 +171,14 @@ public class Tobii {
 
 						// Click when hotkey is released.
 						if (!clippy.keyboard.isKeyDown(vk)) {
-							if (storeSnap && mouse.distance(snappedGazeX, snappedGazeY) > 12) {
-								snapping.add(startGazeX);
-								snapping.add(startGazeY);
-								snapping.add(mouse.x);
-								snapping.add(mouse.y);
+							if (storeAdjustment) {
+								if (mouse.distance(snappedGazeX, snappedGazeY) > 12) {
+									snapping.add(startGazeX);
+									snapping.add(startGazeY);
+									snapping.add(mouse.x);
+									snapping.add(mouse.y);
+								}
+								storeOffset(startGazeX, startGazeY, mouse.x - startGazeX, mouse.y - startGazeY);
 							}
 							robot.mousePress(InputEvent.BUTTON1_MASK);
 							robot.mouseRelease(InputEvent.BUTTON1_MASK);
@@ -213,17 +228,18 @@ public class Tobii {
 					y = snapping.values[best + 3];
 				}
 			}
+
+			double[] offset = getOffset(x, y);
+			if (offset != null) {
+				x += offset[0];
+				y += offset[1];
+			}
+
 			snappedGazeX = x;
 			snappedGazeY = y;
 
 			setMouse(x, y);
 		}
-	}
-
-	void headMoved () {
-		double shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
-		double shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
-		setMouse(snappedGazeX + shiftX, snappedGazeY + shiftY);
 	}
 
 	void setMouse (double xd, double yd) {
@@ -232,6 +248,76 @@ public class Tobii {
 		Point mouse = MouseInfo.getPointerInfo().getLocation();
 		lastMouseX = mouse.x;
 		lastMouseY = mouse.y;
+	}
+
+	void storeOffset (double x, double y, double offsetX, double offsetY) {
+		int column = clamp((int)Math.floor(x / screen.width * gridColumns), 0, gridColumns);
+		int row = clamp((int)Math.floor(y / screen.height * gridRows), 0, gridRows);
+		offsetX = clamp(offsetX, -150, 150);
+		offsetY = clamp(offsetY, -150, 150);
+		storeOffset(column, row, offsetX, offsetY);
+		offsetX *= 0.66f;
+		offsetY *= 0.66f;
+		storeOffset(column - 1, row + 1, offsetX, offsetY);
+		storeOffset(column - 1, row, offsetX, offsetY);
+		storeOffset(column - 1, row - 1, offsetX, offsetY);
+		storeOffset(column + 1, row + 1, offsetX, offsetY);
+		storeOffset(column + 1, row, offsetX, offsetY);
+		storeOffset(column + 1, row - 1, offsetX, offsetY);
+		storeOffset(column, row + 1, offsetX, offsetY);
+		storeOffset(column, row - 1, offsetX, offsetY);
+	}
+
+	void storeOffset (int column, int row, double offsetX, double offsetY) {
+		if (column < 0) return;
+		if (column >= gridColumns) return;
+		if (row < 0) return;
+		if (row >= gridRows) return;
+		int index = (row * gridColumns + column) << 1;
+		grid[index] = offsetX;
+		grid[index + 1] = offsetY;
+	}
+
+	/** @return May be null. */
+	double[] getOffset (double x, double y) {
+		if (screen == null) return null;
+
+		double column = x / screen.width * gridColumns - 0.5;
+		double row = y / screen.height * gridRows - 0.5;
+
+		int column1 = clamp((int)Math.floor(column), 0, gridColumns - 1);
+		int row1 = clamp((int)Math.ceil(row), 0, gridRows - 1);
+		int column2 = clamp((int)Math.ceil(column), 0, gridColumns - 1);
+		int row2 = clamp((int)Math.floor(row), 0, gridRows - 1);
+
+		double pixelsPerColumn = screen.width / (double)gridColumns;
+		double pixelsPerRow = screen.height / (double)gridRows;
+
+		double xPercent = (x - (column1 + 0.5) * pixelsPerColumn) / pixelsPerColumn;
+		double yPercent = (y - (row2 + 0.5) * pixelsPerRow) / pixelsPerRow;
+
+		int index = (row1 * gridColumns + column1) * 2;
+		double p1x = grid[index];
+		double p1y = grid[index + 1];
+		index = (row1 * gridColumns + column2) * 2;
+		double p2x = grid[index];
+		double p2y = grid[index + 1];
+		index = (row2 * gridColumns + column2) * 2;
+		double p3x = grid[index];
+		double p3y = grid[index + 1];
+		index = (row2 * gridColumns + column1) * 2;
+		double p4x = grid[index];
+		double p4y = grid[index + 1];
+
+		double x1 = p1x + (p2x - p1x) * xPercent;
+		double x2 = p4x + (p3x - p4x) * xPercent;
+		gridOffset[0] = x1 * yPercent + x2 * (1 - yPercent);
+
+		double y1 = p3y + (p2y - p3y) * yPercent;
+		double y2 = p4y + (p1y - p4y) * yPercent;
+		gridOffset[1] = y1 * xPercent + y2 * (1 - xPercent);
+
+		return gridOffset;
 	}
 
 	static private class Buffer {
