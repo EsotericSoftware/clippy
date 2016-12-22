@@ -14,6 +14,10 @@ import java.awt.event.KeyEvent;
 import com.esotericsoftware.clippy.tobii.EyeX;
 import com.esotericsoftware.clippy.util.SharedLibraryLoader;
 
+// BOZO - Persist grid offsets.
+// BOZO - Click + drag.
+// BOZO - Animate gaze jump.
+
 public class Tobii {
 	final Clippy clippy = Clippy.instance;
 	EyeX eyeX;
@@ -24,6 +28,7 @@ public class Tobii {
 	double gazeX, gazeY, headX, headY;
 	double startGazeX, startGazeY, snappedGazeX, snappedGazeY, startHeadX, startHeadY;
 	int lastMouseX, lastMouseY;
+	long hotkeyReleaseTime;
 
 	Buffer snapping = new Buffer(50 * 2);
 	boolean storeAdjustment;
@@ -114,7 +119,7 @@ public class Tobii {
 
 				if (!hasLeftEyePosition) return;
 				synchronized (lock) {
-					// Discard samples too far from the average.
+					// Discard samples too far from the average, unless we've skipped enough that the head really did move.
 					if (headSamples.size > 0 && (Math.abs(leftEyeX - headX) > 50 || Math.abs(leftEyeY - headY) > 50)) {
 						headSamplesSkipped++;
 						if (headSamplesSkipped < 12) return;
@@ -132,7 +137,6 @@ public class Tobii {
 						double shiftX = (headX - startHeadX) * clippy.config.tobiiHeadSensitivityX;
 						double shiftY = (startHeadY - headY) * clippy.config.tobiiHeadSensitivityY;
 						setMouse(snappedGazeX + shiftX, snappedGazeY + shiftY);
-						getOffset(snappedGazeX + shiftX, snappedGazeY + shiftY);
 					}
 				}
 			}
@@ -153,6 +157,13 @@ public class Tobii {
 
 			screen = Toolkit.getDefaultToolkit().getScreenSize();
 
+			if (System.currentTimeMillis() - hotkeyReleaseTime < 150) {
+				// Double click.
+				robot.mousePress(InputEvent.BUTTON1_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_MASK);
+				return;
+			}
+
 			setMouseToGaze();
 			storeAdjustment = true;
 			hotkeyPressed = true;
@@ -161,8 +172,8 @@ public class Tobii {
 		threadPool.submit(new Runnable() {
 			public void run () {
 				while (true) {
-					// If mouse was moved manually, abort without clicking.
 					synchronized (lock) {
+						// If mouse was moved manually, abort without clicking.
 						Point mouse = MouseInfo.getPointerInfo().getLocation();
 						if (lastMouseX != mouse.x || lastMouseY != mouse.y) break;
 
@@ -198,8 +209,11 @@ public class Tobii {
 					synchronized (lock) {
 						ignoreHotkey = true;
 					}
-					clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
+					if (clippy.keyboard.getCapslock()) clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
+					clippy.keyboard.setCapslock(false);
 				}
+
+				hotkeyReleaseTime = System.currentTimeMillis();
 			}
 		});
 	}
@@ -207,32 +221,36 @@ public class Tobii {
 	void setMouseToGaze () {
 		synchronized (lock) {
 			double x = gazeX, y = gazeY;
+			if (screen != null) {
+				x = clamp(x, 0, screen.width);
+				y = clamp(y, 0, screen.height);
+			}
 			startGazeX = x;
 			startGazeY = y;
 			startHeadX = headX;
 			startHeadY = headY;
 
-			if (false) {
-				int best = -1;
-				double bestDist = Double.MAX_VALUE;
-				for (int i = 0, n = snapping.size; i < n; i += 4) {
-					double px = snapping.values[i], py = snapping.values[i + 1];
-					double dist = Point.distance(x, y, px, py);
-					if (dist < 75 && dist < bestDist) {
-						bestDist = dist;
-						best = i;
-					}
-				}
-				if (best != -1) {
-					x = snapping.values[best + 2];
-					y = snapping.values[best + 3];
+			// Snapping.
+			int best = -1;
+			double bestDist = Double.MAX_VALUE;
+			for (int i = 0, n = snapping.size; i < n; i += 4) {
+				double px = snapping.values[i], py = snapping.values[i + 1];
+				double dist = Point.distance(x, y, px, py);
+				if (dist < 60 && dist < bestDist) {
+					bestDist = dist;
+					best = i;
 				}
 			}
-
-			double[] offset = getOffset(x, y);
-			if (offset != null) {
-				x += offset[0];
-				y += offset[1];
+			if (best != -1) {
+				x = snapping.values[best + 2];
+				y = snapping.values[best + 3];
+			} else {
+				// Grid offset.
+				double[] offset = getOffset(x, y);
+				if (offset != null) {
+					x += offset[0];
+					y += offset[1];
+				}
 			}
 
 			snappedGazeX = x;
@@ -251,8 +269,8 @@ public class Tobii {
 	}
 
 	void storeOffset (double x, double y, double offsetX, double offsetY) {
-		int column = clamp((int)Math.floor(x / screen.width * gridColumns), 0, gridColumns);
-		int row = clamp((int)Math.floor(y / screen.height * gridRows), 0, gridRows);
+		int column = clamp((int)Math.floor(x / screen.width * gridColumns), 0, gridColumns - 1);
+		int row = clamp((int)Math.floor(y / screen.height * gridRows), 0, gridRows - 1);
 		offsetX = clamp(offsetX, -150, 150);
 		offsetY = clamp(offsetY, -150, 150);
 		storeOffset(column, row, offsetX, offsetY);
@@ -269,10 +287,8 @@ public class Tobii {
 	}
 
 	void storeOffset (int column, int row, double offsetX, double offsetY) {
-		if (column < 0) return;
-		if (column >= gridColumns) return;
-		if (row < 0) return;
-		if (row >= gridRows) return;
+		if (column < 0 || column >= gridColumns) return;
+		if (row < 0 || row >= gridRows) return;
 		int index = (row * gridColumns + column) << 1;
 		grid[index] = offsetX;
 		grid[index + 1] = offsetY;
@@ -284,6 +300,7 @@ public class Tobii {
 
 		double column = x / screen.width * gridColumns - 0.5;
 		double row = y / screen.height * gridRows - 0.5;
+		if (row < 0 || row > gridRows - 1) return null;
 
 		int column1 = clamp((int)Math.floor(column), 0, gridColumns - 1);
 		int row1 = clamp((int)Math.ceil(row), 0, gridRows - 1);

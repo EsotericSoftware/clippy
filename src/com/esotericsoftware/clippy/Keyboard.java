@@ -59,6 +59,7 @@ public class Keyboard {
 	};
 
 	final ArrayList<KeyStroke> hotkeys = new ArrayList();
+	final byte[] keys = new byte[256];
 	boolean started;
 	final ArrayDeque<KeyStroke> fireEventQueue = new ArrayDeque();
 	final Runnable fireEvent = new Runnable() {
@@ -144,6 +145,12 @@ public class Keyboard {
 
 	public boolean getCapslock () {
 		return (GetKeyState(KeyEvent.VK_CAPS_LOCK) & 0x0001) != 0;
+	}
+
+	public void setCapslock (boolean enabled) {
+		if (!GetKeyboardState(keys)) return;
+		keys[KeyEvent.VK_CAPS_LOCK] |= 0x0001;
+		SetKeyboardState(keys);
 	}
 
 	static public int getVK (KeyStroke keyStroke) {

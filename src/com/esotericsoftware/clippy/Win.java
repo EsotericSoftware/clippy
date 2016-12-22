@@ -149,6 +149,10 @@ public class Win {
 
 		static public native short GetKeyState (int nVirtKey);
 
+		static public native boolean GetKeyboardState (byte[] lpKeyState);
+
+		static public native boolean SetKeyboardState (byte[] lpKeyState);
+
 		// Clipboard
 
 		static public native boolean AddClipboardFormatListener (Pointer hWnd);
