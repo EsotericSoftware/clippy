@@ -70,6 +70,7 @@ public class Popup extends PopupFrame {
 	final LinkedList<Integer> recentIDs = new LinkedList();
 	final LinkedList<String> recentText = new LinkedList();
 	final POINT popupPosition = new POINT();
+	final Point mouse = new Point();
 	final GridBagConstraints c = new GridBagConstraints();
 	final Rectangle rectangle = new Rectangle(0, 0, 0, TextItem.getItemHeight());
 	TextItem selectedItem;
@@ -90,8 +91,10 @@ public class Popup extends PopupFrame {
 		blockMouse.setOpaque(false);
 		setGlassPane(blockMouse); // Prevent mouse from selecting items until the mouse is moved a bit.
 		blockMouse.addMouseMotionListener(new MouseAdapter() {
+			final Point mouse = new Point();
+
 			public void mouseMoved (MouseEvent e) {
-				Point mouse = MouseInfo.getPointerInfo().getLocation();
+				Util.getMouse(mouse);
 				if (mouse.distance(mouseStart) > 15) blockMouse.setVisible(false);
 			}
 		});
@@ -386,7 +389,7 @@ public class Popup extends PopupFrame {
 		setLocation(position.x, position.y);
 		keepOnScreen();
 
-		mouseStart = MouseInfo.getPointerInfo().getLocation();
+		mouseStart.setLocation(Util.getMouse(mouse));
 		blockMouse.setVisible(true);
 
 		super.showPopup();

@@ -137,6 +137,12 @@ public class Win {
 
 		static public native Pointer GetDC (Pointer hWnd);
 
+		// Mouse
+
+		static public native boolean GetCursorPos (POINT point);
+
+		static public native boolean SetCursorPos (int x, int y);
+
 		// Keyboard
 
 		static public native boolean RegisterHotKey (Pointer hWnd, int id, int fsModifiers, int vk);
@@ -172,8 +178,6 @@ public class Win {
 		static public native Pointer GetClipboardOwner ();
 
 		// Misc
-
-		static public native boolean GetCursorPos (POINT point);
 
 		static public native boolean GetGUIThreadInfo (int idThread, GUITHREADINFO lpgui);
 

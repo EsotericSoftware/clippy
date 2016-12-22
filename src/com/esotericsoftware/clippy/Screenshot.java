@@ -36,6 +36,7 @@ import java.awt.image.VolatileImage;
 import javax.swing.JFrame;
 
 import com.esotericsoftware.clippy.Win.RECT;
+import com.esotericsoftware.clippy.util.Util;
 import com.sun.jna.Pointer;
 
 public class Screenshot {
@@ -84,9 +85,10 @@ public class Screenshot {
 			int magX = -(magD + magOffsetX), magY = -(magD + magOffsetY);
 			boolean drag, lock, lockX, robotEvent;
 			final Ellipse2D.Float circle = new Ellipse2D.Float(0, 0, magD, magD);
+			final Point mouse = new Point();
 
 			{
-				Point mouse = MouseInfo.getPointerInfo().getLocation();
+				Util.getMouse(mouse);
 				x = mouse.x;
 				y = mouse.y;
 				lastX = x;
@@ -133,7 +135,7 @@ public class Screenshot {
 						x += diffX;
 						y += diffY;
 						if (shift) {
-							robot.mouseMove((int)x, (int)y);
+							Util.setMouse((int)x, (int)y);
 							robotEvent = true;
 						}
 						if (x < 0)

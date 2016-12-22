@@ -20,9 +20,11 @@
 
 package com.esotericsoftware.clippy.util;
 
+import static com.esotericsoftware.clippy.Win.User32.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.Robot;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,12 +42,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import com.esotericsoftware.clippy.Win.POINT;
+
 /** @author Nathan Sweet */
 public class Util {
 	static public final Random random = new Random();
 	static private final String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	static private Charset ascii = Charset.forName("ASCII");
 	static private Path uploadFile = new File(System.getProperty("user.home"), ".clippy/upload").toPath();
+	static private POINT mousePOINT = new POINT();
 
 	static public Timer timer = new Timer("Clippy Timer", true);
 
@@ -63,6 +68,21 @@ public class Util {
 			return new Thread(runnable, "Util");
 		}
 	});
+
+	static public Point getMouse (Point mousePoint) {
+		if (GetCursorPos(mousePOINT)) {
+			mousePoint.x = mousePOINT.x;
+			mousePoint.y = mousePOINT.y;
+		} else {
+			mousePoint.x = Integer.MIN_VALUE;
+			mousePoint.y = Integer.MIN_VALUE;
+		}
+		return mousePoint;
+	}
+
+	static public boolean setMouse (int x, int y) {
+		return SetCursorPos(x, y);
+	}
 
 	static public File extractFile (String sourcePath) throws IOException {
 		File extractedFile = getTempFile(new File(sourcePath).getName());
@@ -211,7 +231,7 @@ public class Util {
 		if (value > max) return max;
 		return value;
 	}
-	
+
 	static public double clamp (double value, double min, double max) {
 		if (value < min) return min;
 		if (value > max) return max;
