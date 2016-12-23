@@ -213,7 +213,7 @@ public class Util {
 		return idFile;
 	}
 
-	static public void sleep (int millis) {
+	static public void sleep (long millis) {
 		try {
 			Thread.sleep(millis);
 		} catch (InterruptedException ignored) {

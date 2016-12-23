@@ -80,7 +80,7 @@ public class Popup extends PopupFrame {
 	final JTextField searchField = new JTextField();
 	final JPanel blockMouse = new JPanel();
 	final JCheckBox lockCheckbox = new JCheckBox("Lock order");
-	Point mouseStart;
+	final Point mouseStart = new Point();
 
 	final ExecutorService searchExecutor = Executors.newFixedThreadPool(1);
 	volatile int startIndex;

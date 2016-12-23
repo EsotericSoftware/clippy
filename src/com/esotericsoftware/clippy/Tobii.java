@@ -13,9 +13,6 @@ import java.awt.event.KeyEvent;
 import com.esotericsoftware.clippy.tobii.EyeX;
 import com.esotericsoftware.clippy.util.SharedLibraryLoader;
 
-// BOZO - Persist grid offsets.
-// BOZO - Click + drag.
-
 public class Tobii {
 	static private final int mouseAnimationMillis = 100; // Zero disables animating mouse movement.
 	static private final int screenLeft = 10, screenTop = 10; // Margins to keep mouse on screen, useful for bottom and right.
@@ -36,8 +33,7 @@ public class Tobii {
 	final Clippy clippy = Clippy.instance;
 	EyeX eyeX;
 	Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-	volatile boolean connected;
-	boolean hotkeyPressed, mouseControl, storeHeadAdjustment, ignoreNextHotkey;
+	boolean connected, hotkeyPressed, mouseControl, storeHeadAdjustment, ignoreNextHotkey;
 
 	double gazeX, gazeY, gazeStartX, gazeStartY, gazeSnappedX, gazeSnappedY;
 	final Buffer gazeJumpSamples = new Buffer(gazeJumpSampleCount * 2);
@@ -48,8 +44,9 @@ public class Tobii {
 
 	final Point mouse = new Point();
 	int mouseLastX, mouseLastY, mouseStartX, mouseStartY, mouseEndX, mouseEndY;
-	long mouseMoveLastTime;
+	long mouseMoveLastTime, mouseDownTime;
 	double mouseMoveTime;
+	boolean mouseDrag;
 
 	long hotkeyReleaseTime;
 	int hotkeyReleaseX, hotkeyReleaseY;
@@ -80,15 +77,21 @@ public class Tobii {
 					break;
 				case connectTrying:
 					if (DEBUG) debug("EyeX attempting to connect...");
-					connected = false;
+					synchronized (Tobii.this) {
+						connected = false;
+					}
 					break;
 				case connected:
 					if (INFO) info("EyeX connected.");
-					connected = true;
+					synchronized (Tobii.this) {
+						connected = true;
+					}
 					break;
 				case disconnected:
 					if (INFO) info("EyeX disconnected.");
-					connected = false;
+					synchronized (Tobii.this) {
+						connected = false;
+					}
 					break;
 				case eventError:
 					if (TRACE) info("Error getting event data.");
@@ -124,7 +127,7 @@ public class Tobii {
 		gazeX = x;
 		gazeY = y;
 
-		// If hotkey is held and gaze has moved far enough, jump the mouse to gaze.
+		// If hotkey is held and gaze has moved far enough, jump the mouse to the gaze.
 		gazeJumpSamples.add(x);
 		gazeJumpSamples.add(y);
 		if (mouseControl && gazeJumpSamples.size > gazeJumpSamples.values.length / 2) {
@@ -139,7 +142,7 @@ public class Tobii {
 	}
 
 	synchronized void setHeadPosition (double x, double y) {
-		// Discard head samples that are too far away, unless we've skipped enough that the head really did move.
+		// Discard head samples that are too far away, unless we've skipped enough that we can believe the head really did move.
 		if (headSamples.size > 0 && Point.distance(x, y, headX, headY) > headMovementMax) {
 			headSamplesSkipped++;
 			if (headSamplesSkipped < headMovementMaxCount) return;
@@ -172,18 +175,18 @@ public class Tobii {
 		mouseControl = true;
 		storeHeadAdjustment = true;
 		screen = Toolkit.getDefaultToolkit().getScreenSize();
-		setMouseToGaze();
+
+		mouseDrag = mouseDownTime > 0;
+		mouseDownTime = 0;
+		if (mouseDrag)
+			setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
+		else
+			setMouseToGaze();
 
 		threadPool.submit(new Runnable() {
 			public void run () {
 				while (hotkeyPressedTick(vk))
 					sleep(8);
-
-				mouseControl = false;
-				while (clippy.keyboard.isKeyDown(vk))
-					sleep(8);
-				hotkeyPressed = false;
-
 				hotkeyReleased(vk);
 			}
 		});
@@ -199,21 +202,28 @@ public class Tobii {
 
 		// Click when hotkey is released.
 		if (!clippy.keyboard.isKeyDown(vk)) {
-			if (System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
-				// If a double click, use the same position as the first click.
-				setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
-			} else if (storeHeadAdjustment) {
-				// Store head adjustment to snap or offset future gazes.
-				if (mouse.distance(gazeSnappedX, gazeSnappedY) > snapStoreDistance) {
-					snapping.add(gazeStartX);
-					snapping.add(gazeStartY);
-					snapping.add(mouse.x);
-					snapping.add(mouse.y);
+			if (mouseDrag) {
+				if (System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
+					// If a double click, use the same position as the mouse down.
+					setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
+					robot.mouseRelease(InputEvent.BUTTON1_MASK);
+					robot.mousePress(InputEvent.BUTTON1_MASK);
+					robot.mouseRelease(InputEvent.BUTTON1_MASK);
 				}
-				setGridOffset(gazeStartX, gazeStartY, mouse.x - gazeStartX, mouse.y - gazeStartY);
+			} else {
+				if (storeHeadAdjustment) {
+					// Store head adjustment to snap or offset future gazes.
+					if (mouse.distance(gazeSnappedX, gazeSnappedY) > snapStoreDistance) {
+						snapping.add(gazeStartX);
+						snapping.add(gazeStartY);
+						snapping.add(mouse.x);
+						snapping.add(mouse.y);
+					}
+					setGridOffset(gazeStartX, gazeStartY, mouse.x - gazeStartX, mouse.y - gazeStartY);
+				}
+				robot.mousePress(InputEvent.BUTTON1_MASK);
+				mouseDownTime = System.currentTimeMillis();
 			}
-			robot.mousePress(InputEvent.BUTTON1_MASK);
-			robot.mouseRelease(InputEvent.BUTTON1_MASK);
 			return false;
 		}
 
@@ -232,19 +242,48 @@ public class Tobii {
 		return true;
 	}
 
-	synchronized void hotkeyReleased (int vk) {
-		if (vk == KeyEvent.VK_CAPS_LOCK) { // Reset capslock state.
-			if (clippy.keyboard.getCapslock()) {
-				ignoreNextHotkey = true;
-				clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
-			}
-			clippy.keyboard.setCapslock(false);
+	void hotkeyReleased (int vk) {
+		// Stop mouse control.
+		boolean mouseDown;
+		synchronized (this) {
+			if (mouseDrag) robot.mouseRelease(InputEvent.BUTTON1_MASK);
+			mouseDown = mouseDownTime > 0;
+			mouseControl = false;
 		}
 
-		getMouse(mouse);
-		hotkeyReleaseX = mouse.x;
-		hotkeyReleaseY = mouse.y;
-		hotkeyReleaseTime = System.currentTimeMillis();
+		// If the mouse isn't down, mouse control was aborted. Wait for the hotkey to actually be released.
+		if (!mouseDown) {
+			while (clippy.keyboard.isKeyDown(vk))
+				sleep(8);
+		}
+
+		// Hotkey has actually been released.
+		synchronized (this) {
+			if (vk == KeyEvent.VK_CAPS_LOCK) { // Reset capslock state.
+				if (clippy.keyboard.getCapslock()) {
+					ignoreNextHotkey = true;
+					clippy.keyboard.sendKeyPress((byte)KeyEvent.VK_CAPS_LOCK);
+				}
+				clippy.keyboard.setCapslock(false);
+			}
+
+			hotkeyPressed = false;
+			getMouse(mouse);
+			hotkeyReleaseX = mouse.x;
+			hotkeyReleaseY = mouse.y;
+			hotkeyReleaseTime = System.currentTimeMillis();
+		}
+
+		// Mouse up after a delay to enable dragging.
+		if (mouseDown) {
+			sleep(Math.max(0, doubleClickTime - (System.currentTimeMillis() - mouseDownTime)));
+			synchronized (this) {
+				if (mouseDownTime > 0) {
+					mouseDownTime = 0;
+					robot.mouseRelease(InputEvent.BUTTON1_MASK);
+				}
+			}
+		}
 	}
 
 	void setMouseToGaze () {
