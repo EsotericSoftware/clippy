@@ -2,19 +2,19 @@
 
 Clippy is a small, multifunctional Windows productivity tool for programmers and other power users. Clippy runs in the background and provides a powerful clipboard history, easy uploading of screenshots, files, and text, and optional features to improve your health when using a computer for long periods of time.
 
-* **Clipboard history** Clippy's main purpose is to store in a database any text items that are copied to the Windows clipboard, which can later be easily retrieved. The usefulness of this for programming cannot be understated!
+* [**Clipboard history**](#clipboard-history) Clippy's main purpose is to store in a database any text items that are copied to the Windows clipboard, which can later be easily retrieved. The usefulness of this for programming cannot be understated!
 
-* **Screenshots** Clippy can take screenshots and upload them, as well as easily upload files, zips, and text/pastes. Uploading can be done via FTP, SFTP, [imgur.com](http://imgur.com/), and/or [pastebin.com](http://pastebin.com/).
+* [**Screenshots**](#screenshots) Clippy can take screenshots and upload them, as well as easily upload files, zips, and text/pastes. Uploading can be done via FTP, SFTP, [imgur.com](http://imgur.com/), and/or [pastebin.com](http://pastebin.com/).
 
-* **Break warnings** Clippy can display a gentle reminder when you have been at the computer too long. This helps to avoid the unhealthy effects of being sedentary. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
+* [**Break warnings**](#break-warnings) Clippy can display a gentle reminder when you have been at the computer too long. This helps to avoid the unhealthy effects of being sedentary. Damage done by sitting for long periods is not undone by being active at other times. It's suggested to stand up for 5 minutes every hour.
 
-* **Blue light filter** Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interfere with your sleep schedule, [melatonin](https://en.wikipedia.org/wiki/Melatonin) production, and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
+* [**Blue light filter**](#blue-light-filter) Clippy can filter the blue light emitted by your monitor based on the time of day. This is useful to reduce your exposure to blue light in the evening, which can otherwise interfere with your sleep schedule, [melatonin](https://en.wikipedia.org/wiki/Melatonin) production, and [circadian rhythm](https://en.wikipedia.org/wiki/Circadian_rhythm), potentially leading to [delayed sleep phase disorder](https://en.wikipedia.org/wiki/Delayed_sleep_phase_disorder).
 
-* **Eye tracking** Clippy can use a [Tobii Eye Tracker 4C](https://tobiigaming.com/eye-tracker-4c/) to control the mouse. Just look at the screen where you want to click and press a hotkey.
+* [**Eye tracking**](#eye-tracking) Clippy can use a [Tobii Eye Tracker 4C](https://tobiigaming.com/eye-tracker-4c/) to control the mouse. Just look at the screen where you want to click and press a hotkey.
 
-* **Lighting control** Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
+* [**Lighting control**](#lighting-control) Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
-* **Dyanmic DNS** Clippy can keep your IP in sync with [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
+* [**Dyanmic DNS**](#dyanmic-dns) Clippy can keep your IP in sync with [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
 
 ## Features and uses
 
@@ -52,13 +52,15 @@ It is highly recommended to run Clippy using 64-bit Java. Clippy may run much mo
 C:\path\to\64-bit\Java\javaw -jar C:\path\to\Clippy.jar
 ```
 
-Clippy runs in the background as an icon in the system tray. It stores any text items that are placed on the clipboard and waits for hotkeys to show the clipboard history popup and take other actions. Clippy can be exited by clicking the icon in the system tray.
+Clippy runs in the background as an icon in the system tray and can be exited by clicking the system tray icon.
 
-## Popup
+## Clipboard history
+
+Clippy stores any text items that are placed on the clipboard and waits for hotkeys to show the clipboard history popup and take other actions. 
 
 ![](http://i.imgur.com/WLVBl8g.gif)
 
-The default hotkey to show the popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items and you may begin typing to search the entire history. The following keys are available on the popup:
+The default hotkey to show the clipboard history popup is `ctrl+shift+insert`. The popup shows the most recent clipboard items and you may begin typing to search the entire history. The following keys are available on the popup:
 - `up` or `down` selects an item.
 - `enter` puts the selected item on the clipboard, hides the popup, and pastes it.
 - `home` or `end` selects the first or last item.
@@ -216,17 +218,21 @@ tobiiEnabled: true
 tobiiClickHotkey: CAPS_LOCK
 ```
 
-When eye tracking is accurate, mouse control is unreal -- it feels like your brain is controlling the computer! However, often it is not perfectly accurate and can be off the target by 1-2" (2.5-5cm). Clippy solves this by using head tracking when you hold down the hotkey. Head tracking is much more accurate, but not suitable for moving the mouse across the entire screen. Clippy uses eye tracking to move the mouse large distances and head tracking to make fine adjustments.
+When eye tracking is accurate, mouse control is unreal -- it feels like your brain is controlling the computer! However, often it is not perfectly accurate and can be off the target by 0.4-1" (1-2.5cm). Clippy solves this by using head tracking when you hold down the hotkey. Head tracking is much more accurate, but not suitable for moving the mouse across the entire screen. Clippy uses eye tracking to move the mouse large distances and head tracking to make fine adjustments.
 
-When the hotkey is pressed, the mouse is placed at (or near) the position on the screen where you are looking. While holding the hotkey, move your head left, right, up, or down slightly to move the mouse. This allows you to adjust for any eye tracking inaccuracy. The mouse is clicked when you release the hotkey. Press shift while holding the hotkey to cancel head tracking without clicking.
+When the hotkey is pressed, the mouse is placed at (or near) the position on the screen where you are looking. While holding the hotkey, move your head left, right, up, or down slightly to move the mouse. This allows you to adjust for any eye tracking inaccuracy. The mouse is clicked when you release the hotkey.
 
-If the mouse is moved while the hotkey is pressed, head tracking is cancelled without clicking. This enables eye tracking to teleport the mouse cursor near where you want it, and then you can use the mouse to adjust the position rather than head tracking. This is similar to Tobii's "mouse warp", but is triggered only when you press the hotkey rather than all the time.
+When you use head tracking to correct where eye tracking position placed the mouse, you give Clippy information about the eye tracker's innaccuracy at that location. Clippy uses this to improve the accuracy of future eye tracking at that location and nearby locations.
+
+Double clicking and dragging both work similar to a touchpad. To double click, press the hotkey, position the mouse cursor, release the hotkey, then press and release the hotkey again. To drag, press the hotkey, position the mouse cursor, release the hotkey, then press and hold the hotkey, position the mouse cursor again to drag, then release the hotkey.
+
+Move the mouse (or press `shift`) while holding the hotkey to cancel head tracking without clicking. This enables eye tracking to teleport the mouse cursor near where you want it, and then you can use the mouse to adjust the position rather than head tracking. This is similar to Tobii's "mouse warp", but is triggered only when you press the hotkey rather than all the time.
 
 The sensitivity settings control how head movement (millimeters) is translated to mouse cursor movement (pixels). Higher numbers cause head movement to move the mouse cursor more. It can be helpful to use a higher sensitivity for the Y axis, since it's more difficult to move your head up and down.
 
 ```
-tobiiHeadSensitivityX: 5
-tobiiHeadSensitivityY: 7
+tobiiHeadSensitivityX: 7
+tobiiHeadSensitivityY: 9.5
 ```
 
 ## Lighting control
