@@ -18,6 +18,7 @@ public class Tobii {
 	static private final int screenLeft = 10, screenTop = 10; // Margins to keep mouse on screen, useful for bottom and right.
 	static private final int screenRight = 15, screenBottom = 30;
 	static private final int doubleClickTime = 350;
+	static private final int doubleTapDragTime = 150;
 	static private final int snapCount = 50; // Number of snap points to remember.
 	static private final int snapDistance = 60; // A gaze within this distance of a snap point will use the snap point instead.
 	static private final int snapStoreDistance = 12; // Head adjustments smaller than this aren't stored as a snap point.
@@ -202,15 +203,13 @@ public class Tobii {
 
 		// Click when hotkey is released.
 		if (!clippy.keyboard.isKeyDown(vk)) {
-			if (mouseDrag) {
-				if (System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
-					// If a double click, use the same position as the mouse down.
-					setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
-					robot.mouseRelease(InputEvent.BUTTON1_MASK);
-					robot.mousePress(InputEvent.BUTTON1_MASK);
-					robot.mouseRelease(InputEvent.BUTTON1_MASK);
-				}
-			} else {
+			if (System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
+				// If a double click, use the same position as the mouse down.
+				setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
+				robot.mouseRelease(InputEvent.BUTTON1_MASK);
+				robot.mousePress(InputEvent.BUTTON1_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_MASK);
+			} else if (!mouseDrag) {
 				if (storeHeadAdjustment) {
 					// Store head adjustment to snap or offset future gazes.
 					if (mouse.distance(gazeSnappedX, gazeSnappedY) > snapStoreDistance) {
@@ -276,7 +275,7 @@ public class Tobii {
 
 		// Mouse up after a delay to enable dragging.
 		if (mouseDown) {
-			sleep(Math.max(0, doubleClickTime - (System.currentTimeMillis() - mouseDownTime)));
+			sleep(Math.max(0, doubleTapDragTime - (System.currentTimeMillis() - mouseDownTime)));
 			synchronized (this) {
 				if (mouseDownTime > 0) {
 					mouseDownTime = 0;
