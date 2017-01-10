@@ -36,13 +36,13 @@ public class DnsMadeEasy {
 			if (WARN) warn("Error obtaining IP.", ex);
 			return;
 		}
-		if (newIP.equals(clippy.config.dnsLastIP)) return;
+		if (newIP.equals(clippy.data.dnsLastIP)) return;
 
 		String result = http(
 			"http://cp.dnsmadeeasy.com/servlet/updateip?username=" + user + "&password=" + pass + "&id=" + id + "&ip=" + newIP);
 		if (result.equals("success")) {
-			clippy.config.dnsLastIP = newIP;
-			clippy.config.save();
+			clippy.data.dnsLastIP = newIP;
+			clippy.data.save();
 			if (INFO) info("IP updated: " + newIP);
 		} else {
 			if (WARN) warn("IP " + newIP + " could not be updated: " + result);

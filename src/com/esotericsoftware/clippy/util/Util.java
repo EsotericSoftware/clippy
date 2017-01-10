@@ -21,6 +21,7 @@
 package com.esotericsoftware.clippy.util;
 
 import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.awt.GraphicsEnvironment;
@@ -30,6 +31,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -43,9 +45,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import com.esotericsoftware.clippy.Win.POINT;
+import com.esotericsoftware.jsonbeans.Json;
+import com.esotericsoftware.jsonbeans.OutputType;
+import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
 
 /** @author Nathan Sweet */
 public class Util {
+	static public final Json json = new Json();
+	static {
+		json.setUsePrototypes(false);
+		json.setIgnoreUnknownFields(true);
+	}
+
 	static public final Random random = new Random();
 	static private final String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	static private Charset ascii = Charset.forName("ASCII");
@@ -236,5 +247,14 @@ public class Util {
 		if (value < min) return min;
 		if (value > max) return max;
 		return value;
+	}
+
+	static public void writeJson (Object object, File file) throws IOException {
+		PrettyPrintSettings pretty = new PrettyPrintSettings();
+		pretty.outputType = OutputType.minimal;
+		pretty.singleLineColumns = 130;
+		OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), "UTF8");
+		writer.write(json.prettyPrint(object, pretty));
+		writer.close();
 	}
 }

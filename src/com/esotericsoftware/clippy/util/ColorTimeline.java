@@ -6,6 +6,7 @@ import static java.util.Calendar.*;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 
 import com.esotericsoftware.clippy.Config.ColorTime;
 import com.esotericsoftware.clippy.Config.ColorTime.Power;

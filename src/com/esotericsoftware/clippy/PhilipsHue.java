@@ -20,6 +20,7 @@ import org.apache.http.util.EntityUtils;
 
 import com.esotericsoftware.clippy.Config.ColorTime;
 import com.esotericsoftware.clippy.Config.ColorTime.Power;
+import com.esotericsoftware.clippy.Config.ColorTimesReference;
 import com.esotericsoftware.clippy.Config.PhilipsHueLights;
 import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.philips.lighting.hue.listener.PHGroupListener;
@@ -116,15 +117,15 @@ public class PhilipsHue {
 				}
 
 				String ip = bridge.getResourceCache().getBridgeConfiguration().getIpAddress();
-				if (!ip.equals(clippy.config.philipsHueIP) || !username.equals(clippy.config.philipsHueUser)) {
-					clippy.config.philipsHueIP = ip;
-					clippy.config.philipsHueUser = username;
-					clippy.config.save();
+				if (!ip.equals(clippy.data.philipsHueIP) || !username.equals(clippy.data.philipsHueUser)) {
+					clippy.data.philipsHueIP = ip;
+					clippy.data.philipsHueUser = username;
+					clippy.data.save();
 				}
 
 				hue.setSelectedBridge(bridge);
 
-				if (clippy.config.philipsHueIP != null && !started) {
+				if (clippy.data.philipsHueIP != null && !started) {
 					started = true;
 					for (PhilipsHueLights lights : clippy.config.philipsHue)
 						start(lights);
@@ -170,14 +171,13 @@ public class PhilipsHue {
 			}
 		});
 
-		if (clippy.config.philipsHueIP != null) {
-			if (DEBUG)
-				debug("Connecting to Philips Hue bridge: " + clippy.config.philipsHueUser + " @ " + clippy.config.philipsHueIP);
-			if (clippy.config.philipsHueUser == null)
-				progress = new ProgressBar("Connecting to Philips Hue: " + clippy.config.philipsHueIP);
+		if (clippy.data.philipsHueIP != null) {
+			if (DEBUG) debug("Connecting to Philips Hue bridge: " + clippy.data.philipsHueUser + " @ " + clippy.data.philipsHueIP);
+			if (clippy.data.philipsHueUser == null)
+				progress = new ProgressBar("Connecting to Philips Hue: " + clippy.data.philipsHueIP);
 			PHAccessPoint accessPoint = new PHAccessPoint();
-			accessPoint.setIpAddress(clippy.config.philipsHueIP);
-			accessPoint.setUsername(clippy.config.philipsHueUser);
+			accessPoint.setIpAddress(clippy.data.philipsHueIP);
+			accessPoint.setUsername(clippy.data.philipsHueUser);
 			hue.connect(accessPoint);
 		} else {
 			if (INFO) info("Searching for Philips Hue bridges...");
@@ -190,8 +190,8 @@ public class PhilipsHue {
 	void start (final PhilipsHueLights lights) {
 		if (lights.times == null || lights.times.isEmpty()) return;
 		boolean hasTimeline = false;
-		for (ArrayList<ColorTime> timeline : lights.times.values()) {
-			if (timeline != null && !timeline.isEmpty()) {
+		for (ColorTimesReference timeline : lights.times.values()) {
+			if (timeline != null && !timeline.getTimes().isEmpty()) {
 				hasTimeline = true;
 				break;
 			}
@@ -424,7 +424,7 @@ public class PhilipsHue {
 				return;
 			}
 
-			ArrayList<ColorTime> times = lights.times.get(timeline.name());
+			ArrayList<ColorTime> times = lights.times.get(timeline.name()).getTimes();
 			if (times == null) return;
 			reset(); // Ensure a missed update is easily fixed by changing the timeline again.
 			if (times == this.times) return;
@@ -473,7 +473,7 @@ public class PhilipsHue {
 					}
 					String id = sensor.getIdentifier();
 					httpGetSensor = new HttpGet(
-						"http://" + clippy.config.philipsHueIP + "/api/" + clippy.config.philipsHueUser + "/sensors/" + id);
+						"http://" + clippy.data.philipsHueIP + "/api/" + clippy.data.philipsHueUser + "/sensors/" + id);
 					if (lights.times.containsKey(Timeline.offHeld.name()))
 						changeOffRule(id, bridge, 4000, 4002);
 					else

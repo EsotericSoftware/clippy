@@ -13,7 +13,7 @@ public class Gamma extends ColorTimeline {
 	volatile boolean disabled;
 
 	public Gamma () {
-		super("Gamma", Clippy.instance.config.gamma, 100, Integer.MAX_VALUE, 0.25f, 0);
+		super("Gamma", Clippy.instance.config.gamma.getTimes(), 100, Integer.MAX_VALUE, 0.25f, 0);
 		if (times == null || times.isEmpty()) return;
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {

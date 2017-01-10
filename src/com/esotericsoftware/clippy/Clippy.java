@@ -52,6 +52,7 @@ public class Clippy {
 	static public final File logFile = new File(System.getProperty("user.home"), ".clippy/clippy.log");
 
 	final Config config;
+	final Data data;
 	ClipDataStore db;
 	final Popup popup;
 	final Menu menu;
@@ -85,6 +86,7 @@ public class Clippy {
 		});
 
 		config = new Config();
+		data = new Data();
 
 		if (config.imageUpload != null) {
 			switch (config.imageUpload) {

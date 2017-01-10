@@ -21,6 +21,7 @@
 package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.minlog.Log.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,7 +31,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -41,6 +41,7 @@ import com.esotericsoftware.clippy.util.Sun;
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonException;
 import com.esotericsoftware.jsonbeans.JsonReader;
+import com.esotericsoftware.jsonbeans.JsonSerializable;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
 import com.esotericsoftware.jsonbeans.OutputType;
@@ -48,12 +49,8 @@ import com.esotericsoftware.minlog.Log;
 
 /** @author Nathan Sweet */
 public class Config {
+	static public final Clippy clippy = Clippy.instance;
 	static private final File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
-	static private final Json json = new Json();
-	static {
-		json.setUsePrototypes(false);
-		json.setIgnoreUnknownFields(true);
-	}
 
 	public boolean allowDuplicateClips;
 	public int maxLengthToStore = 1024 * 1024; // 1 MB
@@ -98,11 +95,11 @@ public class Config {
 	public String breakEndSound = "breakEnd";
 	public int breakResetMinutes = 5;
 
-	public ArrayList<ColorTime> gamma;
+	public HashMap<String, ColorTimesReference> colorTimelines;
+
+	public ColorTimesReference gamma;
 
 	public boolean philipsHueEnabled;
-	public String philipsHueIP;
-	public String philipsHueUser;
 	public int philipsHueDisableMinutes = 90;
 	public ArrayList<PhilipsHueLights> philipsHue;
 
@@ -115,7 +112,6 @@ public class Config {
 	public String dnsPassword;
 	public String dnsID;
 	public int dnsMinutes = 30;
-	public String dnsLastIP;
 
 	public Config () {
 		if (configFile.exists()) {
@@ -128,6 +124,14 @@ public class Config {
 					Runtime.getRuntime().halt(0);
 				}
 			}
+		} else {
+			// Save default config file.
+			configFile.getParentFile().mkdirs();
+			try {
+				writeJson(this, configFile);
+			} catch (Exception ex) {
+				if (WARN) warn("Unable to write config.json.", ex);
+			}
 		}
 
 		try {
@@ -139,37 +143,6 @@ public class Config {
 			if (WARN) warn("Unable to set logging level.", ex);
 		}
 		if (TRACE) trace("Config file: " + configFile.getAbsolutePath());
-
-		Comparator<ColorTime> colorTimeComparator = new Comparator<ColorTime>() {
-			public int compare (ColorTime o1, ColorTime o2) {
-				return o1.dayMillis - o2.dayMillis;
-			}
-		};
-		if (gamma != null) Collections.sort(gamma, colorTimeComparator);
-		if (philipsHue != null) {
-			for (PhilipsHueLights lights : philipsHue) {
-				if (lights.times != null) {
-					for (ArrayList<ColorTime> timeline : lights.times.values())
-						if (timeline != null) Collections.sort(timeline, colorTimeComparator);
-				}
-			}
-		}
-
-		save();
-	}
-
-	public void save () {
-		configFile.getParentFile().mkdirs();
-		try {
-			PrettyPrintSettings pretty = new PrettyPrintSettings();
-			pretty.outputType = OutputType.minimal;
-			pretty.singleLineColumns = 130;
-			OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF8");
-			writer.write(json.prettyPrint(this, pretty));
-			writer.close();
-		} catch (Exception ex) {
-			if (WARN) warn("Unable to write config.json.", ex);
-		}
 	}
 
 	static public enum ImageUpload {
@@ -184,7 +157,35 @@ public class Config {
 		ftp, sftp
 	}
 
-	static public class ColorTime implements com.esotericsoftware.jsonbeans.JsonSerializable {
+	static public class ColorTimesReference implements JsonSerializable {
+		public String name;
+		public ArrayList<ColorTime> times;
+
+		public void write (Json json) {
+			throw new UnsupportedOperationException();
+		}
+
+		public void read (Json json, JsonValue value) {
+			if (value.isString())
+				name = value.asString();
+			else if (value.isArray())
+				times = json.readValue(ArrayList.class, ColorTime.class, value);
+			else
+				throw new JsonException("Invalid color timeline reference: " + value);
+		}
+
+		public ArrayList<ColorTime> getTimes () {
+			if (name != null) {
+				ArrayList<ColorTime> times = clippy.config.colorTimelines.get(name).getTimes();
+				if (times == null) throw new JsonException("Color timeline not found: " + name);
+				Collections.sort(times);
+				return times;
+			}
+			return times;
+		}
+	}
+
+	static public class ColorTime implements JsonSerializable, Comparable<ColorTime> {
 		static private final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mma");
 
 		String time;
@@ -197,15 +198,7 @@ public class Config {
 		}
 
 		public void write (Json json) {
-			if (time != null) json.writeField(this, "time");
-			if (power == Power.on || power == Power.off) json.writeField(this, "power");
-			json.writeField(this, "brightness");
-			if (kelvin == 0) {
-				json.writeField(this, "r");
-				json.writeField(this, "g");
-				json.writeField(this, "b");
-			} else
-				json.writeField(this, "temp");
+			throw new UnsupportedOperationException();
 		}
 
 		public void read (Json json, JsonValue jsonData) {
@@ -260,6 +253,10 @@ public class Config {
 			}
 		}
 
+		public int compareTo (ColorTime other) {
+			return dayMillis - other.dayMillis;
+		}
+
 		public String toString () {
 			String timeString;
 			if (dayMillis < 0)
@@ -286,7 +283,7 @@ public class Config {
 		/** May be null. */
 		public String switchName;
 		/** May be null. */
-		public HashMap<String, ArrayList<ColorTime>> times;
+		public HashMap<String, ColorTimesReference> times;
 
 		public transient PhilipsHueTimeline timeline;
 
@@ -296,7 +293,7 @@ public class Config {
 			json.writeField(this, "switchName", "switch");
 			try {
 				json.getWriter().object("timelines");
-				for (Entry<String, ArrayList<ColorTime>> entry : times.entrySet())
+				for (Entry<String, ColorTimesReference> entry : times.entrySet())
 					json.writeValue(entry.getKey(), entry.getValue(), ArrayList.class, ColorTime.class);
 				json.getWriter().pop();
 			} catch (IOException ex) {
@@ -310,7 +307,7 @@ public class Config {
 			json.readField(this, "switchName", "switch", null, data);
 			times = new HashMap();
 			for (JsonValue map = data.getChild("timelines"); map != null; map = map.next)
-				times.put(map.name, json.readValue(ArrayList.class, ColorTime.class, map));
+				times.put(map.name, json.readValue(ColorTimesReference.class, map));
 		}
 	}
 }
