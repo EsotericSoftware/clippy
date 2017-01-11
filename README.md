@@ -16,6 +16,10 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * [**Dyanmic DNS**](#dyanmic-dns) Clippy can keep your IP in sync with [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
 
+* [**IR transceiver**](#ir-transceiver) Clippy can control a [USB-UIRT](http://www.usbuirt.com/) to learn, send, and receiver IR codes to control your computer via IR or control other devices.
+
+* [**Plugin code**](#plugin-code) Write your own Java code to control lighting, respond to events like receiving an IR code or a Philips Hue button being pressed, and more.
+
 ## Features and uses
 
 * It is very common to copy multiple pieces of text. Since the Windows clipboard only holds a single item, without Clippy this means finding and copying the same text many times.
@@ -581,6 +585,54 @@ dnsMinutes: 30
 ```
 
 The user and password settings are your DnsMadeEasy account credentials. You may optionally configure DnsMadeEasy to have a password per record, so you don't need to use your account password. Record ID identifies the record to update. Minutes is the number of minutes between IP checks.
+
+## IR transceiver
+
+The [USB-UIRT](http://www.usbuirt.com/) is a USB device that can learn, send, and receiver IR codes. This can be useful to control your computer via an IR remote or to have Clippy control other devices by sending IR. Making use of the USB-UIRT requires writing your own [plugin class](#plugin-code) using Java:
+
+```
+import com.esotericsoftware.clippy.usbuirt.UsbUirt;
+
+public class ClippyPlugin {
+	public ClippyPlugin () throws Exception {
+		UsbUirt ir = new UsbUirt() {
+			protected void receive (String code) {
+				System.out.println("Received: " + code);
+			}
+		};
+		ir.connect();
+		String code = ir.learn();
+		System.out.println("Learned: " + code);
+		ir.transmit(code, false);
+	}
+}
+```
+
+## Plugin code
+
+A Java class can be specified, allowing you to easily provide code that registers listeners to respond to events and perform other tasks.
+
+```
+pluginClass: com.esotericsoftware.clippy.ClippyPlugin
+```
+
+An instance of the plugin class will be created when Clippy starts.
+
+```
+public class ClippyPlugin {
+	public ClippyPlugin () {
+		System.out.println("Hallo!");
+	}
+}
+```
+
+If the class is in the `com.esotericsoftware.clippy` package, it will be able to access all of Clippy's classes to perform various tasks.
+
+The class must be on the classpath Clippy was started with, for example:
+
+```
+javaw -classpath Clippy.jar;YourPlugin.jar com.esotericsoftware.clippy.Clippy
+```
 
 ## Database
 
