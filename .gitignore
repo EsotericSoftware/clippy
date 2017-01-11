@@ -2,3 +2,4 @@ bin
 clippy.log
 build/Clippy.exe
 build/Clippy.jar
+.temp
