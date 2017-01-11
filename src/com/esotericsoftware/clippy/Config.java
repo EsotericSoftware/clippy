@@ -113,6 +113,8 @@ public class Config {
 	public String dnsID;
 	public int dnsMinutes = 30;
 
+	public String pluginClass;
+
 	public Config () {
 		if (configFile.exists()) {
 			JsonValue root = new JsonReader().parse(configFile);
@@ -185,7 +187,7 @@ public class Config {
 		}
 	}
 
-	static public class ColorTime implements JsonSerializable, Comparable<ColorTime> {
+	static public class ColorTime implements com.esotericsoftware.jsonbeans.JsonSerializable, Comparable<ColorTime> {
 		static private final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mma");
 
 		String time;

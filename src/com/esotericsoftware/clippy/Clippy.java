@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, Esoteric Software
+/* Copyright (c) 2014-2017, Esoteric Software
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -206,6 +206,14 @@ public class Clippy {
 		new PhilipsHue();
 		tobii = new Tobii();
 		new DnsMadeEasy();
+
+		if (config.pluginClass != null) {
+			try {
+				Class.forName(config.pluginClass).newInstance();
+			} catch (Exception ex) {
+				if (ERROR) error("Error initializing plugin: " + config.pluginClass, ex);
+			}
+		}
 
 		if (INFO) info("Started.");
 	}
