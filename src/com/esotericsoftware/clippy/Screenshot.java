@@ -295,6 +295,7 @@ public class Screenshot {
 		frame.setType(Frame.Type.UTILITY);
 		frame.setUndecorated(true);
 		frame.setBackground(new Color(0, 0, 0, 0));
+		frame.setLocation(0, 0);
 		frame.setSize(width, height);
 		frame.setVisible(true);
 		frame.validate();
