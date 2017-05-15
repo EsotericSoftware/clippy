@@ -39,19 +39,31 @@ public class BreakWarning {
 			public void run () {
 				if (progressBar != null) return;
 
-				long inactiveMinutes = getInactiveMillis(true) / 1000 / 60;
-				if (inactiveMinutes >= clippy.config.breakResetMinutes) lastBreakTime = System.currentTimeMillis();
+				long time = System.currentTimeMillis();
 
-				long activeMinutes = (System.currentTimeMillis() - lastBreakTime) / 1000 / 60 - inactiveMinutes;
-				if (activeMinutes >= clippy.config.breakWarningMinutes) showBreakDialog();
+				long inactiveMillis = getInactiveMillis(true);
+				long inactiveMinutes = inactiveMillis / 1000 / 60;
+				if (inactiveMinutes >= clippy.config.breakResetMinutes) lastBreakTime = time;
+
+				long activeMillis = (time - lastBreakTime) - inactiveMillis;
+				long activeMinutes = activeMillis / 1000 / 60;
+				if (activeMinutes >= clippy.config.breakWarningMinutes)
+					showBreakDialog();
+				else {
+					clippy.tray.updateTooltip("Clippy\n" //
+						+ "Active: " + formatTime(activeMillis) + "\n" //
+						+ "Break in: " + formatTime((clippy.config.breakWarningMinutes - activeMinutes) * 60 * 1000));
+				}
 			}
 		}, 5 * 1000, 5 * 1000);
 	}
 
 	void showBreakDialog () {
+		clippy.tray.updateTooltip("Clippy - Take a break!");
+
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
-				playClip(startClip, 1);
+				clippy.tray.balloon("Clippy", "Take a break!", 30000);
 				progressBar = new ProgressBar("");
 				progressBar.clickToDispose = false;
 				progressBar.red("");
@@ -72,38 +84,30 @@ public class BreakWarning {
 							String message;
 							if (percent < 0.75f) {
 								indeterminateMillis = 0;
-								long breakSeconds = clippy.config.breakResetMinutes * 60 - inactiveMillis / 1000;
-								long minutes = breakSeconds / 60, seconds = breakSeconds - minutes * 60;
-								String secondsMessage = seconds + " second" + (seconds == 1 ? "" : "s");
-								String minutesMessage = minutes + " minute" + (minutes == 1 ? "" : "s");
-								if (minutes == 0)
-									message = "Break: " + secondsMessage;
-								else
-									message = "Break: " + minutesMessage + ", " + secondsMessage;
-							} else {
-								long activeMinutes = (System.currentTimeMillis() - lastBreakTime) / 1000 / 60;
-								long hours = activeMinutes / 60, minutes = activeMinutes - hours * 60;
-								String minutesMessage = minutes + " minute" + (minutes == 1 ? "" : "s");
-								String hoursMessage = hours + " hour" + (hours == 1 ? "" : "s");
-								if (hours == 0)
-									message = "Active: " + minutesMessage;
-								else if (minutes == 0)
-									message = "Active: " + hoursMessage;
-								else
-									message = "Active: " + hoursMessage + ", " + minutesMessage;
-							}
+								message = "Break: " + formatTime(clippy.config.breakResetMinutes * 60 * 1000 - inactiveMillis);
+								progressBar.setVisible(true);
+							} else
+								message = "Active: " + formatTime(System.currentTimeMillis() - lastBreakTime);
 							progressBar.progressBar.setString(message);
 
 							indeterminateMillis -= 100;
 							if (indeterminateMillis > 0) {
 								if (!progressBar.progressBar.isIndeterminate()) {
-									playClip(flashClip, volume);
-									volume += 0.1f;
+									if (!progressBar.isVisible()) {
+										// First time after balloon.
+										playClip(startClip, 1);
+										progressBar.setVisible(true);
+									} else {
+										// Every breakReminderMinutes.
+										playClip(flashClip, volume);
+										volume += 0.1f;
+									}
 									progressBar.progressBar.setIndeterminate(true);
 								}
 							} else {
-								if (indeterminateMillis < -5 * 60 * 1000 && percent >= 0.99f) indeterminateMillis = 5000;
-								progressBar.setProgress(percent);
+								if (indeterminateMillis < -clippy.config.breakReminderMinutes * 60 * 1000 && percent >= 0.99f)
+									indeterminateMillis = 5000;
+								progressBar.setProgress(percent); // Sets indeterminate to false.
 								progressBar.toFront();
 								progressBar.setAlwaysOnTop(true);
 							}
@@ -179,5 +183,15 @@ public class BreakWarning {
 		disabled = !disabled;
 		ProgressBar progressBar = this.progressBar;
 		if (progressBar != null) progressBar.setVisible(!disabled);
+	}
+
+	String formatTime (long millis) {
+		long activeMinutes = millis / 1000 / 60;
+		long hours = activeMinutes / 60, minutes = activeMinutes - hours * 60;
+		String minutesMessage = minutes + " minute" + (minutes == 1 ? "" : "s");
+		String hoursMessage = hours + " hour" + (hours == 1 ? "" : "s");
+		if (hours == 0) return minutesMessage;
+		if (minutes == 0) return hoursMessage;
+		return hoursMessage + ", " + minutesMessage;
 	}
 }

@@ -93,6 +93,7 @@ public class Config {
 	public String breakStartSound = "breakStart";
 	public String breakFlashSound = "breakFlash";
 	public String breakEndSound = "breakEnd";
+	public int breakReminderMinutes = 5;
 	public int breakResetMinutes = 5;
 
 	public HashMap<String, ColorTimesReference> colorTimelines;

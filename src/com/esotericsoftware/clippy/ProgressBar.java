@@ -74,8 +74,6 @@ public class ProgressBar extends JDialog {
 
 		setAutoRequestFocus(false);
 		setFocusableWindowState(false);
-		setVisible(true);
-		setFocusableWindowState(false);
 
 		if (clickToDispose) {
 			addMouseListener(new MouseAdapter() {
@@ -90,6 +88,11 @@ public class ProgressBar extends JDialog {
 				}
 			});
 		}
+	}
+
+	public void setVisible (boolean b) {
+		super.setVisible(b);
+		setFocusableWindowState(false);
 	}
 
 	public void dispose () {
