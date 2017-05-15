@@ -197,7 +197,7 @@ breakResetMinutes: 5
 
 ### Warning sounds
 
-By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically every `breakReminderMinutes` if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The warning sound is played periodically at increasing volume if a break is not taken. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable.
+By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically every `breakReminderMinutes` if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The warning sound is played periodically at increasing volume if a break is not taken. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable. Set `breakReminderMinutes` to 0 to not be reminded after the initial warning.
 
 ```
 breakStartSound: breakStart

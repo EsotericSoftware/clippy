@@ -63,10 +63,15 @@ public class BreakWarning {
 
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
-				clippy.tray.balloon("Clippy", "Take a break!", 30000);
 				progressBar = new ProgressBar("");
 				progressBar.clickToDispose = false;
 				progressBar.red("");
+				if (clippy.config.breakReminderMinutes > 0)
+					clippy.tray.balloon("Clippy", "Take a break!", 30000);
+				else {
+					playClip(startClip, 1);
+					progressBar.setVisible(true);
+				}
 				new Thread("BreakWarning Dialog") {
 					{
 						setDaemon(true);
@@ -105,8 +110,8 @@ public class BreakWarning {
 									progressBar.progressBar.setIndeterminate(true);
 								}
 							} else {
-								if (indeterminateMillis < -clippy.config.breakReminderMinutes * 60 * 1000 && percent >= 0.99f)
-									indeterminateMillis = 5000;
+								if (clippy.config.breakReminderMinutes > 0 && percent >= 0.99f
+									&& indeterminateMillis < -clippy.config.breakReminderMinutes * 60 * 1000) indeterminateMillis = 5000;
 								progressBar.setProgress(percent); // Sets indeterminate to false.
 								progressBar.toFront();
 								progressBar.setAlwaysOnTop(true);
