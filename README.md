@@ -135,10 +135,10 @@ Colors can be described as RGB values, as shown above, or as a color temperature
 
 ```
 gamma: [
-	{ time: 6:00am, brightness: 1, temp: 6500 }
-	{ time: 6:00pm, brightness: 1, temp: 6500 }
-	{ time: 9:00pm, brightness: 0.8, temp: 3800 }
-	{ time: 5:30am, brightness: 0.8, temp: 3800 }
+	{ time: 6:00am, brightness: 1, kelvin: 6500 }
+	{ time: 6:00pm, brightness: 1, kelvin: 6500 }
+	{ time: 9:00pm, brightness: 0.8, kelvin: 3800 }
+	{ time: 5:30am, brightness: 0.8, kelvin: 3800 }
 ]
 ```
 
@@ -148,10 +148,10 @@ Times can be described using 12 hour time, as shown above, or 24 hour time:
 
 ```
 gamma: [
-	{ time: 06:00, brightness: 1, temp: 6500 }
-	{ time: 18:00, brightness: 1, temp: 6500 }
-	{ time: 21:00, brightness: 0.8, temp: 3800 }
-	{ time: 05:30, brightness: 0.8, temp: 3800 }
+	{ time: 06:00, brightness: 1, kelvin: 6500 }
+	{ time: 18:00, brightness: 1, kelvin: 6500 }
+	{ time: 21:00, brightness: 0.8, kelvin: 3800 }
+	{ time: 05:30, brightness: 0.8, kelvin: 3800 }
 ]
 ```
 
@@ -159,10 +159,10 @@ Time can also be describe using `sunrise:xxx` or `sunset:xxx` where `xxx` is you
 
 ```
 gamma: [
-	{ time: sunrise:43.4357, brightness: 1, temp: 6500 }
-	{ time: sunset-60:43.4357, brightness: 1, temp: 6500 }
-	{ time: sunset+120:43.4357, brightness: 0.8, temp: 3800 }
-	{ time: sunrise-30:43.4357, brightness: 0.8, temp: 3800 }
+	{ time: sunrise:43.4357, brightness: 1, kelvin: 6500 }
+	{ time: sunset-60:43.4357, brightness: 1, kelvin: 6500 }
+	{ time: sunset+120:43.4357, brightness: 0.8, kelvin: 3800 }
+	{ time: sunrise-30:43.4357, brightness: 0.8, kelvin: 3800 }
 ]
 ```
 
@@ -197,12 +197,13 @@ breakResetMinutes: 5
 
 ### Warning sounds
 
-By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The warning sound is played periodically at increasing volume if a break is not taken. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable.
+By default Clippy plays an obnoxious sound when a break needs to be taken and another periodically every `breakReminderMinutes` if the break warning is ignored. This can help you to remember to take a break, as it soon becomes easy to ignore the warning popup. The warning sound is played periodically at increasing volume if a break is not taken. The default settings use the default sounds, but the sounds can be changed by specifying a file path. Set to `null` to disable.
 
 ```
 breakStartSound: breakStart
 breakFlashSound: breakFlash
 breakEndSound: breakEnd
+breakReminderMinutes: 5
 ```
 
 ### Warning toggle
