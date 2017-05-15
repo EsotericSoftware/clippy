@@ -40,10 +40,13 @@ import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
 
 /** @author Nathan Sweet */
 public class Tray {
-	final NOTIFYICONDATA notifyIconData = new NOTIFYICONDATA();
+	final NOTIFYICONDATA windowNotifyIconData = new NOTIFYICONDATA();
+	final NOTIFYICONDATA balloonNotifyIconData = new NOTIFYICONDATA();
 	final POINT mousePosition = new POINT();
 	Pointer hwnd;
 	StdCallCallback wndProc;
+	private String tooltip = "";
+	int a;
 
 	public Tray () {
 		final CyclicBarrier barrier = new CyclicBarrier(2);
@@ -70,17 +73,17 @@ public class Tray {
 					System.exit(0);
 					return;
 				}
-				notifyIconData.hWnd = hwnd;
-				notifyIconData.uID = 1763;
-				notifyIconData.uFlags = NIF_ICON | NIF_MESSAGE;
-				notifyIconData.uCallbackMessage = wmTrayIcon;
-				notifyIconData.hIcon = LoadImage(null, new WString(iconPath), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-				notifyIconData.setTooltip("Clippy");
-				Shell_NotifyIcon(NIM_ADD, notifyIconData);
+				windowNotifyIconData.hWnd = hwnd;
+				windowNotifyIconData.uID = 1763;
+				windowNotifyIconData.uFlags = NIF_ICON | NIF_MESSAGE;
+				windowNotifyIconData.uCallbackMessage = wmTrayIcon;
+				windowNotifyIconData.hIcon = LoadImage(null, new WString(iconPath), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+				windowNotifyIconData.setTooltip("Clippy");
+				Shell_NotifyIcon(NIM_ADD, windowNotifyIconData);
 
 				Runtime.getRuntime().addShutdownHook(new Thread() {
 					public void run () {
-						Shell_NotifyIcon(NIM_DELETE, notifyIconData);
+						Shell_NotifyIcon(NIM_DELETE, windowNotifyIconData);
 					}
 				});
 
@@ -104,7 +107,7 @@ public class Tray {
 							}
 						} else if (message == wmTaskbarCreated) {
 							// Add icon again if explorer crashed.
-							Shell_NotifyIcon(NIM_ADD, notifyIconData);
+							Shell_NotifyIcon(NIM_ADD, windowNotifyIconData);
 						}
 						return DefWindowProc(hwnd, message, wParameter, lParameter);
 					}
@@ -141,11 +144,17 @@ public class Tray {
 	protected void mouseUp (POINT position, int button) {
 	}
 
-	public void message (String title, String message, int millis) {
-		NOTIFYICONDATA notifyIconData = new NOTIFYICONDATA();
-		notifyIconData.hWnd = hwnd;
-		notifyIconData.uID = 1763;
-		notifyIconData.setBalloon(title, message, millis, NIIF_NONE);
-		Shell_NotifyIcon(NIM_MODIFY, notifyIconData);
+	public synchronized void updateTooltip (String text) {
+		if (tooltip.equals(text)) return;
+		tooltip = text;
+		windowNotifyIconData.setTooltip(text);
+		Shell_NotifyIcon(NIM_MODIFY, windowNotifyIconData);
+	}
+
+	public synchronized void balloon (String title, String message, int millis) {
+		balloonNotifyIconData.hWnd = this.windowNotifyIconData.hWnd;
+		balloonNotifyIconData.uID = this.windowNotifyIconData.uID;
+		balloonNotifyIconData.setBalloon(title, message, millis, NIIF_NONE);
+		Shell_NotifyIcon(NIM_MODIFY, balloonNotifyIconData);
 	}
 }

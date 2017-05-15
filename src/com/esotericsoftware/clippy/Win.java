@@ -300,15 +300,13 @@ public class Win {
 		public int uFlags;
 		public int uCallbackMessage;
 		public Pointer hIcon;
-		public char[] szTip = new char[64];
+		public char[] szTip = new char[128];
 		public int dwState;
 		public int dwStateMask;
 		public char[] szInfo = new char[256];
 		public int uTimeoutOrVersion; // {UINT uTimeout; UINT uVersion;};
 		public char[] szInfoTitle = new char[64];
 		public int dwInfoFlags;
-		public int guidItem;
-		public Pointer hBalloonIcon;
 
 		{
 			cbSize = size();
@@ -316,20 +314,28 @@ public class Win {
 
 		public void setTooltip (String s) {
 			uFlags |= NIF_TIP;
+
 			System.arraycopy(s.toCharArray(), 0, szTip, 0, Math.min(s.length(), szTip.length));
+			szTip[s.length()] = '\0';
 		}
 
 		public void setBalloon (String title, String message, int millis, int niif) {
 			uFlags |= NIF_INFO;
+
 			System.arraycopy(message.toCharArray(), 0, szInfo, 0, Math.min(message.length(), szInfo.length));
+			szInfo[message.length()] = '\0';
+
 			uTimeoutOrVersion = millis;
+
 			System.arraycopy(title.toCharArray(), 0, szInfoTitle, 0, Math.min(title.length(), szInfoTitle.length));
+			szInfoTitle[title.length()] = '\0';
+
 			dwInfoFlags = niif;
 		}
 
 		protected List<?> getFieldOrder () {
 			return Arrays.asList(new String[] {"cbSize", "hWnd", "uID", "uFlags", "uCallbackMessage", "hIcon", "szTip", "dwState",
-				"dwStateMask", "szInfo", "uTimeoutOrVersion", "szInfoTitle", "dwInfoFlags", "guidItem", "hBalloonIcon"});
+				"dwStateMask", "szInfo", "uTimeoutOrVersion", "szInfoTitle", "dwInfoFlags"});
 		}
 	}
 
