@@ -168,6 +168,7 @@ public class Config {
 		}
 
 		public void read (Json json, JsonValue value) {
+			if (value.isNull()) return;
 			if (value.isString())
 				name = value.asString();
 			else if (value.isArray())
