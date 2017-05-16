@@ -98,6 +98,7 @@ public abstract class Upload {
 			}
 		}
 		ProgressBar progressBar = new ProgressBar(file.getName());
+		progressBar.setVisible(true);
 		synchronized (progressBars) {
 			progressBars.put(file, progressBar);
 		}

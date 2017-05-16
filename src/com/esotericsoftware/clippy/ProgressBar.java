@@ -163,6 +163,7 @@ public class ProgressBar extends JDialog {
 		}
 
 		final ProgressBar progressBar = new ProgressBar("1-msDk.png");
+		progressBar.setVisible(true);
 		new Thread() {
 			public void run () {
 				Util.sleep(2000);

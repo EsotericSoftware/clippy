@@ -82,7 +82,10 @@ public class PhilipsHue {
 			private boolean started;
 
 			public void onAccessPointsFound (List<PHAccessPoint> accessPoints) {
-				if (progress == null) progress = new ProgressBar("");
+				if (progress == null) {
+					progress = new ProgressBar("");
+					progress.setVisible(true);
+				}
 				if (accessPoints.size() == 1) {
 					PHAccessPoint accessPoint = accessPoints.get(0);
 					if (INFO) info("Philips Hue bridge found: " + accessPoint.getIpAddress());
@@ -104,7 +107,10 @@ public class PhilipsHue {
 					info("Philips Hue authentication required: " + accessPoint.getIpAddress());
 					info("Press the Philips Hue link button...");
 				}
-				if (progress == null) progress = new ProgressBar("");
+				if (progress == null) {
+					progress = new ProgressBar("");
+					progress.setVisible(true);
+				}
 				progress.green("Press the Philips Hue link button...");
 				hue.startPushlinkAuthentication(accessPoint);
 			}
@@ -153,7 +159,10 @@ public class PhilipsHue {
 				}
 				if (ERROR) error("Philips Hue error: " + message + " (" + code + ")");
 				if (!started) {
-					if (progress == null) progress = new ProgressBar("");
+					if (progress == null) {
+						progress = new ProgressBar("");
+						progress.setVisible(true);
+					}
 					if (message == null) message = "Error " + code;
 					progress.failed("Philips Hue: " + message, 20000);
 					progress = null;
@@ -173,8 +182,10 @@ public class PhilipsHue {
 
 		if (clippy.data.philipsHueIP != null) {
 			if (DEBUG) debug("Connecting to Philips Hue bridge: " + clippy.data.philipsHueUser + " @ " + clippy.data.philipsHueIP);
-			if (clippy.data.philipsHueUser == null)
+			if (clippy.data.philipsHueUser == null) {
 				progress = new ProgressBar("Connecting to Philips Hue: " + clippy.data.philipsHueIP);
+				progress.setVisible(true);
+			}
 			PHAccessPoint accessPoint = new PHAccessPoint();
 			accessPoint.setIpAddress(clippy.data.philipsHueIP);
 			accessPoint.setUsername(clippy.data.philipsHueUser);
@@ -182,6 +193,7 @@ public class PhilipsHue {
 		} else {
 			if (INFO) info("Searching for Philips Hue bridges...");
 			progress = new ProgressBar("Searching for Philips Hue bridges...");
+			progress.setVisible(true);
 			PHBridgeSearchManager search = (PHBridgeSearchManager)hue.getSDKService(PHHueSDK.SEARCH_BRIDGE);
 			search.search(true, true);
 		}
