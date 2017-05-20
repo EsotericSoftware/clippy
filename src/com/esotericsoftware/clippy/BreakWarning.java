@@ -129,6 +129,7 @@ public class BreakWarning {
 	}
 
 	void playClip (Clip clip, float volume) {
+		if (clip == null) return;
 		if (volume < 0) volume = 0;
 		if (volume > 1) volume = 1;
 		clip.stop();
