@@ -22,6 +22,7 @@ package com.esotericsoftware.clippy.util;
 
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -62,6 +63,8 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		this.databasePath = databasePath;
 		this.tableName = tableName;
 		this.connectionOptions = connectionOptions;
+
+		new File(databasePath + ".lock.db").delete(); // Try to delete orphaned database lock file.
 	}
 
 	public void setInMemory (boolean inMemory) {
