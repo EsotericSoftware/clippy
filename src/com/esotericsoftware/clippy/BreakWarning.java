@@ -60,6 +60,7 @@ public class BreakWarning {
 
 	void showBreakDialog () {
 		clippy.tray.updateTooltip("Clippy - Take a break!");
+		if (INFO) info("Break needed.");
 
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
@@ -108,6 +109,7 @@ public class BreakWarning {
 										volume += 0.1f;
 									}
 									progressBar.progressBar.setIndeterminate(true);
+									if (INFO) info("Break reminder.");
 								}
 							} else {
 								if (clippy.config.breakReminderMinutes > 0 && percent >= 0.99f
@@ -122,6 +124,7 @@ public class BreakWarning {
 						playClip(endClip, 1);
 						progressBar.done("Break complete!", 2000);
 						progressBar = null;
+						if (INFO) info("Break complete!");
 					}
 				}.start();
 			}
