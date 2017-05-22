@@ -51,8 +51,8 @@ public class BreakWarning {
 					showBreakDialog();
 				else {
 					clippy.tray.updateTooltip("Clippy\n" //
-						+ "Active: " + formatTime(activeMillis) + "\n" //
-						+ "Break in: " + formatTime((clippy.config.breakWarningMinutes - activeMinutes) * 60 * 1000));
+						+ "Active: " + formatTimeMinutes(activeMillis) + "\n" //
+						+ "Break in: " + formatTimeMinutes((clippy.config.breakWarningMinutes - activeMinutes) * 60 * 1000));
 				}
 			}
 		}, 5 * 1000, 5 * 1000);
@@ -90,10 +90,10 @@ public class BreakWarning {
 							String message;
 							if (percent < 0.75f) {
 								indeterminateMillis = 0;
-								message = "Break: " + formatTime(clippy.config.breakResetMinutes * 60 * 1000 - inactiveMillis);
+								message = "Break: " + formatTimeSeconds(clippy.config.breakResetMinutes * 60 * 1000 - inactiveMillis);
 								progressBar.setVisible(true);
 							} else
-								message = "Active: " + formatTime(System.currentTimeMillis() - lastBreakTime);
+								message = "Active: " + formatTimeMinutes(System.currentTimeMillis() - lastBreakTime);
 							progressBar.progressBar.setString(message);
 
 							indeterminateMillis -= 100;
@@ -194,13 +194,22 @@ public class BreakWarning {
 		if (progressBar != null) progressBar.setVisible(!disabled);
 	}
 
-	String formatTime (long millis) {
-		long activeMinutes = millis / 1000 / 60;
-		long hours = activeMinutes / 60, minutes = activeMinutes - hours * 60;
+	String formatTimeMinutes (long timeMillis) {
+		long timeMinutes = timeMillis / 1000 / 60;
+		long hours = timeMinutes / 60, minutes = timeMinutes - hours * 60;
 		String minutesMessage = minutes + " minute" + (minutes == 1 ? "" : "s");
 		String hoursMessage = hours + " hour" + (hours == 1 ? "" : "s");
 		if (hours == 0) return minutesMessage;
 		if (minutes == 0) return hoursMessage;
 		return hoursMessage + ", " + minutesMessage;
+	}
+
+	String formatTimeSeconds (long timeMillis) {
+		long timeSeconds = timeMillis / 1000;
+		long minutes = timeSeconds / 60, seconds = timeSeconds - minutes * 60;
+		String secondsMessage = seconds + " second" + (seconds == 1 ? "" : "s");
+		String minutesMessage = minutes + " minute" + (minutes == 1 ? "" : "s");
+		if (minutes == 0) return secondsMessage;
+		return minutesMessage + ", " + secondsMessage;
 	}
 }
