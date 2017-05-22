@@ -29,13 +29,19 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+
+import org.h2.util.New;
 
 import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
 import com.esotericsoftware.clippy.Win.POINT;
@@ -301,6 +307,51 @@ public class Clippy {
 			} catch (Throwable ignored2) {
 			}
 		}
+
+		setLogger(new Logger() {
+			private final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm");
+
+			public void log (int level, String category, String message, Throwable ex) {
+				StringBuilder builder = new StringBuilder(256);
+
+				builder.append(dateFormat.format(new Date()));
+
+				switch (level) {
+				case LEVEL_ERROR:
+					builder.append(" ERROR: ");
+					break;
+				case LEVEL_WARN:
+					builder.append("  WARN: ");
+					break;
+				case LEVEL_INFO:
+					builder.append("  INFO: ");
+					break;
+				case LEVEL_DEBUG:
+					builder.append(" DEBUG: ");
+					break;
+				case LEVEL_TRACE:
+					builder.append(" TRACE: ");
+					break;
+				}
+
+				if (category != null) {
+					builder.append('[');
+					builder.append(category);
+					builder.append("] ");
+				}
+
+				builder.append(message);
+
+				if (ex != null) {
+					StringWriter writer = new StringWriter(256);
+					ex.printStackTrace(new PrintWriter(writer));
+					builder.append('\n');
+					builder.append(writer.toString().trim());
+				}
+
+				System.out.println(builder.toString());
+			}
+		});
 
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
