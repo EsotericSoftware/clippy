@@ -11,11 +11,11 @@
 	<classpathentry exported="true" kind="lib" path="libs/scar-1.11a.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/huelocalsdk.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/huesdkresources.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/h2-1.4.192.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/commons-logging-1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/httpclient-4.5.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/httpcore-4.4.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/clippy-natives.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/jsonbeans-0.8.jar"/>
+	<classpathentry kind="lib" path="libs/h2-1.4.195.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
