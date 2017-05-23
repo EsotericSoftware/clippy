@@ -650,7 +650,8 @@ SELECT COUNT(*) FROM clips; -- Get total number of clips.
 SELECT MAX(id) FROM clips; -- Get highest clip ID.
 DELETE FROM clips WHERE id = 1234; -- Delete specific clip.
 DELETE FROM clips WHERE id < 10000; -- Delete some old clips.
-SELECT id, text FROM clips ORDER BY LENGTH(text) DESC LIMIT 20; -- Show 20 largest clips.
+SELECT id, LENGTH(text) length, text FROM clips ORDER BY length DESC LIMIT 50; -- Show 50 largest clips.
+DELETE FROM clips WHERE LENGTH(text) >= 12345; -- Delete clips larger than 12345 characters.
 ```
 
 ## Development details
