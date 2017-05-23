@@ -652,6 +652,7 @@ DELETE FROM clips WHERE id = 1234; -- Delete specific clip.
 DELETE FROM clips WHERE id < 10000; -- Delete some old clips.
 SELECT id, LENGTH(text) length, text FROM clips ORDER BY length DESC LIMIT 50; -- Show 50 largest clips.
 DELETE FROM clips WHERE LENGTH(text) >= 12345; -- Delete clips larger than 12345 characters.
+DELETE FROM clips WHERE text LIKE '%abcde%'; -- Delete clips containing "abcde".
 ```
 
 ## Development details
