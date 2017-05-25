@@ -3,11 +3,11 @@ package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.minlog.Log.*;
 
-import java.awt.EventQueue;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.sound.sampled.AudioInputStream;
@@ -16,6 +16,7 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 
 import com.esotericsoftware.clippy.Win.LASTINPUTINFO;
+import com.esotericsoftware.clippy.util.EventQueueRepeat;
 import com.esotericsoftware.clippy.util.Util;
 
 public class BreakWarning {
@@ -27,9 +28,11 @@ public class BreakWarning {
 	volatile ProgressBar progressBar;
 	Clip startClip, flashClip, endClip;
 	volatile boolean disabled;
+	Timer timer;
 
 	public BreakWarning () {
 		if (clippy.config.breakWarningMinutes <= 0) return;
+		timer = new Timer("BreakWarning", true);
 
 		if (clippy.config.breakStartSound != null) startClip = loadClip(clippy.config.breakStartSound);
 		if (clippy.config.breakFlashSound != null) flashClip = loadClip(clippy.config.breakFlashSound);
@@ -59,76 +62,73 @@ public class BreakWarning {
 	}
 
 	void showBreakDialog () {
-		clippy.tray.updateTooltip("Clippy - Take a break!");
 		if (INFO) info("Break needed.");
 
-		EventQueue.invokeLater(new Runnable() {
-			public void run () {
+		new EventQueueRepeat() {
+			float indeterminateMillis = 5000;
+			float volume = 0.05f;
+
+			protected void start () {
 				progressBar = new ProgressBar("");
 				progressBar.clickToDispose = false;
 				progressBar.red("");
+				clippy.tray.updateTooltip("Clippy - Take a break!");
 				if (clippy.config.breakReminderMinutes > 0)
 					clippy.tray.balloon("Clippy", "Take a break!", 30000);
 				else {
 					playClip(startClip, 1);
 					progressBar.setVisible(true);
 				}
-				new Thread("BreakWarning Dialog") {
-					{
-						setDaemon(true);
-					}
-
-					public void run () {
-						float indeterminateMillis = 5000;
-						float volume = 0.05f;
-						while (true) {
-							long inactiveMillis = getInactiveMillis(false);
-							long inactiveMinutes = inactiveMillis / 1000 / 60;
-							if (inactiveMinutes >= clippy.config.breakResetMinutes) break;
-
-							float percent = 1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000);
-							String message;
-							if (percent < 0.75f) {
-								indeterminateMillis = 0;
-								message = "Break: " + formatTimeSeconds(clippy.config.breakResetMinutes * 60 * 1000 - inactiveMillis);
-								progressBar.setVisible(true);
-							} else
-								message = "Active: " + formatTimeMinutes(System.currentTimeMillis() - lastBreakTime);
-							progressBar.progressBar.setString(message);
-
-							indeterminateMillis -= 100;
-							if (indeterminateMillis > 0) {
-								if (!progressBar.progressBar.isIndeterminate()) {
-									if (!progressBar.isVisible()) {
-										// First time after balloon.
-										playClip(startClip, 1);
-										progressBar.setVisible(true);
-									} else {
-										// Every breakReminderMinutes.
-										playClip(flashClip, volume);
-										volume += 0.1f;
-									}
-									progressBar.progressBar.setIndeterminate(true);
-									if (INFO) info("Break reminder.");
-								}
-							} else {
-								if (clippy.config.breakReminderMinutes > 0 && percent >= 0.99f
-									&& indeterminateMillis < -clippy.config.breakReminderMinutes * 60 * 1000) indeterminateMillis = 5000;
-								progressBar.setProgress(percent); // Sets indeterminate to false.
-								progressBar.toFront();
-								progressBar.setAlwaysOnTop(true);
-							}
-							Util.sleep(100);
-						}
-						lastBreakTime = System.currentTimeMillis();
-						playClip(endClip, 1);
-						progressBar.done("Break complete!", 2000);
-						progressBar = null;
-						if (INFO) info("Break complete!");
-					}
-				}.start();
 			}
-		});
+
+			protected boolean repeat () {
+				long inactiveMillis = getInactiveMillis(false);
+				long inactiveMinutes = inactiveMillis / 1000 / 60;
+				if (inactiveMinutes >= clippy.config.breakResetMinutes) return true;
+
+				float percent = 1 - inactiveMillis / (float)(clippy.config.breakResetMinutes * 60 * 1000);
+				String message;
+				if (percent < 0.75f) {
+					indeterminateMillis = 0;
+					message = "Break: " + formatTimeSeconds(clippy.config.breakResetMinutes * 60 * 1000 - inactiveMillis);
+					progressBar.setVisible(true);
+				} else
+					message = "Active: " + formatTimeMinutes(System.currentTimeMillis() - lastBreakTime);
+				progressBar.progressBar.setString(message);
+
+				indeterminateMillis -= 100;
+				if (indeterminateMillis > 0) {
+					if (!progressBar.progressBar.isIndeterminate()) {
+						if (!progressBar.isVisible()) {
+							// First time after balloon.
+							playClip(startClip, 1);
+							progressBar.setVisible(true);
+						} else {
+							// Every breakReminderMinutes.
+							playClip(flashClip, volume);
+							volume += 0.1f;
+						}
+						progressBar.progressBar.setIndeterminate(true);
+						if (INFO) info("Break reminder.");
+					}
+				} else {
+					if (clippy.config.breakReminderMinutes > 0 && percent >= 0.99f
+						&& indeterminateMillis < -clippy.config.breakReminderMinutes * 60 * 1000) indeterminateMillis = 5000;
+					progressBar.setProgress(percent); // Sets indeterminate to false.
+					progressBar.toFront();
+					progressBar.setAlwaysOnTop(true);
+				}
+				return false;
+			}
+
+			protected void end () {
+				lastBreakTime = System.currentTimeMillis();
+				playClip(endClip, 1);
+				progressBar.done("Break complete!", 2000);
+				progressBar = null;
+				if (INFO) info("Break complete!");
+			}
+		}.run(100);
 	}
 
 	void playClip (Clip clip, float volume) {

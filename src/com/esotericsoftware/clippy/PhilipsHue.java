@@ -3,6 +3,7 @@ package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.awt.EventQueue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -79,9 +80,17 @@ public class PhilipsHue {
 		hue.setDeviceName(name);
 
 		hue.getNotificationManager().registerSDKListener(new PHSDKListener() {
-			private boolean started;
+			private volatile boolean started;
 
-			public void onAccessPointsFound (List<PHAccessPoint> accessPoints) {
+			public void onAccessPointsFound (final List<PHAccessPoint> accessPoints) {
+				EventQueue.invokeLater(new Runnable() {
+					public void run () {
+						onAccessPointsFoundEDT(accessPoints);
+					}
+				});
+			}
+
+			void onAccessPointsFoundEDT (List<PHAccessPoint> accessPoints) {
 				if (progress == null) {
 					progress = new ProgressBar("");
 					progress.setVisible(true);
@@ -102,7 +111,17 @@ public class PhilipsHue {
 				}
 			}
 
-			public void onAuthenticationRequired (PHAccessPoint accessPoint) {
+			// ---
+
+			public void onAuthenticationRequired (final PHAccessPoint accessPoint) {
+				EventQueue.invokeLater(new Runnable() {
+					public void run () {
+						onAuthenticationRequired(accessPoint);
+					}
+				});
+			}
+
+			void onAuthenticationRequiredEDT (PHAccessPoint accessPoint) {
 				if (INFO) {
 					info("Philips Hue authentication required: " + accessPoint.getIpAddress());
 					info("Press the Philips Hue link button...");
@@ -115,7 +134,17 @@ public class PhilipsHue {
 				hue.startPushlinkAuthentication(accessPoint);
 			}
 
-			public void onBridgeConnected (PHBridge bridge, String username) {
+			// ---
+
+			public void onBridgeConnected (final PHBridge bridge, final String username) {
+				EventQueue.invokeLater(new Runnable() {
+					public void run () {
+						onBridgeConnectedEDT(bridge, username);
+					}
+				});
+			}
+
+			void onBridgeConnectedEDT (PHBridge bridge, String username) {
 				if (INFO) info("Philips Hue bridge connected: " + username);
 				if (progress != null) {
 					progress.done("Philips Hue bridge connected!", 2000);
@@ -140,6 +169,8 @@ public class PhilipsHue {
 				}
 			}
 
+			// ---
+
 			public void onConnectionLost (PHAccessPoint accessPoint) {
 				if (WARN) warn("Philips Hue connection lost.");
 			}
@@ -152,12 +183,24 @@ public class PhilipsHue {
 				if (TRACE) trace("Philips Hue cache updated: " + messageTypes);
 			}
 
-			public void onError (int code, String message) {
+			// ---
+
+			public void onError (final int code, final String message) {
 				if (code == PHMessageType.PUSHLINK_BUTTON_NOT_PRESSED) {
 					if (TRACE) trace("Philips Hue error: " + message + " (" + code + ")");
 					return;
 				}
 				if (ERROR) error("Philips Hue error: " + message + " (" + code + ")");
+				if (!started) {
+					EventQueue.invokeLater(new Runnable() {
+						public void run () {
+							onErrorEDT(code, message);
+						}
+					});
+				}
+			}
+
+			void onErrorEDT (int code, String message) {
 				if (!started) {
 					if (progress == null) {
 						progress = new ProgressBar("");
@@ -168,6 +211,8 @@ public class PhilipsHue {
 					progress = null;
 				}
 			}
+
+			// ---
 
 			public void onParsingErrors (List<PHHueParsingError> errors) {
 				if (ERROR) {
@@ -183,8 +228,16 @@ public class PhilipsHue {
 		if (clippy.data.philipsHueIP != null) {
 			if (DEBUG) debug("Connecting to Philips Hue bridge: " + clippy.data.philipsHueUser + " @ " + clippy.data.philipsHueIP);
 			if (clippy.data.philipsHueUser == null) {
-				progress = new ProgressBar("Connecting to Philips Hue: " + clippy.data.philipsHueIP);
-				progress.setVisible(true);
+				try {
+					EventQueue.invokeAndWait(new Runnable() {
+						public void run () {
+							progress = new ProgressBar("Connecting to Philips Hue: " + clippy.data.philipsHueIP);
+							progress.setVisible(true);
+						}
+					});
+				} catch (Exception ex) {
+					throw new RuntimeException(ex);
+				}
 			}
 			PHAccessPoint accessPoint = new PHAccessPoint();
 			accessPoint.setIpAddress(clippy.data.philipsHueIP);
@@ -192,8 +245,16 @@ public class PhilipsHue {
 			hue.connect(accessPoint);
 		} else {
 			if (INFO) info("Searching for Philips Hue bridges...");
-			progress = new ProgressBar("Searching for Philips Hue bridges...");
-			progress.setVisible(true);
+			try {
+				EventQueue.invokeAndWait(new Runnable() {
+					public void run () {
+						progress = new ProgressBar("Searching for Philips Hue bridges...");
+						progress.setVisible(true);
+					}
+				});
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
+			}
 			PHBridgeSearchManager search = (PHBridgeSearchManager)hue.getSDKService(PHHueSDK.SEARCH_BRIDGE);
 			search.search(true, true);
 		}

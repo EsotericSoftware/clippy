@@ -107,7 +107,10 @@ public class ProgressBar extends JDialog {
 
 	public void setProgress (final float progress) {
 		this.progress = progress;
-		EventQueue.invokeLater(updateProgress);
+		if (EventQueue.isDispatchThread())
+			updateProgress.run();
+		else
+			EventQueue.invokeLater(updateProgress);
 	}
 
 	public void green (String message) {
