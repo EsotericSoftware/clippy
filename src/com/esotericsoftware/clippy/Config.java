@@ -102,6 +102,7 @@ public class Config {
 
 	public boolean philipsHueEnabled;
 	public int philipsHueDisableMinutes = 90;
+	public int philipsHueSwitchCheckMillis = 1000;
 	public ArrayList<PhilipsHueLights> philipsHue;
 
 	public boolean tobiiEnabled;

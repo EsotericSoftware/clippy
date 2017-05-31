@@ -353,6 +353,7 @@ public class PhilipsHue {
 		long brightnessDisabled;
 		String lastEventDate;
 		Timeline timeline;
+		long lastSwitchCheck;
 
 		PhilipsHueTimeline (PhilipsHueLights lights) {
 			super("PhilipsHue " + (lights.switchName != null ? lights.switchName : lights.name), null, 5 * 1000, 1000, 0,
@@ -364,18 +365,23 @@ public class PhilipsHue {
 		protected void update () {
 			// Check if switch state has changed.
 			if (lights.switchName != null) {
-				PHBridge bridge = PHHueSDK.getInstance().getSelectedBridge();
-				if (bridge != null) {
-					SwitchEvent event = getSwitchEvent(bridge);
-					if (event != null) {
-						if (lastEventDate == null) lastEventDate = event.date;
-						if (!lastEventDate.equals(event.date)) {
-							lastEventDate = event.date;
-							handleEvent(event, true);
+				long time = System.currentTimeMillis();
+				if (time - lastSwitchCheck > clippy.config.philipsHueSwitchCheckMillis) {
+					lastSwitchCheck = time;
+					PHBridge bridge = PHHueSDK.getInstance().getSelectedBridge();
+					if (bridge != null) {
+						SwitchEvent event = getSwitchEvent(bridge);
+						if (event != null) {
+							if (lastEventDate == null) lastEventDate = event.date;
+							if (!lastEventDate.equals(event.date)) {
+								lastEventDate = event.date;
+								handleEvent(event, true);
+							}
 						}
 					}
 				}
 			}
+
 			super.update();
 
 			// If timeline has 1 entry and it has no time, go back to the on timeline after first update.
