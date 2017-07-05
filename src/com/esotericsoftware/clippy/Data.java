@@ -10,7 +10,7 @@ import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonValue;
 
 public class Data {
-	static private final File dataFile = new File(System.getProperty("user.home"), ".clippy/data.json");
+	static public final File dataFile = new File(System.getProperty("user.home"), ".clippy/data.json");
 
 	public String philipsHueIP;
 	public String philipsHueUser;

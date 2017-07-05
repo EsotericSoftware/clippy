@@ -199,6 +199,7 @@ public class Clippy {
 			protected void mouseDown (POINT position, int button) {
 				gamma.reset();
 				gamma.wake();
+				menu.populate();
 				menu.setLocation(position.x, position.y - menu.getHeight());
 				menu.showPopup();
 			}

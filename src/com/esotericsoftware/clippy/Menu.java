@@ -23,24 +23,61 @@ package com.esotericsoftware.clippy;
 import static java.awt.GridBagConstraints.*;
 
 import java.awt.GridBagConstraints;
+import java.util.ArrayList;
+
+import javax.swing.JSeparator;
 
 import com.esotericsoftware.clippy.util.PopupFrame;
 import com.esotericsoftware.clippy.util.TextItem;
 
 /** @author Nathan Sweet */
 public class Menu extends PopupFrame {
-	public Menu () {
+	boolean populated;
+	ArrayList<String> itemText = new ArrayList();
+	ArrayList<Runnable> itemRunnable = new ArrayList();
+
+	public void addItem (String text, Runnable runnable) {
+		if (populated) throw new IllegalStateException();
+		itemText.add(text);
+		itemRunnable.add(runnable);
+	}
+
+	public void addSeparator () {
+		if (populated) throw new IllegalStateException();
+		itemText.add(null);
+		itemRunnable.add(null);
+	}
+
+	public void populate () {
+		if (populated) return;
+
+		addItem("Exit", new Runnable() {
+			public void run () {
+				System.exit(0);
+			}
+		});
+		populated = true;
+
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = HORIZONTAL;
 		c.anchor = WEST;
 		c.weightx = 1;
-
+		c.gridx = 0;
 		c.gridy = 0;
-		panel.add(new TextItem("Exit") {
-			public void clicked () {
-				System.exit(0);
+
+		for (int i = 0, n = itemText.size(); i < n; i++) {
+			final Runnable runnable = itemRunnable.get(i);
+			if (runnable == null)
+				panel.add(new JSeparator(), c);
+			else {
+				panel.add(new TextItem(itemText.get(i)) {
+					public void clicked () {
+						runnable.run();
+					}
+				}, c);
 			}
-		}, c);
+			c.gridy++;
+		}
 
 		pack();
 	}

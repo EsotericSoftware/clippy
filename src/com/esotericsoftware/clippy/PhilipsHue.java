@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JOptionPane;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -24,6 +26,7 @@ import com.esotericsoftware.clippy.Config.ColorTime.Power;
 import com.esotericsoftware.clippy.Config.ColorTimesReference;
 import com.esotericsoftware.clippy.Config.PhilipsHueLights;
 import com.esotericsoftware.clippy.util.ColorTimeline;
+import com.philips.lighting.hue.listener.PHBridgeConfigurationListener;
 import com.philips.lighting.hue.listener.PHGroupListener;
 import com.philips.lighting.hue.listener.PHLightListener;
 import com.philips.lighting.hue.listener.PHRuleListener;
@@ -34,6 +37,7 @@ import com.philips.lighting.hue.sdk.PHMessageType;
 import com.philips.lighting.hue.sdk.PHSDKListener;
 import com.philips.lighting.hue.sdk.utilities.PHUtilities;
 import com.philips.lighting.model.PHBridge;
+import com.philips.lighting.model.PHBridgeConfiguration;
 import com.philips.lighting.model.PHBridgeResource;
 import com.philips.lighting.model.PHBridgeResourcesCache;
 import com.philips.lighting.model.PHGroup;
@@ -105,6 +109,7 @@ public class PhilipsHue {
 						info("Philips Hue bridges found:");
 						for (PHAccessPoint accessPoint : accessPoints)
 							info("  " + accessPoint.getIpAddress());
+						info("Set \"philipsHueIP\" in: " + Data.dataFile.getAbsolutePath());
 					}
 					progress.done("Bridges found! See clippy.log for IPs.", -1);
 					progress = null;
@@ -116,7 +121,7 @@ public class PhilipsHue {
 			public void onAuthenticationRequired (final PHAccessPoint accessPoint) {
 				EventQueue.invokeLater(new Runnable() {
 					public void run () {
-						onAuthenticationRequired(accessPoint);
+						onAuthenticationRequiredEDT(accessPoint);
 					}
 				});
 			}
@@ -166,6 +171,18 @@ public class PhilipsHue {
 						start(lights);
 					for (PhilipsHueLights lights : clippy.config.philipsHue)
 						if (lights.timeline != null) lights.timeline.setTimeline(Timeline.on);
+
+					clippy.menu.addItem("TouchLink", new Runnable() {
+						public void run () {
+							if (JOptionPane.showConfirmDialog(null,
+								"This will reset the nearest Philips Hue device so it can be added to a different bridge.",
+								"Philips Hue TouchLink", JOptionPane.OK_CANCEL_OPTION,
+								JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
+								touchLink();
+							}
+						}
+					});
+					clippy.menu.addSeparator();
 				}
 			}
 
@@ -271,6 +288,31 @@ public class PhilipsHue {
 		}
 		if (!hasTimeline) return;
 		new PhilipsHueTimeline(lights).start();
+	}
+
+	void touchLink () {
+		PHBridgeConfiguration config = new PHBridgeConfiguration();
+		config.setTouchlink(true);
+		PHHueSDK.getInstance().getSelectedBridge().updateBridgeConfigurations(config, new PHBridgeConfigurationListener() {
+			public void onSuccess () {
+				JOptionPane.showMessageDialog(null, "A Hue device was found. You may now do a device search using the Hue app.",
+					"Philips Hue TouchLink", JOptionPane.INFORMATION_MESSAGE);
+				if (TRACE) trace("Philips Hue TouchLink successful.");
+			}
+
+			public void onStateUpdate (Map<String, String> success, List<PHHueError> errors) {
+				if (TRACE) trace("Philips Hue TouchLink state updated: " + success + "\n" + errors);
+			}
+
+			public void onError (int code, String message) {
+				if (ERROR) error("Philips Hue TouchLink error: " + message + " (" + code + ")");
+			}
+
+			public void onReceivingConfiguration (PHBridgeConfiguration config) {
+				if (TRACE) trace("Philips Hue TouchLink configuration received: " + config);
+			}
+		});
+
 	}
 
 	static final PHLightListener lightListener = new PHLightListener() {

@@ -574,6 +574,12 @@ gamma: [
 ]
 ```
 
+### TouchLink
+
+Clippy can trigger a TouchLink, which is where the nearest Philips Hue device is reset, even if it has been paired with another bridge. This process is also known as stealing or "lightstealer". The device should be within ~30cm (12 inches) of the bridge, though a meter (3 feet) or more may still work. There should not be other devices closer to the bridge. To start the TouchLink, click the Clippy icon in the system tray, then "Philips Hue TouchLink". A dialog will appear if a device is successfully found. Afterward, you may use the Hue mobile app to search and find the device that was reset.
+
+Switches cannot be reset using TouchLink. Instead, the switch has a physical "Setup" button on the back that must be held until the switch's orange LED blinks. After that you may search for the switch using the Hue app.
+
 ## Dyanmic DNS
 
 When your IP changes, Clippy can update your dynamic DNS entry at [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
