@@ -41,13 +41,12 @@ import java.util.List;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
-import org.h2.util.New;
-
 import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
 import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.clippy.util.MultiplexOutputStream;
 import com.esotericsoftware.clippy.util.TextItem;
 import com.esotericsoftware.minlog.Log;
+import com.esotericsoftware.minlog.Log.Logger;
 import com.sun.jna.WString;
 
 // BOZO - Favorites that always show up before others when searching.
@@ -213,6 +212,20 @@ public class Clippy {
 		new PhilipsHue();
 		tobii = new Tobii();
 		new DnsMadeEasy();
+
+		menu.addSeparator(true);
+		menu.addItem(true, "Upload clipboard", new Runnable() {
+			public void run () {
+				menu.hidePopup();
+				upload();
+			}
+		});
+		menu.addItem(true, "Screenshot", new Runnable() {
+			public void run () {
+				menu.hidePopup();
+				screenshot.region();
+			}
+		});
 
 		if (config.pluginClass != null) {
 			try {

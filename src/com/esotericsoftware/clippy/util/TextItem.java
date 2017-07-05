@@ -45,7 +45,7 @@ public class TextItem extends JLabel {
 		putClientProperty("html.disable", Boolean.TRUE);
 		setOpaque(true);
 		setFont(font);
-		setBorder(BorderFactory.createEmptyBorder(2, 7, 2, 7));
+		setBorder(BorderFactory.createEmptyBorder(4, 7, 0, 7));
 
 		addMouseListener(new MouseAdapter() {
 			public void mouseClicked (MouseEvent e) {

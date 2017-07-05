@@ -20,11 +20,11 @@
 
 package com.esotericsoftware.clippy;
 
-import static java.awt.GridBagConstraints.*;
-
 import java.awt.GridBagConstraints;
+import java.awt.Insets;
 import java.util.ArrayList;
 
+import javax.swing.JComponent;
 import javax.swing.JSeparator;
 
 import com.esotericsoftware.clippy.util.PopupFrame;
@@ -32,53 +32,60 @@ import com.esotericsoftware.clippy.util.TextItem;
 
 /** @author Nathan Sweet */
 public class Menu extends PopupFrame {
-	boolean populated;
-	ArrayList<String> itemText = new ArrayList();
-	ArrayList<Runnable> itemRunnable = new ArrayList();
+	final ArrayList<JComponent> items = new ArrayList();
+	final GridBagConstraints c = new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+		new Insets(0, 0, 0, 0), 0, 0);
+	final JSeparator exitSeparator = new JSeparator();
+	final TextItem exitItem = new TextItem("Exit") {
+		public void clicked () {
+			System.exit(0);
+		}
+	};
 
-	public void addItem (String text, Runnable runnable) {
-		if (populated) throw new IllegalStateException();
-		itemText.add(text);
-		itemRunnable.add(runnable);
+	public Object addItem (boolean first, String text, final Runnable runnable) {
+		TextItem item = new TextItem(text) {
+			public void clicked () {
+				runnable.run();
+			}
+		};
+		if (first)
+			items.add(0, item);
+		else
+			items.add(item);
+		return item;
 	}
 
-	public void addSeparator () {
-		if (populated) throw new IllegalStateException();
-		itemText.add(null);
-		itemRunnable.add(null);
+	public Object addSeparator (boolean first) {
+		JSeparator separator = new JSeparator();
+		if (first)
+			items.add(0, separator);
+		else
+			items.add(separator);
+		return separator;
+	}
+
+	public void remove (Object object) {
+		items.remove(object);
+		if (isVisible()) populate();
 	}
 
 	public void populate () {
-		if (populated) return;
-
-		addItem("Exit", new Runnable() {
-			public void run () {
-				System.exit(0);
-			}
-		});
-		populated = true;
-
-		GridBagConstraints c = new GridBagConstraints();
-		c.fill = HORIZONTAL;
-		c.anchor = WEST;
-		c.weightx = 1;
-		c.gridx = 0;
+		panel.removeAll();
 		c.gridy = 0;
-
-		for (int i = 0, n = itemText.size(); i < n; i++) {
-			final Runnable runnable = itemRunnable.get(i);
-			if (runnable == null)
-				panel.add(new JSeparator(), c);
-			else {
-				panel.add(new TextItem(itemText.get(i)) {
-					public void clicked () {
-						runnable.run();
-					}
-				}, c);
-			}
+		boolean lastSeparator = true;
+		for (int i = 0, n = items.size(); i < n; i++) {
+			JComponent item = items.get(i);
+			boolean separator = item instanceof JSeparator;
+			if (separator && lastSeparator) continue;
+			lastSeparator = separator;
+			panel.add(item, c);
 			c.gridy++;
 		}
-
+		if (!lastSeparator) {
+			panel.add(exitSeparator, c);
+			c.gridy++;
+		}
+		panel.add(exitItem, c);
 		pack();
 	}
 }

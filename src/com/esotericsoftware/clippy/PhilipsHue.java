@@ -172,8 +172,10 @@ public class PhilipsHue {
 					for (PhilipsHueLights lights : clippy.config.philipsHue)
 						if (lights.timeline != null) lights.timeline.setTimeline(Timeline.on);
 
-					clippy.menu.addItem("TouchLink", new Runnable() {
+					clippy.menu.addSeparator(true);
+					clippy.menu.addItem(true, "TouchLink", new Runnable() {
 						public void run () {
+							clippy.menu.hidePopup();
 							if (JOptionPane.showConfirmDialog(null,
 								"This will reset the nearest Philips Hue device so it can be added to a different bridge.",
 								"Philips Hue TouchLink", JOptionPane.OK_CANCEL_OPTION,
@@ -182,7 +184,6 @@ public class PhilipsHue {
 							}
 						}
 					});
-					clippy.menu.addSeparator();
 				}
 			}
 

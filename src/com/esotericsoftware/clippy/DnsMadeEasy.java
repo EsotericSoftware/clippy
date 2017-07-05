@@ -19,11 +19,15 @@ public class DnsMadeEasy {
 
 		Util.timer.schedule(new TimerTask() {
 			public void run () {
-				try {
-					update(clippy.config.dnsUser, clippy.config.dnsPassword, clippy.config.dnsID);
-				} catch (IOException ex) {
-					if (ERROR) error("Error updating dynamic DNS.", ex);
-				}
+				new Thread("DnsMadeEasy") {
+					public void run () {
+						try {
+							update(clippy.config.dnsUser, clippy.config.dnsPassword, clippy.config.dnsID);
+						} catch (IOException ex) {
+							if (ERROR) error("Error updating dynamic DNS.", ex);
+						}
+					}
+				}.start();
 			}
 		}, 0, clippy.config.dnsMinutes * 60 * 1000);
 	}
