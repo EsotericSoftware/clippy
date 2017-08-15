@@ -20,14 +20,32 @@
 
 package com.esotericsoftware.clippy;
 
-import static com.esotericsoftware.clippy.Win.User32.*;
-import static com.esotericsoftware.minlog.Log.*;
+import static com.esotericsoftware.clippy.Win.User32.FindWindow;
+import static com.esotericsoftware.clippy.Win.User32.VK_CONTROL;
+import static com.esotericsoftware.clippy.Win.User32.VK_MENU;
+import static com.esotericsoftware.clippy.Win.User32.VK_SHIFT;
+import static com.esotericsoftware.minlog.Log.ERROR;
+import static com.esotericsoftware.minlog.Log.INFO;
+import static com.esotericsoftware.minlog.Log.LEVEL_DEBUG;
+import static com.esotericsoftware.minlog.Log.LEVEL_ERROR;
+import static com.esotericsoftware.minlog.Log.LEVEL_INFO;
+import static com.esotericsoftware.minlog.Log.LEVEL_TRACE;
+import static com.esotericsoftware.minlog.Log.LEVEL_WARN;
+import static com.esotericsoftware.minlog.Log.TRACE;
+import static com.esotericsoftware.minlog.Log.WARN;
+import static com.esotericsoftware.minlog.Log.error;
+import static com.esotericsoftware.minlog.Log.info;
+import static com.esotericsoftware.minlog.Log.setLogger;
+import static com.esotericsoftware.minlog.Log.trace;
+import static com.esotericsoftware.minlog.Log.warn;
 
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -37,6 +55,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
@@ -237,6 +256,30 @@ public class Clippy {
 
 		if (INFO) info("Started.");
 	}
+	
+	boolean isThirdPartyProcessRunning(String title)
+	{
+		if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0)
+		{
+			try {
+				Process process = Runtime.getRuntime().exec("tasklist.exe");
+				Scanner scanner = new Scanner(new InputStreamReader(process.getInputStream()));
+			    while (scanner.hasNext()) {
+			        String line = scanner.nextLine();
+			        if (line.toLowerCase().indexOf(title.toLowerCase()) >= 0)
+			        {
+			      	  return true;
+			        }
+			    }
+			    scanner.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		return false;
+	}
 
 	void upload () {
 		String text = clipboard.getContents();
@@ -258,6 +301,12 @@ public class Clippy {
 	void store (String text) {
 		if (text.length() > config.maxLengthToStore) {
 			if (TRACE) trace("Text too large to store: " + text.length());
+			return;
+		}
+		if (isThirdPartyProcessRunning("keepass"))
+		{
+			info("Storing aborted. KeePass is running.");
+			tray.balloon("Security Concern", "While KeePass is running Clippy will not store anything.", 5500);
 			return;
 		}
 		if (TRACE) trace("Store clipboard text: " + text.trim());
