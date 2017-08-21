@@ -61,8 +61,8 @@ public class PhilipsHue {
 		if (!clippy.config.philipsHueEnabled) return;
 
 		PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-		connectionManager.setMaxTotal(clippy.config.philipsHue.size());
-		connectionManager.setDefaultMaxPerRoute(clippy.config.philipsHue.size());
+		connectionManager.setMaxTotal(Math.max(1, clippy.config.philipsHue.size()));
+		connectionManager.setDefaultMaxPerRoute(Math.max(1, clippy.config.philipsHue.size()));
 		http = HttpClients.custom().setConnectionManager(connectionManager).build();
 
 		Thread thread = new Thread("PhilipsHueStart") {
@@ -295,13 +295,23 @@ public class PhilipsHue {
 		PHBridgeConfiguration config = new PHBridgeConfiguration();
 		config.setTouchlink(true);
 		PHHueSDK.getInstance().getSelectedBridge().updateBridgeConfigurations(config, new PHBridgeConfigurationListener() {
+			boolean found;
+
 			public void onSuccess () {
-				JOptionPane.showMessageDialog(null, "A Hue device was found. You may now do a device search using the Hue app.",
-					"Philips Hue TouchLink", JOptionPane.INFORMATION_MESSAGE);
-				if (TRACE) trace("Philips Hue TouchLink successful.");
+				if (found) {
+					if (TRACE) trace("Philips Hue TouchLink successful.");
+					JOptionPane.showMessageDialog(null, "A Hue device was found. You may now do a device search using the Hue app.",
+						"Philips Hue TouchLink", JOptionPane.INFORMATION_MESSAGE);
+				} else {
+					if (TRACE) trace("Philips Hue TouchLink found no devices.");
+					JOptionPane.showMessageDialog(null,
+						"No Hue devices were found for TouchLink. Try moving the devices closer to the bridge.",
+						"Philips Hue TouchLink", JOptionPane.WARNING_MESSAGE);
+				}
 			}
 
 			public void onStateUpdate (Map<String, String> success, List<PHHueError> errors) {
+				if (success.size() > 0) found = true;
 				if (TRACE) trace("Philips Hue TouchLink state updated: " + success + "\n" + errors);
 			}
 
