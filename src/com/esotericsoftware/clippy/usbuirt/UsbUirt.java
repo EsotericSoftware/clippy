@@ -24,7 +24,7 @@ public class UsbUirt {
 	static public final int ERROR_COMMUNICATION = 0x20000002;
 	static public final int ERROR_DRIVER_NOT_FOUND = 0x20000003;
 	static public final int ERROR_INCOMPATIBLE_FIRMWARE = 0x20000004;
-	static public final int ERROR_UNKOWN = -1;
+	static public final int ERROR_UNKNOWN = -1;
 
 	static {
 		new SharedLibraryLoader().load("uuirtdrv");
