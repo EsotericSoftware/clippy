@@ -107,7 +107,7 @@ Clippy has 3 settings for uploading:
 
 The default settings use pastebin for text, imagur for images, and disallow file upload. FTP and SFTP must be configured in the `config.json` file before use.
 
-## Blue light reduction
+## Blue light filter
 
 Clippy can adjust the Windows gamma based on the time of day. Gamma controls the amount of red, green, and blue displayed on the screen. The gamma changes are defined as a timeline:
 

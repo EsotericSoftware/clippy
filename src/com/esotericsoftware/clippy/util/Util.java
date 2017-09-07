@@ -37,6 +37,7 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.UUID;
@@ -44,8 +45,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import com.esotericsoftware.clippy.Config.ColorTime;
+import com.esotericsoftware.clippy.Config.ColorTimesReference;
 import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.jsonbeans.Json;
+import com.esotericsoftware.jsonbeans.JsonException;
+import com.esotericsoftware.jsonbeans.JsonSerializer;
+import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.OutputType;
 import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
 
@@ -55,6 +61,29 @@ public class Util {
 	static {
 		json.setUsePrototypes(false);
 		json.setIgnoreUnknownFields(true);
+
+		json.setSerializer(ColorTimesReference.class, new JsonSerializer<ColorTimesReference>() {
+			public ColorTimesReference read (Json json, JsonValue value, Class type) {
+				if (value.isNull()) return null;
+				ColorTimesReference object = new ColorTimesReference();
+				if (value.isString())
+					object.name = value.asString();
+				else if (value.isArray())
+					object.times = json.readValue(ArrayList.class, ColorTime.class, value);
+				else
+					throw new JsonException("Invalid color timeline reference: " + value);
+				return object;
+			}
+
+			public void write (Json json, ColorTimesReference object, Class type) {
+				// Only written for default gamma config.
+				if (object.name != null || object.times == null) throw new IllegalStateException();
+				json.writeArrayStart();
+				for (int i = 0, n = object.times.size(); i < n; i++)
+					json.writeValue(object.times.get(i), ColorTime.class);
+				json.writeArrayEnd();
+			}
+		});
 	}
 
 	static public final Random random = new Random();

@@ -20,13 +20,11 @@
 
 package com.esotericsoftware.clippy;
 
-import static com.esotericsoftware.minlog.Log.*;
 import static com.esotericsoftware.clippy.util.Util.*;
+import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -43,8 +41,7 @@ import com.esotericsoftware.jsonbeans.JsonException;
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonSerializable;
 import com.esotericsoftware.jsonbeans.JsonValue;
-import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
-import com.esotericsoftware.jsonbeans.OutputType;
+import com.esotericsoftware.jsonbeans.JsonWriter;
 import com.esotericsoftware.minlog.Log;
 
 /** @author Nathan Sweet */
@@ -129,6 +126,13 @@ public class Config {
 				}
 			}
 		} else {
+			gamma = new ColorTimesReference();
+			gamma.times = new ArrayList();
+			gamma.times.add(new ColorTime("6:00am", 1, 1, 1, 1));
+			gamma.times.add(new ColorTime("6:00pm", 1, 1, 1, 1));
+			gamma.times.add(new ColorTime("9:00pm", 1, 1, 0.7f, 0.6f));
+			gamma.times.add(new ColorTime("5:30am", 1, 1, 0.7f, 0.6f));
+
 			// Save default config file.
 			configFile.getParentFile().mkdirs();
 			try {
@@ -161,23 +165,9 @@ public class Config {
 		ftp, sftp
 	}
 
-	static public class ColorTimesReference implements JsonSerializable {
+	static public class ColorTimesReference {
 		public String name;
 		public ArrayList<ColorTime> times;
-
-		public void write (Json json) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void read (Json json, JsonValue value) {
-			if (value.isNull()) return;
-			if (value.isString())
-				name = value.asString();
-			else if (value.isArray())
-				times = json.readValue(ArrayList.class, ColorTime.class, value);
-			else
-				throw new JsonException("Invalid color timeline reference: " + value);
-		}
 
 		public ArrayList<ColorTime> getTimes () {
 			if (name != null) {
@@ -202,8 +192,26 @@ public class Config {
 		public ColorTime () {
 		}
 
+		public ColorTime (String time, float brightness, float r, float g, float b) {
+			this.time = time;
+			this.brightness = brightness;
+			this.r = r;
+			this.g = g;
+			this.b = b;
+		}
+
 		public void write (Json json) {
-			throw new UnsupportedOperationException();
+			// Only written for default gamma config.
+			JsonWriter writer = json.getWriter();
+			try {
+				writer.set("time", time);
+				writer.set("brightness", brightness);
+				writer.set("r", r);
+				writer.set("g", g);
+				writer.set("b", b);
+			} catch (IOException ex) {
+				throw new JsonException(ex);
+			}
 		}
 
 		public void read (Json json, JsonValue jsonData) {
