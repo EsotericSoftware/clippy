@@ -128,10 +128,10 @@ public class Config {
 		} else {
 			gamma = new ColorTimesReference();
 			gamma.times = new ArrayList();
+			gamma.times.add(new ColorTime("5:30am", 1, 1, 0.7f, 0.6f));
 			gamma.times.add(new ColorTime("6:00am", 1, 1, 1, 1));
 			gamma.times.add(new ColorTime("6:00pm", 1, 1, 1, 1));
 			gamma.times.add(new ColorTime("9:00pm", 1, 1, 0.7f, 0.6f));
-			gamma.times.add(new ColorTime("5:30am", 1, 1, 0.7f, 0.6f));
 
 			// Save default config file.
 			configFile.getParentFile().mkdirs();
