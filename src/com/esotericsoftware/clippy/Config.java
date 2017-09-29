@@ -173,7 +173,6 @@ public class Config {
 			if (name != null) {
 				ArrayList<ColorTime> times = clippy.config.colorTimelines.get(name).getTimes();
 				if (times == null) throw new JsonException("Color timeline not found: " + name);
-				Collections.sort(times);
 				return times;
 			}
 			return times;

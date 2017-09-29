@@ -21,7 +21,6 @@
 package com.esotericsoftware.clippy.util;
 
 import static com.esotericsoftware.clippy.Win.User32.*;
-import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.awt.GraphicsEnvironment;
@@ -38,6 +37,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Timer;
 import java.util.UUID;
@@ -52,8 +52,8 @@ import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonException;
 import com.esotericsoftware.jsonbeans.JsonSerializer;
 import com.esotericsoftware.jsonbeans.JsonValue;
-import com.esotericsoftware.jsonbeans.OutputType;
 import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
+import com.esotericsoftware.jsonbeans.OutputType;
 
 /** @author Nathan Sweet */
 public class Util {
@@ -68,9 +68,10 @@ public class Util {
 				ColorTimesReference object = new ColorTimesReference();
 				if (value.isString())
 					object.name = value.asString();
-				else if (value.isArray())
+				else if (value.isArray()) {
 					object.times = json.readValue(ArrayList.class, ColorTime.class, value);
-				else
+					Collections.sort(object.times);
+				} else
 					throw new JsonException("Invalid color timeline reference: " + value);
 				return object;
 			}
