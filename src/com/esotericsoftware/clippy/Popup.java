@@ -28,7 +28,6 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -64,7 +63,7 @@ import com.sun.jna.Pointer;
 
 /** @author Nathan Sweet */
 public class Popup extends PopupFrame {
-	final ArrayList<TextItem> items = new ArrayList();
+	final ArrayList<PopupTextItem> items = new ArrayList();
 	final ArrayList<String> itemSnips = new ArrayList();
 	final ArrayList<Integer> itemIDs = new ArrayList();
 	final LinkedList<Integer> recentIDs = new LinkedList();
@@ -72,8 +71,8 @@ public class Popup extends PopupFrame {
 	final POINT popupPosition = new POINT();
 	final Point mouse = new Point();
 	final GridBagConstraints c = new GridBagConstraints();
-	final Rectangle rectangle = new Rectangle(0, 0, 0, TextItem.getItemHeight());
-	TextItem selectedItem;
+	final Rectangle rectangle = new Rectangle(0, 0, 0, PopupTextItem.getItemHeight());
+	PopupTextItem selectedItem;
 	String selectNextPopulate;
 
 	final JPanel itemPanel = new JPanel();
@@ -105,7 +104,7 @@ public class Popup extends PopupFrame {
 			public Dimension getPreferredSize () {
 				Dimension prefSize = super.getPreferredSize();
 				prefSize.width = Math.min(prefSize.width, clippy.config.popupWidth);
-				prefSize.height = Math.min(prefSize.height, TextItem.getItemHeight() * clippy.config.popupCount);
+				prefSize.height = Math.min(prefSize.height, PopupTextItem.getItemHeight() * clippy.config.popupCount);
 				return prefSize;
 			}
 		};
@@ -122,7 +121,7 @@ public class Popup extends PopupFrame {
 		c.fill = HORIZONTAL;
 		c.anchor = WEST;
 
-		searchField.setFont(TextItem.font);
+		searchField.setFont(PopupTextItem.font);
 		searchField.addFocusListener(focusListener);
 		searchField.getDocument().addDocumentListener(new DocumentChangeListener() {
 			public void changed () {
@@ -136,7 +135,7 @@ public class Popup extends PopupFrame {
 			}
 		});
 
-		lockCheckbox.setFont(TextItem.font);
+		lockCheckbox.setFont(PopupTextItem.font);
 		lockCheckbox.addFocusListener(focusListener);
 
 		KeyAdapter forwardKeys = new KeyAdapter() {
@@ -235,7 +234,7 @@ public class Popup extends PopupFrame {
 				return;
 			}
 			int index = Math.max(0, selectedIndex - clippy.config.popupCount);
-			TextItem item = items.get(index);
+			PopupTextItem item = items.get(index);
 			item.setSelected(true);
 			item.selected();
 			return;
@@ -251,13 +250,13 @@ public class Popup extends PopupFrame {
 					keepOnScreen();
 				else
 					startIndex = oldStartIndex;
-				TextItem lastItem = items.get(items.size() - 1);
+				PopupTextItem lastItem = items.get(items.size() - 1);
 				lastItem.setSelected(true);
 				lastItem.selected();
 				return;
 			}
 			int index = Math.min(selectedIndex + clippy.config.popupCount, items.size() - 1);
-			TextItem item = items.get(index);
+			PopupTextItem item = items.get(index);
 			item.setSelected(true);
 			item.selected();
 			return;
@@ -266,7 +265,7 @@ public class Popup extends PopupFrame {
 			if (items.isEmpty()) return;
 			int index = items.indexOf(selectedItem) - (e.isControlDown() ? 5 : 1);
 			if (index < 0) index = e.isControlDown() ? 0 : (items.size() - 1);
-			TextItem item = items.get(index);
+			PopupTextItem item = items.get(index);
 			item.setSelected(true);
 			item.selected();
 			return;
@@ -275,19 +274,19 @@ public class Popup extends PopupFrame {
 			if (items.isEmpty()) return;
 			int index = items.indexOf(selectedItem) + (e.isControlDown() ? 5 : 1);
 			if (index >= items.size()) index = e.isControlDown() ? (items.size() - 1) : 0;
-			TextItem item = items.get(index);
+			PopupTextItem item = items.get(index);
 			item.setSelected(true);
 			item.selected();
 			return;
 		}
 		case KeyEvent.VK_HOME: {
-			TextItem item = items.get(0);
+			PopupTextItem item = items.get(0);
 			item.setSelected(true);
 			item.selected();
 			return;
 		}
 		case KeyEvent.VK_END: {
-			TextItem item = items.get(items.size() - 1);
+			PopupTextItem item = items.get(items.size() - 1);
 			item.setSelected(true);
 			item.selected();
 			return;
@@ -341,7 +340,7 @@ public class Popup extends PopupFrame {
 	private void updateNumberLabels () {
 		boolean numberMode = isNumberMode();
 		for (int i = 0, n = Math.min(items.size(), 10); i < n; i++) {
-			TextItem item = items.get(i);
+			PopupTextItem item = items.get(i);
 			String label = item.label;
 			if (numberMode) {
 				if (i < 9)
@@ -491,19 +490,20 @@ public class Popup extends PopupFrame {
 		}
 		searchExecutor.submit(new Runnable() {
 			public void run () {
-				if (abort()) return;
 				try {
 					ClipConnection conn = clippy.db.getThreadConnection();
-					int count = conn.getCount(), max = clippy.config.popupSearchCount;
-					int[] first = {1000, 10000, 50000, 100000};
-					for (int i = 0, n = first.length; i < n; i++) {
-						if (first[i] > count) break;
-						conn.searchRecent(searchIDs, searchSnips, "%" + text + "%", first[i], max);
-						if (searchIDs.size() > 0) populateSearch();
-						if (searchIDs.size() == max) return;
-						if (abort()) return;
-					}
-					conn.search(searchIDs, searchSnips, "%" + text + "%", max);
+					if (abort()) return;
+					// Disable searching only the most recent until it's proven faster.
+					// int count = conn.getCount(), max = clippy.config.popupSearchCount;
+					// int[] first = {1000, 10000, 50000, 100000};
+					// for (int i = 0, n = first.length; i < n; i++) {
+					// if (first[i] > count) break;
+					// conn.searchRecent(searchIDs, searchSnips, "%" + text + "%", first[i], max);
+					// if (searchIDs.size() > 0) populateSearch();
+					// if (searchIDs.size() == max) return;
+					// if (abort()) return;
+					// }
+					conn.search(searchIDs, searchSnips, "%" + text + "%", clippy.config.popupSearchCount);
 					populateSearch();
 				} catch (SQLException ex) {
 					if (Log.ERROR) error("Unable to retrieve clips.", ex);
@@ -547,6 +547,7 @@ public class Popup extends PopupFrame {
 	}
 
 	void populate () {
+		int selectedItemID = selectedItem == null ? -1 : selectedItem.id;
 		clearItems();
 		for (int i = 0, n = itemSnips.size(); i < n; i++) {
 			final String text = itemSnips.get(i);
@@ -554,7 +555,7 @@ public class Popup extends PopupFrame {
 			String label = text.trim().replace("\r\n", "\n").replace('\n', ' ');
 			if (label.isEmpty()) label = text.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t").replace(" ", "\u2022");
 
-			TextItem item = new TextItem(label) {
+			PopupTextItem item = new PopupTextItem(label, id) {
 				public void clicked () {
 					pasteItem(id, text);
 				}
@@ -569,7 +570,8 @@ public class Popup extends PopupFrame {
 			if (item.getPreferredSize().width > clippy.config.popupWidth) item.tooltipText = text;
 			items.add(item);
 
-			if (i == 0) {
+			if (i == 0 || id == selectedItemID) {
+				if (selectedItem != null) selectedItem.setSelected(false);
 				selectedItem = item;
 				item.setSelected(true);
 			}
@@ -585,7 +587,7 @@ public class Popup extends PopupFrame {
 		if (selectNextPopulate != null) {
 			int index = itemSnips.indexOf(selectNextPopulate);
 			if (index != -1) {
-				TextItem item = items.get(index);
+				PopupTextItem item = items.get(index);
 				item.setSelected(true);
 				item.selected();
 			}
@@ -667,5 +669,14 @@ public class Popup extends PopupFrame {
 		selectedItem = null;
 		items.clear();
 		ToolTipManager.sharedInstance().mouseExited(new MouseEvent(this, 0, 0, 0, 0, 0, 0, 0, 0, false, 0)); // Hide any tooltip.
+	}
+
+	static class PopupTextItem extends TextItem {
+		int id;
+
+		public PopupTextItem (String label, int id) {
+			super(label);
+			this.id = id;
+		}
 	}
 }
