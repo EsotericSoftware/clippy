@@ -63,9 +63,6 @@ public class Win {
 		static public native boolean GlobalUnlock (Pointer hMem);
 
 		static public native int GetTickCount ();
-
-		static public native Pointer CreateEvent (Pointer lpEventAttributes, boolean bManualReset, boolean bInitialState,
-			String lpName);
 	}
 
 	static public class User32 {
