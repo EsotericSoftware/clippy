@@ -86,7 +86,7 @@ public class Clippy {
 		Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 			public void uncaughtException (Thread thread, Throwable ex) {
 				if (ERROR) error("Uncaught exception, exiting.", ex);
-				System.exit(0);
+				Runtime.getRuntime().halt(1);
 			}
 		});
 

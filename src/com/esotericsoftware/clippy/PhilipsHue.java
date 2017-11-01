@@ -556,6 +556,8 @@ public class PhilipsHue {
 				return;
 			}
 
+			ColorTimesReference colorTimes = lights.times.get(timeline.name());
+			if (colorTimes == null) return;
 			ArrayList<ColorTime> times = lights.times.get(timeline.name()).getTimes();
 			if (times == null) return;
 			reset(); // Ensure a missed update is easily fixed by changing the timeline again.
@@ -590,20 +592,23 @@ public class PhilipsHue {
 		SwitchEvent getSwitchEvent (PHBridge bridge) {
 			try {
 				if (httpGetSensor == null) {
-					PHBridgeResourcesCache cache = bridge.getResourceCache();
-					PHSensor sensor = findResource(cache.getAllSensors(), lights.switchName, "switch");
-					if (sensor == null) {
-						if (ERROR) {
-							error(type + " switch not found: " + lights.switchName);
-							String groups = "";
-							for (PHGroup other : cache.getAllGroups())
-								groups += other.getName() + "\n";
-							error("Groups available:\n" + groups);
+					String id = lights.switchID;
+					if (id == null) {
+						PHBridgeResourcesCache cache = bridge.getResourceCache();
+						PHSensor sensor = findResource(cache.getAllSensors(), lights.switchName, "switch");
+						if (sensor == null) {
+							if (ERROR) {
+								error(type + " switch not found: " + lights.switchName);
+								String groups = "";
+								for (PHGroup other : cache.getAllGroups())
+									groups += other.getName() + "\n";
+								error("Groups available:\n" + groups);
+							}
+							lights.switchName = null;
+							return null;
 						}
-						lights.switchName = null;
-						return null;
+						id = sensor.getIdentifier();
 					}
-					String id = sensor.getIdentifier();
 					httpGetSensor = new HttpGet(
 						"http://" + clippy.data.philipsHueIP + "/api/" + clippy.data.philipsHueUser + "/sensors/" + id);
 					if (lights.times.containsKey(Timeline.offHeld.name()))
@@ -645,7 +650,8 @@ public class PhilipsHue {
 				}
 			} catch (Exception ex) {
 				if (ERROR) error(type + " error getting switch state: " + lights.switchName, ex);
-				lights.switchName = null;
+				// lights.switchID = null;
+				// lights.switchName = null;
 			}
 			return null;
 		}

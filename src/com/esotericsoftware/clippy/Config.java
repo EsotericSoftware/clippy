@@ -293,7 +293,7 @@ public class Config {
 		 * http://www.developers.meethue.com/documentation/supported-lights */
 		public String model;
 		/** May be null. */
-		public String switchName;
+		public String switchName, switchID;
 		/** May be null. */
 		public HashMap<String, ColorTimesReference> times;
 
@@ -303,6 +303,7 @@ public class Config {
 			json.writeField(this, "name");
 			json.writeField(this, "model");
 			json.writeField(this, "switchName", "switch");
+			json.writeField(this, "switchID");
 			try {
 				json.getWriter().object("timelines");
 				for (Entry<String, ColorTimesReference> entry : times.entrySet())
@@ -317,6 +318,7 @@ public class Config {
 			json.readField(this, "name", data);
 			json.readField(this, "model", data);
 			json.readField(this, "switchName", "switch", null, data);
+			json.readField(this, "switchID", data);
 			times = new HashMap();
 			for (JsonValue map = data.getChild("timelines"); map != null; map = map.next)
 				times.put(map.name, json.readValue(ColorTimesReference.class, map));
