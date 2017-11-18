@@ -64,6 +64,8 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		this.tableName = tableName;
 		this.connectionOptions = connectionOptions;
 
+		if (databasePath.startsWith("~"))
+			databasePath = new File(System.getProperty("user.home"), databasePath.substring(1)).getAbsolutePath();
 		new File(databasePath + ".lock.db").delete(); // Try to delete orphaned database lock file.
 	}
 

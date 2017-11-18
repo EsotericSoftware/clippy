@@ -38,6 +38,7 @@ public class Menu extends PopupFrame {
 	final JSeparator exitSeparator = new JSeparator();
 	final TextItem exitItem = new TextItem("Exit") {
 		public void clicked () {
+			Clippy.pidFile.delete();
 			System.exit(0);
 		}
 	};

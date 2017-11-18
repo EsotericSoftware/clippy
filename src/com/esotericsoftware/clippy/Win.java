@@ -63,6 +63,8 @@ public class Win {
 		static public native boolean GlobalUnlock (Pointer hMem);
 
 		static public native int GetTickCount ();
+
+		static public native int GetCurrentProcessId ();
 	}
 
 	static public class User32 {

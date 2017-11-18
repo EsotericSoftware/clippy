@@ -28,6 +28,8 @@ import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -55,6 +57,7 @@ import com.sun.jna.WString;
 public class Clippy {
 	static public Clippy instance;
 	static public final File logFile = new File(System.getProperty("user.home"), ".clippy/clippy.log");
+	static public final File pidFile = new File(System.getProperty("user.home"), ".clippy/pid");
 
 	final Config config;
 	final Data data;
@@ -86,6 +89,7 @@ public class Clippy {
 		Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 			public void uncaughtException (Thread thread, Throwable ex) {
 				if (ERROR) error("Uncaught exception, exiting.", ex);
+				pidFile.delete();
 				Runtime.getRuntime().halt(1);
 			}
 		});
@@ -150,7 +154,8 @@ public class Clippy {
 		final KeyStroke screenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
 		final KeyStroke tobiiPressedHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiClickHotkey) : null;
 		final KeyStroke tobiiPressedHotkey2 = tobiiPressedHotkey != null && tobiiPressedHotkey.getKeyCode() == KeyEvent.VK_CAPS_LOCK
-			? KeyStroke.getKeyStroke("ctrl CAPS_LOCK") : null; // Enables ctrl + click.
+			? KeyStroke.getKeyStroke("ctrl CAPS_LOCK")
+			: null; // Enables ctrl + click.
 		List<KeyStroke> keys = Arrays.asList(toggleHotkey, popupHotkey, uploadHotkey, screenshotHotkey, screenshotAppHotkey,
 			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiPressedHotkey, tobiiPressedHotkey2);
 		keyboard = new Keyboard() {
@@ -233,6 +238,14 @@ public class Clippy {
 			} catch (Exception ex) {
 				if (ERROR) error("Error initializing plugin: " + config.pluginClass, ex);
 			}
+		}
+
+		try {
+			FileWriter writer = new FileWriter(pidFile);
+			writer.write(Integer.toString(Win.Kernel32.GetCurrentProcessId()));
+			writer.close();
+		} catch (IOException ex) {
+			if (WARN) warn("Unable to write PID file.", ex);
 		}
 
 		if (INFO) info("Started.");
