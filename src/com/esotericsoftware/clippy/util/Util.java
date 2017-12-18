@@ -234,6 +234,8 @@ public class Util {
 
 	static public File nextUploadFile (int number, String name) {
 		name = name.replaceAll(" ", "-");
+		name = name.replaceAll("-+", "-");
+		name = name.replaceAll("-$", "");
 		try {
 			name = URLEncoder.encode(name, "UTF-8");
 		} catch (UnsupportedEncodingException ignored) {
