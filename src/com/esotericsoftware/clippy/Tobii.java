@@ -210,6 +210,12 @@ public class Tobii {
 				robot.mousePress(InputEvent.BUTTON1_MASK);
 				robot.mouseRelease(InputEvent.BUTTON1_MASK);
 			} else if (!mouseDrag) {
+				// Finish animation.
+				if (mouseMoveTime > 0) {
+					mouseMoveTime = 0;
+					setMousePosition(mouseEndX, mouseEndY, false);
+				}
+
 				if (storeHeadAdjustment) {
 					// Store head adjustment to snap or offset future gazes.
 					if (mouse.distance(gazeSnappedX, gazeSnappedY) > snapStoreDistance) {
@@ -242,6 +248,12 @@ public class Tobii {
 	}
 
 	void hotkeyReleased (int vk) {
+		// Stop animation.
+		if (mouseMoveTime > 0) {
+			mouseMoveTime = 0;
+			setMousePosition(mouseEndX, mouseEndY, false);
+		}
+
 		// Stop mouse control.
 		boolean mouseDown;
 		synchronized (this) {
@@ -326,6 +338,8 @@ public class Tobii {
 		y = clamp(y, screenTop, screen.height - 1 - screenBottom);
 		if (!animate || mouseAnimationMillis == 0) {
 			setMouse(x, y);
+			mouse.x = x;
+			mouse.y = y;
 			mouseLastX = x;
 			mouseLastY = y;
 			return;
