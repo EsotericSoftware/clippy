@@ -598,7 +598,11 @@ public class Popup extends PopupFrame {
 	void pasteItem (int id, String text) {
 		if (text == null) throw new RuntimeException("Invalid item ID: " + id);
 		hidePopup();
-		int newID = clippy.paste(text);
+		int newID;
+		if (clippy.config.popupPastes)
+			newID = clippy.paste(text);
+		else
+			newID = clippy.current(text);
 		if (newID != -1) addRecentItem(newID, text);
 	}
 

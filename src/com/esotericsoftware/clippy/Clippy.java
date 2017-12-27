@@ -286,11 +286,11 @@ public class Clippy {
 
 	/** @param text May be null.
 	 * @return The new ID for the clipboard item that was moved to last, or -1. */
-	public int paste (String text) {
-		int newID = -1;
-		if (text == null) return newID;
-		if (!clipboard.setContents(text)) return newID;
+	public int current (String text) {
+		if (text == null) return -1;
+		if (!clipboard.setContents(text)) return -1;
 
+		int newID = -1;
 		try {
 			if (!popup.lockCheckbox.isSelected()) {
 				newID = db.getThreadConnection().makeLast(text);
@@ -299,6 +299,15 @@ public class Clippy {
 		} catch (SQLException ex) {
 			if (ERROR) error("Error moving clipboard text to last.", ex);
 		}
+
+		return newID;
+	}
+
+	/** @param text May be null.
+	 * @return The new ID for the clipboard item that was moved to last, or -1. */
+	public int paste (String text) {
+		int newID = current(text);
+		if (newID == -1) return -1;
 
 		// Could use SendInput or menu->Edit->Paste, or users could install the clink CMD prompt addon or use Windows 10.
 		// char[] chars = new char[2048];

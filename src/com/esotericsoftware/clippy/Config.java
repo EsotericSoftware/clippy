@@ -60,6 +60,7 @@ public class Config {
 	public int popupSearchCount = 60;
 	public boolean popupDefaultNumbers;
 	public String popupHotkey = "ctrl shift INSERT";
+	public boolean popupPastes = true;
 	public String font = "Consolas-14";
 
 	public String screenshotHotkey = null;
