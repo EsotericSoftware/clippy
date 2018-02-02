@@ -16,6 +16,6 @@
 	<classpathentry exported="true" kind="lib" path="libs/httpcore-4.4.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/clippy-natives.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/jsonbeans-0.8.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/h2-1.4.195.jar"/>
+	<classpathentry kind="lib" path="libs/h2-1.4.196.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
