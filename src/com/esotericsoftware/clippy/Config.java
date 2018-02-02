@@ -63,6 +63,8 @@ public class Config {
 	public boolean popupPastes = true;
 	public String font = "Consolas-14";
 
+	public int clipBackupDays = 7;
+
 	public String screenshotHotkey = null;
 	public String screenshotAppHotkey = "ctrl alt shift BACK_SLASH";
 	public String screenshotRegionHotkey = "ctrl alt BACK_SLASH";

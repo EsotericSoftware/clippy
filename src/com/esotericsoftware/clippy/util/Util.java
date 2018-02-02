@@ -26,10 +26,13 @@ import static com.esotericsoftware.minlog.Log.*;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
+import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -192,6 +195,45 @@ public class Util {
 			return false;
 		} finally {
 			testFile.delete();
+		}
+	}
+
+	static public void delete (File file) {
+		if (file.isDirectory()) {
+			for (File child : file.listFiles())
+				delete(child);
+		}
+		file.delete();
+	}
+
+	static public void copy (File src, File dest) throws IOException {
+		if (src.isDirectory()) {
+			dest.mkdirs();
+			for (File child : src.listFiles())
+				copy(child, new File(dest, child.getName()));
+			return;
+		}
+		InputStream in = null;
+		OutputStream out = null;
+		try {
+			in = new FileInputStream(src);
+			out = new FileOutputStream(dest);
+			byte[] buffer = new byte[1024];
+			while (true) {
+				int count = in.read(buffer);
+				if (count == -1) break;
+				out.write(buffer, 0, count);
+			}
+		} finally {
+			close(in);
+			close(out);
+		}
+	}
+
+	static public void close (Closeable c) {
+		try {
+			if (c != null) c.close();
+		} catch (Throwable ignored) {
 		}
 	}
 

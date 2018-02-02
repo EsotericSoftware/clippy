@@ -47,11 +47,13 @@ import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
 import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.clippy.util.MultiplexOutputStream;
 import com.esotericsoftware.clippy.util.TextItem;
+import com.esotericsoftware.clippy.util.Util;
 import com.esotericsoftware.minlog.Log;
 import com.esotericsoftware.minlog.Log.Logger;
 import com.sun.jna.WString;
 
 // BOZO - Favorites that always show up before others when searching.
+// BOZO - Don't auto paste if alt is down.
 
 /** @author Nathan Sweet */
 public class Clippy {
@@ -135,6 +137,24 @@ public class Clippy {
 		}
 
 		TextItem.font = Font.decode(config.font);
+
+		// Backup clip database on startup every X days. 
+		File backupDir = new File(System.getProperty("user.home"), ".clippy/db-backup2");
+		File oldestDir = new File(System.getProperty("user.home"), ".clippy/db-backup1");
+		if (backupDir.lastModified() < oldestDir.lastModified()) {
+			File temp = oldestDir;
+			oldestDir = backupDir;
+			backupDir = temp;
+		}
+		if (System.currentTimeMillis() - backupDir.lastModified() > 1000l * 60 * 60 * 24 * config.clipBackupDays) {
+			try {
+				if (INFO) info("Backing up clip database: " + oldestDir.getAbsolutePath());
+				Util.delete(oldestDir);
+				Util.copy(new File(System.getProperty("user.home"), ".clippy/db"), oldestDir);
+			} catch (IOException ex) {
+				if (ERROR) error("Error backing up clip database.", ex);
+			}
+		}
 
 		try {
 			db = new ClipDataStore();
