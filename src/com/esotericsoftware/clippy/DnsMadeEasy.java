@@ -35,7 +35,7 @@ public class DnsMadeEasy {
 	void update (String user, String pass, String id) throws IOException {
 		String newIP;
 		try {
-			newIP = http("http://www.dnsmadeeasy.com/myip.jsp").trim();
+			newIP = http("http://myip.dnsmadeeasy.com/").trim();
 		} catch (IOException ex) {
 			if (WARN) warn("Error obtaining IP.", ex);
 			return;
