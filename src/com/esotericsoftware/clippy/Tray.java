@@ -40,13 +40,13 @@ import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
 
 /** @author Nathan Sweet */
 public class Tray {
+	final Clippy clippy = Clippy.instance;
 	final NOTIFYICONDATA windowNotifyIconData = new NOTIFYICONDATA();
 	final NOTIFYICONDATA balloonNotifyIconData = new NOTIFYICONDATA();
 	final POINT mousePosition = new POINT();
 	Pointer hwnd;
 	StdCallCallback wndProc;
 	private String tooltip = "";
-	int a;
 
 	public Tray () {
 		final CyclicBarrier barrier = new CyclicBarrier(2);
@@ -108,6 +108,8 @@ public class Tray {
 						} else if (message == wmTaskbarCreated) {
 							// Add icon again if explorer crashed.
 							Shell_NotifyIcon(NIM_ADD, windowNotifyIconData);
+						} else if (message == WM_CLOSE) {
+							clippy.menu.exitItem.clicked();
 						}
 						return DefWindowProc(hwnd, message, wParameter, lParameter);
 					}

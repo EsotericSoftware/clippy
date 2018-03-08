@@ -89,6 +89,7 @@ public class Win {
 
 		static public final int WM_HOTKEY = 0x312;
 		static public final int WM_CLIPBOARDUPDATE = 0x31D;
+		static public final int WM_CLOSE = 0x10;
 		static public final int WM_USER = 0x400;
 		static public final int WM_LBUTTONDOWN = 0x201;
 		static public final int WM_LBUTTONUP = 0x202;
