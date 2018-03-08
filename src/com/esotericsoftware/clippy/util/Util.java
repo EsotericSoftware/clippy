@@ -275,7 +275,7 @@ public class Util {
 	}
 
 	static public File nextUploadFile (int number, String name) {
-		name = name.replaceAll(" ", "-");
+		name = name.replaceAll("[ ,]", "-");
 		name = name.replaceAll("-+", "-");
 		name = name.replaceAll("-$", "");
 		try {
