@@ -74,6 +74,7 @@ public class Clippy {
 	final Gamma gamma;
 	final BreakWarning breakWarning;
 	final Tobii tobii;
+	boolean disabled;
 
 	public Clippy () {
 		instance = this;
@@ -138,7 +139,7 @@ public class Clippy {
 
 		TextItem.font = Font.decode(config.font);
 
-		// Backup clip database on startup every X days. 
+		// Backup clip database on startup every X days.
 		File backupDir = new File(System.getProperty("user.home"), ".clippy/db-backup2");
 		File oldestDir = new File(System.getProperty("user.home"), ".clippy/db-backup1");
 		if (backupDir.lastModified() < oldestDir.lastModified()) {
@@ -181,9 +182,7 @@ public class Clippy {
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(toggleHotkey)) {
-					if (INFO) info("Toggle gamma and break warning.");
-					gamma.toggle();
-					breakWarning.toggle();
+					setDisabled(!disabled);
 				} else if (keyStroke.equals(popupHotkey))
 					showPopup(keyStroke);
 				else if (keyStroke.equals(uploadHotkey)) //
@@ -349,6 +348,14 @@ public class Clippy {
 		return newID;
 	}
 
+	public void setDisabled (boolean disabled) {
+		if (this.disabled == disabled) return;
+		this.disabled = disabled;
+		if (INFO) info("Disabled: " + disabled);
+		gamma.toggle();
+		breakWarning.toggle();
+	}
+
 	public static void main (String[] args) throws Exception {
 		if (FindWindow(new WString("STATIC"), new WString("com.esotericsoftware.clippy")) != null) {
 			if (ERROR) error("Already running.");
@@ -394,7 +401,8 @@ public class Clippy {
 					builder.append('[');
 					builder.append(category);
 					builder.append("] ");
-				}
+				} else
+					builder.append("[clippy] ");
 
 				builder.append(message);
 
