@@ -85,6 +85,7 @@ public class BreakWarning {
 	synchronized boolean showBreakReminder (boolean balloonFirst) {
 		if (disabled || breakReminder != null) return false;
 		breakReminder = new BreakReminder(balloonFirst);
+		inactiveTime = Win.Kernel32.GetTickCount();
 		return true;
 	}
 
