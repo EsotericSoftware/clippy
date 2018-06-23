@@ -66,8 +66,8 @@ public class Popup extends PopupFrame {
 	final ArrayList<PopupTextItem> items = new ArrayList();
 	final ArrayList<String> itemSnips = new ArrayList();
 	final ArrayList<Integer> itemIDs = new ArrayList();
-	final LinkedList<Integer> recentIDs = new LinkedList();
-	final LinkedList<String> recentText = new LinkedList();
+	final ArrayList<Integer> recentIDs = new ArrayList();
+	final ArrayList<String> recentText = new ArrayList();
 	final POINT popupPosition = new POINT();
 	final Point mouse = new Point();
 	final GridBagConstraints c = new GridBagConstraints();
@@ -412,12 +412,12 @@ public class Popup extends PopupFrame {
 	}
 
 	public void makeLast (int newID, String text) {
-		int index = recentText.indexOf(text);
+		int index = recentTextIndexOf(text);
 		if (index == -1) return;
 		Integer oldID = recentIDs.remove(index);
 		recentText.remove(index);
-		recentIDs.addFirst(newID);
-		recentText.addFirst(text);
+		recentIDs.add(0, newID);
+		recentText.add(0, text);
 	}
 
 	public void clearRecentItems () {
@@ -440,7 +440,7 @@ public class Popup extends PopupFrame {
 		}
 
 		if (!clippy.config.allowDuplicateClips) {
-			int index = recentText.indexOf(text);
+			int index = recentTextIndexOf(text);
 			if (index != -1) {
 				if (lockCheckbox.isSelected()) return;
 				recentIDs.remove(index);
@@ -449,12 +449,18 @@ public class Popup extends PopupFrame {
 		}
 
 		if (recentIDs.size() >= clippy.config.popupCount) {
-			recentIDs.removeLast();
-			recentText.removeLast();
+			recentIDs.remove(recentIDs.size() - 1);
+			recentText.remove(recentText.size() - 1);
 		}
 
-		recentIDs.addFirst(id);
-		recentText.addFirst(text);
+		recentIDs.add(0, id);
+		recentText.add(0, text);
+	}
+
+	int recentTextIndexOf (String text) {
+		for (int i = 0, n = recentText.size(); i < n; i++)
+			if (recentText.get(i).equalsIgnoreCase(text)) return i;
+		return -1;
 	}
 
 	boolean showRecentItems (boolean useCache) {
