@@ -54,7 +54,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	}
 
 	public final class ClipConnection extends DataStore.DataStoreConnection {
-		private final PreparedStatement add, removeText, removeID, searchRecent, search, last, getText;
+		private final PreparedStatement add, removeText, removeID, searchRecent, search, last, getText, getID;
 
 		ClipConnection () throws SQLException {
 			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?", true);
@@ -65,6 +65,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 				"SELECT id, snip FROM (SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ?) WHERE snip LIKE ? LIMIT ?");
 			search = prepareStatement("SELECT id, snip FROM :table: WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
 			getText = prepareStatement("SELECT text FROM :table: WHERE id=? LIMIT 1");
+			getID = prepareStatement("SELECT id FROM :table: WHERE text=? LIMIT 1");
 		}
 
 		public int add (String text) throws SQLException {
@@ -129,6 +130,14 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			ResultSet set = getText.executeQuery();
 			if (set.next()) return set.getString(1);
 			return null;
+		}
+
+		/** @return May be -1. */
+		public int getID (String text) throws SQLException {
+			getID.setString(1, text);
+			ResultSet set = getID.executeQuery();
+			if (set.next()) return set.getInt(1);
+			return -1;
 		}
 	}
 }

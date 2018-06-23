@@ -312,17 +312,16 @@ public class Clippy {
 		if (!clipboard.setContents(text)) return -1;
 
 		try {
-			if (!popup.lockCheckbox.isSelected()) {
-				ClipConnection conn = db.getThreadConnection();
-				conn.removeText(text);
-				int newID = conn.add(text);
-				popup.makeLast(newID, text);
-				return newID;
-			}
+			ClipConnection conn = db.getThreadConnection();
+			if (popup.lockCheckbox.isSelected()) return conn.getID(text);
+			conn.removeText(text);
+			int newID = conn.add(text);
+			popup.makeLast(newID, text);
+			return newID;
 		} catch (SQLException ex) {
 			if (ERROR) error("Error moving clipboard text to last.", ex);
+			return -1;
 		}
-		return -1;
 	}
 
 	/** @param text May be null.
