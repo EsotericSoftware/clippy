@@ -262,7 +262,12 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 		/** Tokens in the SQL are replaced using {@link DataStore#sql(String)}. */
 		public PreparedStatement prepareStatement (String sql) throws SQLException {
-			return conn.prepareStatement(sql(sql));
+			return prepareStatement(sql, false);
+		}
+
+		/** Tokens in the SQL are replaced using {@link DataStore#sql(String)}. */
+		public PreparedStatement prepareStatement (String sql, boolean generatedKeys) throws SQLException {
+			return conn.prepareStatement(sql(sql), generatedKeys ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS);
 		}
 
 		/** Tokens in the SQL are replaced using {@link DataStore#sql(String)}. */

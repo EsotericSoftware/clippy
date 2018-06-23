@@ -20,12 +20,12 @@
 
 package com.esotericsoftware.clippy;
 
+import com.esotericsoftware.clippy.util.DataStore;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
-import com.esotericsoftware.clippy.util.DataStore;
 
 /** @author Nathan Sweet */
 public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
@@ -54,14 +54,12 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	}
 
 	public final class ClipConnection extends DataStore.DataStoreConnection {
-		private final PreparedStatement add, removeText, removeID, contains, makeLast, searchRecent, search, last, getText;
+		private final PreparedStatement add, removeText, removeID, searchRecent, search, last, getText;
 
 		ClipConnection () throws SQLException {
-			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?");
+			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?", true);
 			removeText = prepareStatement("DELETE FROM :table: WHERE text=?");
 			removeID = prepareStatement("DELETE FROM :table: WHERE id=?");
-			contains = prepareStatement("SELECT COUNT(*) FROM :table: WHERE text=? LIMIT 1");
-			makeLast = prepareStatement("UPDATE :table: SET id=(SELECT MAX(id) + 1 FROM :table:) WHERE text=? LIMIT 1");
 			last = prepareStatement("SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ? OFFSET ?");
 			searchRecent = prepareStatement(
 				"SELECT id, snip FROM (SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ?) WHERE snip LIKE ? LIMIT ?");
@@ -85,21 +83,6 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		public void removeID (int id) throws SQLException {
 			removeID.setInt(1, id);
 			removeID.executeUpdate();
-		}
-
-		public boolean contains (String text) throws SQLException {
-			contains.setString(1, text);
-			ResultSet set = contains.executeQuery();
-			if (!set.next()) return false;
-			return set.getInt(1) != 0;
-		}
-
-		public int makeLast (String text) throws SQLException {
-			makeLast.setString(1, text);
-			makeLast.executeUpdate();
-			ResultSet set = makeLast.getGeneratedKeys();
-			if (set.next()) return set.getInt(1);
-			return -1;
 		}
 
 		public void searchRecent (ArrayList<Integer> ids, ArrayList<String> snips, String text, int first, int max)

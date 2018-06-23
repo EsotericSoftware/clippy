@@ -23,9 +23,14 @@ package com.esotericsoftware.clippy;
 import static com.esotericsoftware.clippy.Win.User32.*;
 import static com.esotericsoftware.minlog.Log.*;
 
-import java.awt.EventQueue;
-import java.awt.Font;
-import java.awt.event.KeyEvent;
+import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
+import com.esotericsoftware.clippy.Win.POINT;
+import com.esotericsoftware.clippy.util.MultiplexOutputStream;
+import com.esotericsoftware.clippy.util.TextItem;
+import com.esotericsoftware.clippy.util.Util;
+import com.esotericsoftware.minlog.Log;
+import com.esotericsoftware.minlog.Log.Logger;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -43,14 +48,11 @@ import java.util.List;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
-import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
-import com.esotericsoftware.clippy.Win.POINT;
-import com.esotericsoftware.clippy.util.MultiplexOutputStream;
-import com.esotericsoftware.clippy.util.TextItem;
-import com.esotericsoftware.clippy.util.Util;
-import com.esotericsoftware.minlog.Log;
-import com.esotericsoftware.minlog.Log.Logger;
 import com.sun.jna.WString;
+
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.KeyEvent;
 
 // BOZO - Favorites that always show up before others when searching.
 // BOZO - Don't auto paste if alt is down.
@@ -304,22 +306,23 @@ public class Clippy {
 	}
 
 	/** @param text May be null.
-	 * @return The new ID for the clipboard item that was moved to last, or -1. */
+	 * @return The new ID for the clipboard item that was moved to last, or -1 if it was not moved. */
 	public int current (String text) {
 		if (text == null) return -1;
 		if (!clipboard.setContents(text)) return -1;
 
-		int newID = -1;
 		try {
 			if (!popup.lockCheckbox.isSelected()) {
-				newID = db.getThreadConnection().makeLast(text);
+				ClipConnection conn = db.getThreadConnection();
+				conn.removeText(text);
+				int newID = conn.add(text);
 				popup.makeLast(newID, text);
+				return newID;
 			}
 		} catch (SQLException ex) {
 			if (ERROR) error("Error moving clipboard text to last.", ex);
 		}
-
-		return newID;
+		return -1;
 	}
 
 	/** @param text May be null.
