@@ -23,9 +23,18 @@ package com.esotericsoftware.clippy.util;
 import static com.esotericsoftware.clippy.Win.User32.*;
 import static com.esotericsoftware.minlog.Log.*;
 
-import java.awt.GraphicsEnvironment;
-import java.awt.Point;
-import java.awt.Robot;
+import com.esotericsoftware.clippy.Config.ColorTime;
+import com.esotericsoftware.clippy.Config.ColorTimesReference;
+import com.esotericsoftware.clippy.Win.POINT;
+import com.esotericsoftware.clippy.Win.WTS_PROCESS_INFO;
+import com.esotericsoftware.clippy.Win.Wtsapi32;
+import com.esotericsoftware.jsonbeans.Json;
+import com.esotericsoftware.jsonbeans.JsonException;
+import com.esotericsoftware.jsonbeans.JsonSerializer;
+import com.esotericsoftware.jsonbeans.JsonValue;
+import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
+import com.esotericsoftware.jsonbeans.OutputType;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,15 +57,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-import com.esotericsoftware.clippy.Config.ColorTime;
-import com.esotericsoftware.clippy.Config.ColorTimesReference;
-import com.esotericsoftware.clippy.Win.POINT;
-import com.esotericsoftware.jsonbeans.Json;
-import com.esotericsoftware.jsonbeans.JsonException;
-import com.esotericsoftware.jsonbeans.JsonSerializer;
-import com.esotericsoftware.jsonbeans.JsonValue;
-import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
-import com.esotericsoftware.jsonbeans.OutputType;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
+
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Robot;
 
 /** @author Nathan Sweet */
 public class Util {
@@ -330,5 +337,28 @@ public class Util {
 		OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), "UTF8");
 		writer.write(json.prettyPrint(object, pretty));
 		writer.close();
+	}
+
+	/** @param names May be null.
+	 * @return May be null. */
+	static public String getRunningProcess (String... names) {
+		if (names == null) return null;
+
+		PointerByReference infosOut = new PointerByReference();
+		IntByReference countOut = new IntByReference();
+		if (!Wtsapi32.WTSEnumerateProcesses(Wtsapi32.WTS_CURRENT_SERVER_HANDLE, null, 1, infosOut, countOut)) return null;
+
+		Pointer infos = infosOut.getValue();
+		try {
+			int size = WTS_PROCESS_INFO.size, offset = 0;
+			for (int i = 0, n = countOut.getValue(); i < n; i++, offset += size) {
+				String name = new WTS_PROCESS_INFO(infos.share(offset)).readField("pProcessName").toString();
+				for (int ii = 0, nn = names.length; ii < nn; ii++)
+					if (name.equalsIgnoreCase(names[ii])) return name;
+			}
+			return null;
+		} finally {
+			Wtsapi32.WTSFreeMemory(infos);
+		}
 	}
 }

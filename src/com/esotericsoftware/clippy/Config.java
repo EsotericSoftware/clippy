@@ -23,26 +23,24 @@ package com.esotericsoftware.clippy;
 import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map.Entry;
-
 import com.esotericsoftware.clippy.PhilipsHue.PhilipsHueTimeline;
 import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.esotericsoftware.clippy.util.Sun;
 import com.esotericsoftware.jsonbeans.Json;
 import com.esotericsoftware.jsonbeans.JsonException;
 import com.esotericsoftware.jsonbeans.JsonReader;
-import com.esotericsoftware.jsonbeans.JsonSerializable;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.JsonWriter;
 import com.esotericsoftware.minlog.Log;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 /** @author Nathan Sweet */
 public class Config {
@@ -63,7 +61,11 @@ public class Config {
 	public boolean popupPastes = true;
 	public String font = "Consolas-14";
 
-	public int clipBackupDays = 7;
+	public String[] processesDisableClipHistory;
+	public String[] processesDisable;
+	public int processesCheckSeconds = 25;
+
+	public int clipBackupDays = 3;
 
 	public String screenshotHotkey = null;
 	public String screenshotAppHotkey = "ctrl alt shift BACK_SLASH";

@@ -32,6 +32,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.WString;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 import com.sun.jna.win32.W32APIOptions;
 
 /** @author Nathan Sweet */
@@ -366,5 +367,38 @@ public class Win {
 		protected List<String> getFieldOrder () {
 			return Arrays.asList("Red", "Green", "Blue");
 		}
+	}
+
+	static public class Wtsapi32 {
+		static {
+			Native.register(NativeLibrary.getInstance("wtsapi32", W32APIOptions.DEFAULT_OPTIONS));
+		}
+
+		static public final int WTS_CURRENT_SERVER_HANDLE = 0;
+
+		static public native boolean WTSEnumerateProcesses (int hServer, Pointer Reserved, int Version,
+			PointerByReference ppProcessInfo, IntByReference pCount);
+
+		static public native void WTSFreeMemory (Pointer pMemory);
+	}
+
+	static public class WTS_PROCESS_INFO extends Structure {
+		public int SessionId;
+		public int ProcessId;
+		public WString pProcessName;
+		public Pointer pUserSid;
+
+		private WTS_PROCESS_INFO () {
+		}
+
+		public WTS_PROCESS_INFO (Pointer p) {
+			super(p);
+		}
+
+		protected List<String> getFieldOrder () {
+			return Arrays.asList("SessionId", "ProcessId", "pProcessName", "pUserSid");
+		}
+
+		static public final int size = new WTS_PROCESS_INFO().size();
 	}
 }

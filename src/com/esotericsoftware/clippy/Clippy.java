@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.TimerTask;
 
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
@@ -77,6 +78,7 @@ public class Clippy {
 	final BreakWarning breakWarning;
 	final Tobii tobii;
 	boolean disabled;
+	boolean processDisabled;
 
 	public Clippy () {
 		instance = this;
@@ -269,7 +271,34 @@ public class Clippy {
 			if (WARN) warn("Unable to write PID file.", ex);
 		}
 
+		if (config.processesDisable != null) checkProcesses();
+
 		if (INFO) info("Started.");
+	}
+
+	void checkProcesses () {
+		System.out.println(1);
+
+		String process = Util.getRunningProcess(config.processesDisable);
+		if (process != null) {
+			if (!disabled) {
+				if (TRACE) trace("Disabled, process running: " + process);
+				setDisabled(true);
+				processDisabled = true;
+			}
+		} else if (processDisabled) {
+			processDisabled = false;
+			if (disabled) {
+				if (TRACE) trace("Enabled, process no longer running.");
+				setDisabled(false);
+			}
+		}
+
+		Util.timer.schedule(new TimerTask() {
+			public void run () {
+				checkProcesses();
+			}
+		}, config.processesCheckSeconds * 1000);
 	}
 
 	void upload () {
@@ -290,10 +319,19 @@ public class Clippy {
 	}
 
 	void store (String text) {
+		if (config.processesDisableClipHistory != null) {
+			String process = Util.getRunningProcess(config.processesDisableClipHistory);
+			if (process != null) {
+				if (TRACE) trace("Not storing clipboard text, process running: " + process);
+				return;
+			}
+		}
+
 		if (text.length() > config.maxLengthToStore) {
 			if (TRACE) trace("Text too large to store: " + text.length());
 			return;
 		}
+
 		if (TRACE) trace("Store clipboard text: " + text.trim());
 		try {
 			ClipConnection conn = db.getThreadConnection();
@@ -350,15 +388,17 @@ public class Clippy {
 		return newID;
 	}
 
-	public void setDisabled (boolean disabled) {
-		if (this.disabled == disabled) return;
+	public boolean setDisabled (boolean disabled) {
+		if (this.disabled == disabled) return false;
 		this.disabled = disabled;
 		if (INFO) info("Disabled: " + disabled);
 		gamma.toggle();
 		breakWarning.toggle();
+		processDisabled = false;
+		return true;
 	}
 
-	public static void main (String[] args) throws Exception {
+	static public void main (String[] args) throws Exception {
 		if (FindWindow(new WString("STATIC"), new WString("com.esotericsoftware.clippy")) != null) {
 			if (ERROR) error("Already running.");
 			return;
