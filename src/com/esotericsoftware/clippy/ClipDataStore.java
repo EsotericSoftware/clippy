@@ -32,7 +32,8 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	static public final int maxSnipSize = 2048;
 
 	public ClipDataStore () throws SQLException {
-		super("~/.clippy/db/db", "clips");
+		super("~/.clippy/db/db", "clips", //
+			"LOG=0"); // Disable transaction log.
 		// setTraceLevel(TraceLevel.DEBUG);
 		if (System.getProperty("dev") != null)
 			setInMemory(true);
@@ -46,7 +47,6 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		addIndex("snip");
 		addIndex("text");
 		createIndexes();
-		getThreadConnection().execute("SET LOG 0"); // Disable transaction log.
 	}
 
 	public ClipConnection newConnection () throws SQLException {
