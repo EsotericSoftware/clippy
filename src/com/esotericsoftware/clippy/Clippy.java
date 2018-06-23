@@ -362,6 +362,9 @@ public class Clippy {
 			return;
 		}
 
+		// Disable the stupid things Java 9+ does when the OS DPI scaling is >100%.
+		System.setProperty("sun.java2d.uiScale", "1.0");
+
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
 		} catch (Throwable ignored) {
