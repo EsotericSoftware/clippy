@@ -339,11 +339,8 @@ public class Util {
 		writer.close();
 	}
 
-	/** @param names May be null.
-	 * @return May be null. */
+	/** @return May be null. */
 	static public String getRunningProcess (String... names) {
-		if (names == null) return null;
-
 		PointerByReference infosOut = new PointerByReference();
 		IntByReference countOut = new IntByReference();
 		if (!Wtsapi32.WTSEnumerateProcesses(Wtsapi32.WTS_CURRENT_SERVER_HANDLE, null, 1, infosOut, countOut)) return null;
