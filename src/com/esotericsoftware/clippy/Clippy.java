@@ -277,8 +277,6 @@ public class Clippy {
 	}
 
 	void checkProcesses () {
-		System.out.println(1);
-
 		String process = Util.getRunningProcess(config.processesDisable);
 		if (process != null) {
 			if (!disabled) {
