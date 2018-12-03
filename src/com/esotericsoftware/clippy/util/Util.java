@@ -46,6 +46,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -99,7 +100,6 @@ public class Util {
 
 	static public final Random random = new Random();
 	static private final String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	static private Charset ascii = Charset.forName("ASCII");
 	static private Path uploadFile = new File(System.getProperty("user.home"), ".clippy/upload").toPath();
 	static private POINT mousePOINT = new POINT();
 
@@ -253,11 +253,11 @@ public class Util {
 	}
 
 	static public String readFile (Path path) throws IOException {
-		return new String(Files.readAllBytes(path), ascii);
+		return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 	}
 
 	static public void writeFile (Path path, String contents) throws IOException {
-		Files.write(path, contents.getBytes(ascii));
+		Files.write(path, contents.getBytes(StandardCharsets.UTF_8));
 	}
 
 	static public int nextUploadID () {
