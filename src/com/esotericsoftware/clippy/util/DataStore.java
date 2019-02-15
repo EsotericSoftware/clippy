@@ -63,10 +63,6 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		this.databasePath = databasePath;
 		this.tableName = tableName;
 		this.connectionOptions = connectionOptions;
-
-		if (databasePath.startsWith("~"))
-			databasePath = new File(System.getProperty("user.home"), databasePath.substring(1)).getAbsolutePath();
-		new File(databasePath + ".lock.db").delete(); // Try to delete orphaned database lock file.
 	}
 
 	public void setInMemory (boolean inMemory) {
@@ -154,16 +150,28 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	/** Returns a new open connection to the database that backs all DataStores. */
 	public Connection openConnection () throws SQLException {
 		String url;
+		File lockFile = null;
 		if (inMemory)
 			url = "jdbc:h2:mem:" + databasePath;
 		else {
 			url = "jdbc:h2:file:" + databasePath;
 			if (socketLocking) url += ";FILE_LOCK=SOCKET";
+
+			if (databasePath.startsWith("~"))
+				lockFile = new File(System.getProperty("user.home"), databasePath.substring(1) + ".lock.db");
+			else
+				lockFile = new File(databasePath + ".lock.db");
+			lockFile.delete(); // Try to delete orphaned database lock file.
 		}
 		if (traceLevel != TraceLevel.OFF) url += ";TRACE_LEVEL_SYSTEM_OUT=" + traceLevel.ordinal();
 		url += ";" + connectionOptions;
 		if (TRACE) trace("Opening data store connection: " + url);
-		return DriverManager.getConnection(url);
+		try {
+			return DriverManager.getConnection(url);
+		} catch (SQLException ex) {
+			if (lockFile == null || !lockFile.exists()) throw ex;
+			throw new SQLException("Try deleting lock file: " + lockFile.getAbsolutePath(), ex);
+		}
 	}
 
 	/** Creates the indexes for the database table. Can only be called after open is called. */
