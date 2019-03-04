@@ -23,6 +23,29 @@ package com.esotericsoftware.clippy.util;
 import static com.esotericsoftware.clippy.Win.User32.*;
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
+import java.util.Timer;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.esotericsoftware.clippy.Config.ColorTime;
 import com.esotericsoftware.clippy.Config.ColorTimesReference;
 import com.esotericsoftware.clippy.Win.POINT;
@@ -35,33 +58,11 @@ import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.JsonValue.PrettyPrintSettings;
 import com.esotericsoftware.jsonbeans.OutputType;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Random;
-import java.util.Timer;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
+import java.awt.EventQueue;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
@@ -265,10 +266,10 @@ public class Util {
 		try {
 			synchronized (uploadFile) {
 				if (Files.exists(uploadFile))
-					number = Integer.parseInt(Util.readFile(uploadFile));
+					number = Integer.parseInt(readFile(uploadFile));
 				else
 					number = 1;
-				Util.writeFile(uploadFile, Integer.toString(number + 1));
+				writeFile(uploadFile, Integer.toString(number + 1));
 			}
 		} catch (Exception ex) {
 			if (WARN) warn("Upload ID error.", ex);
@@ -291,10 +292,10 @@ public class Util {
 		}
 
 		if (number == 0) {
-			if (name.charAt(0) == '.') name = Util.id(8) + name;
+			if (name.charAt(0) == '.') name = id(8) + name;
 		} else {
 			if (name.charAt(0) == '.')
-				name = number + "-" + Util.id(4) + name;
+				name = number + "-" + id(4) + name;
 			else
 				name = number + "-" + name;
 		}
@@ -357,5 +358,42 @@ public class Util {
 		} finally {
 			Wtsapi32.WTSFreeMemory(infos);
 		}
+	}
+
+	static public void requireEDT () {
+		if (!EventQueue.isDispatchThread()) throw new RuntimeException();
+	}
+
+	static public void edt (final Runnable runnable) {
+		if (EventQueue.isDispatchThread()) runnable.run();
+		EventQueue.invokeLater(runnable);
+	}
+
+	static public void edtWait (final Runnable runnable) {
+		if (EventQueue.isDispatchThread()) runnable.run();
+		try {
+			EventQueue.invokeAndWait(runnable);
+		} catch (Exception ex) {
+			throw new RuntimeException();
+		}
+	}
+
+	static public <T> T edtWait (final RunnableValue<T> runnable) {
+		if (EventQueue.isDispatchThread()) return runnable.run();
+		try {
+			final AtomicReference ref = new AtomicReference();
+			EventQueue.invokeAndWait(new Runnable() {
+				public void run () {
+					ref.set(runnable.run());
+				}
+			});
+			return (T)ref.get();
+		} catch (Exception ex) {
+			throw new RuntimeException();
+		}
+	}
+
+	static public interface RunnableValue<T> {
+		public T run ();
 	}
 }

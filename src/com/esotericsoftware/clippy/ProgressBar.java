@@ -1,15 +1,8 @@
 
 package com.esotericsoftware.clippy;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.GraphicsEnvironment;
-import java.awt.Rectangle;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import static com.esotericsoftware.clippy.util.Util.*;
+
 import java.io.IOException;
 
 import javax.swing.BorderFactory;
@@ -20,6 +13,16 @@ import javax.swing.JProgressBar;
 import javax.swing.UIManager;
 
 import com.esotericsoftware.clippy.util.Util;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Desktop;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class ProgressBar extends JDialog {
 	static int instances;
@@ -110,7 +113,7 @@ public class ProgressBar extends JDialog {
 		if (EventQueue.isDispatchThread())
 			updateProgress.run();
 		else
-			EventQueue.invokeLater(updateProgress);
+			edt(updateProgress);
 	}
 
 	public void green (String message) {
@@ -124,15 +127,15 @@ public class ProgressBar extends JDialog {
 	}
 
 	public void done (final String message, final int delay) {
-		EventQueue.invokeLater(new Runnable() {
+		edt(new Runnable() {
 			public void run () {
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(1000);
 				green(message);
 				if (delay != -1) {
-					Util.threadPool.submit(new Runnable() {
+					threadPool.submit(new Runnable() {
 						public void run () {
-							Util.sleep(delay);
+							sleep(delay);
 							dispose();
 						}
 					});
@@ -142,15 +145,15 @@ public class ProgressBar extends JDialog {
 	}
 
 	public void failed (final String message, final int delay) {
-		EventQueue.invokeLater(new Runnable() {
+		edt(new Runnable() {
 			public void run () {
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(1000);
 				red(message);
 				if (delay != -1) {
-					Util.threadPool.submit(new Runnable() {
+					threadPool.submit(new Runnable() {
 						public void run () {
-							Util.sleep(20000);
+							sleep(20000);
 							dispose();
 						}
 					});

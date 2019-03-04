@@ -43,7 +43,7 @@ public class BreakWarning {
 		clippy.menu.addItem(false, "Start break", new Runnable() {
 			public void run () {
 				clippy.menu.hidePopup();
-				Util.timer.schedule(new TimerTask() {
+				timer.schedule(new TimerTask() {
 					public void run () {
 						if (showBreakReminder(false)) {
 							if (INFO) info("Break started manually.");
@@ -53,7 +53,7 @@ public class BreakWarning {
 			}
 		});
 
-		Util.timer.schedule(new TimerTask() {
+		timer.schedule(new TimerTask() {
 			public void run () {
 				checkBreakReminder();
 			}

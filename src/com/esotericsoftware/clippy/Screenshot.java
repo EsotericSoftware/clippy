@@ -88,7 +88,7 @@ public class Screenshot {
 			final Point mouse = new Point();
 
 			{
-				Util.getMouse(mouse);
+				getMouse(mouse);
 				x = mouse.x;
 				y = mouse.y;
 				lastX = x;
@@ -135,7 +135,7 @@ public class Screenshot {
 						x += diffX;
 						y += diffY;
 						if (shift) {
-							Util.setMouse((int)x, (int)y);
+							setMouse((int)x, (int)y);
 							robotEvent = true;
 						}
 						if (x < 0)

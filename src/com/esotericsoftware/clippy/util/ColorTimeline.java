@@ -1,12 +1,12 @@
 
 package com.esotericsoftware.clippy.util;
 
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 import static java.util.Calendar.*;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Comparator;
 
 import com.esotericsoftware.clippy.Config.ColorTime;
 import com.esotericsoftware.clippy.Config.ColorTime.Power;
@@ -64,7 +64,7 @@ abstract public class ColorTimeline {
 
 	protected void update () {
 		if (times == null) {
-			Util.sleep(1000);
+			sleep(1000);
 			return;
 		}
 
@@ -109,7 +109,7 @@ abstract public class ColorTimeline {
 
 		// Compute the delay between changes.
 		int changes = (int)Math.floor(maxChange / maxNoticeableChange);
-		int millis = changes == 0 ? remaining : Util.clamp(Math.round(duration / (float)changes), minSleepMillis, remaining);
+		int millis = changes == 0 ? remaining : clamp(Math.round(duration / (float)changes), minSleepMillis, remaining);
 		millis = Math.min(millis, maxSleepMillis);
 
 		// Find target RGB and brightness.
@@ -143,7 +143,7 @@ abstract public class ColorTimeline {
 
 		set(tr, tg, tb, kelvin, tbrightness, power, Math.min(millis, maxTransitionMillis));
 
-		Util.sleep(millis);
+		sleep(millis);
 	}
 
 	void set (float r, float g, float b, float kelvin, float brightness, Power power, int millis) {

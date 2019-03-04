@@ -21,12 +21,10 @@
 package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 import static java.awt.event.KeyEvent.*;
 
-import java.awt.EventQueue;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +34,9 @@ import java.util.concurrent.CyclicBarrier;
 import javax.swing.KeyStroke;
 
 import com.esotericsoftware.clippy.Win.MSG;
+
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /** @author Nathan Sweet */
 public class Keyboard {
@@ -109,7 +110,7 @@ public class Keyboard {
 						KeyStroke hotkey = hotkeys.get(id);
 						if (TRACE) trace("Received hotkey: " + hotkey);
 						fireEventQueue.addLast(hotkey);
-						EventQueue.invokeLater(fireEvent);
+						edt(fireEvent);
 					}
 				}
 

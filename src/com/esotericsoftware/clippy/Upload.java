@@ -84,15 +84,11 @@ public abstract class Upload {
 	ProgressBar newProgressBar (final File file) {
 		if (!clippy.config.uploadProgressBar) return null;
 		if (!EventQueue.isDispatchThread()) {
-			try {
-				EventQueue.invokeAndWait(new Runnable() {
-					public void run () {
-						newProgressBar(file);
-					}
-				});
-			} catch (Exception ex) {
-				throw new RuntimeException(ex);
-			}
+			edtWait(new Runnable() {
+				public void run () {
+					newProgressBar(file);
+				}
+			});
 			synchronized (progressBars) {
 				return progressBars.get(file);
 			}
@@ -241,10 +237,10 @@ public abstract class Upload {
 
 	static public void uploadText (String text) {
 		if (clippy.textUpload == null) return;
-		File file = Util.nextUploadFile(".txt");
+		File file = nextUploadFile(".txt");
 		try {
 			if (TRACE) trace("Writing text file: " + file);
-			Util.writeFile(file.toPath(), text);
+			writeFile(file.toPath(), text);
 			clippy.textUpload.upload(file, true, new UploadListener() {
 				public void complete (String url) {
 					if (clippy.config.pasteAfterUpload)
@@ -261,10 +257,10 @@ public abstract class Upload {
 
 	static public void uploadImage (BufferedImage image, boolean forcePNG) {
 		if (clippy.imageUpload == null) return;
-		int number = Util.nextUploadID();
+		int number = nextUploadID();
 		File filePNG = null;
 		try {
-			filePNG = Util.nextUploadFile(number, ".png");
+			filePNG = nextUploadFile(number, ".png");
 			if (TRACE) trace("Writing PNG file: " + filePNG);
 			ImageIO.write(image, "png", filePNG);
 		} catch (IOException ex) {
@@ -276,7 +272,7 @@ public abstract class Upload {
 		File fileJPG = null;
 		if (!forcePNG) {
 			try {
-				fileJPG = Util.nextUploadFile(number, ".jpg");
+				fileJPG = nextUploadFile(number, ".jpg");
 				if (TRACE) trace("Writing JPG file: " + fileJPG);
 
 				JPEGImageWriteParam param = new JPEGImageWriteParam(null);
@@ -334,7 +330,7 @@ public abstract class Upload {
 
 	static private void uploadZip (final String[] files) {
 		String zipName = (files.length == 1 ? new File(files[0]) : new File(files[0]).getParentFile()).getName();
-		final File zip = Util.nextUploadFile(zipName + ".zip");
+		final File zip = nextUploadFile(zipName + ".zip");
 		clippy.fileUpload.upload(zip, true, new UploadListener() {
 			public void prepare () throws Exception {
 				Paths paths = new Paths();
@@ -356,7 +352,7 @@ public abstract class Upload {
 	}
 
 	static private void uploadFile (final File file, final boolean deleteAfterUpload) {
-		final String path = Util.nextUploadFile(file.getName()).getAbsolutePath();
+		final String path = nextUploadFile(file.getName()).getAbsolutePath();
 		clippy.fileUpload.upload(new File(path), true, new UploadListener() {
 			public void prepare () throws Exception {
 				copyFile(file.getAbsolutePath(), path);

@@ -1,6 +1,7 @@
 
 package com.esotericsoftware.clippy;
 
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.IOException;
@@ -9,15 +10,13 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.util.TimerTask;
 
-import com.esotericsoftware.clippy.util.Util;
-
 public class DnsMadeEasy {
 	final Clippy clippy = Clippy.instance;
 
 	public DnsMadeEasy () {
 		if (clippy.config.dnsUser == null || clippy.config.dnsUser.isEmpty()) return;
 
-		Util.timer.schedule(new TimerTask() {
+		timer.schedule(new TimerTask() {
 			public void run () {
 				new Thread("DnsMadeEasy") {
 					public void run () {

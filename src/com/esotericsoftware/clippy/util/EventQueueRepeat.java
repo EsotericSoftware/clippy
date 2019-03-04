@@ -1,8 +1,11 @@
 
 package com.esotericsoftware.clippy.util;
 
-import java.awt.EventQueue;
+import static com.esotericsoftware.clippy.util.Util.*;
+
 import java.util.TimerTask;
+
+import java.awt.EventQueue;
 
 public abstract class EventQueueRepeat {
 	final Runnable repeatRunnable = new Runnable() {
@@ -28,7 +31,7 @@ public abstract class EventQueueRepeat {
 		EventQueue.invokeLater(new Runnable() {
 			public void run () {
 				start();
-				Util.timer.schedule(repeatTask, delay, delay);
+				timer.schedule(repeatTask, delay, delay);
 			}
 		});
 	}

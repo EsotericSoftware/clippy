@@ -24,6 +24,7 @@ import static com.esotericsoftware.clippy.Win.NOTIFYICONDATA.*;
 import static com.esotericsoftware.clippy.Win.Shell32.*;
 import static com.esotericsoftware.clippy.Win.User32.*;
 import static com.esotericsoftware.clippy.Win.User32_64.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import com.esotericsoftware.clippy.Win.MSG;
 import com.esotericsoftware.clippy.Win.NOTIFYICONDATA;
 import com.esotericsoftware.clippy.Win.POINT;
 import com.esotericsoftware.clippy.Win.Parameter;
-import com.esotericsoftware.clippy.util.Util;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
@@ -67,7 +68,7 @@ public class Tray {
 
 				String iconPath;
 				try {
-					iconPath = Util.extractFile("tray.ico").getAbsolutePath();
+					iconPath = extractFile("tray.ico").getAbsolutePath();
 				} catch (IOException ex) {
 					if (ERROR) error("Unable to read icon.", ex);
 					System.exit(0);

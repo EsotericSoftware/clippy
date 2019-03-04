@@ -21,26 +21,14 @@
 package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 import static java.awt.GridBagConstraints.*;
 
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -57,9 +45,21 @@ import com.esotericsoftware.clippy.Win.RECT;
 import com.esotericsoftware.clippy.util.DocumentChangeListener;
 import com.esotericsoftware.clippy.util.PopupFrame;
 import com.esotericsoftware.clippy.util.TextItem;
-import com.esotericsoftware.clippy.util.Util;
+import com.esotericsoftware.clippy.util.Util.RunnableValue;
 import com.esotericsoftware.minlog.Log;
+
 import com.sun.jna.Pointer;
+
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /** @author Nathan Sweet */
 public class Popup extends PopupFrame {
@@ -93,7 +93,7 @@ public class Popup extends PopupFrame {
 			final Point mouse = new Point();
 
 			public void mouseMoved (MouseEvent e) {
-				Util.getMouse(mouse);
+				getMouse(mouse);
 				if (mouse.distance(mouseStart) > 15) blockMouse.setVisible(false);
 			}
 		});
@@ -126,7 +126,7 @@ public class Popup extends PopupFrame {
 		searchField.getDocument().addDocumentListener(new DocumentChangeListener() {
 			public void changed () {
 				pack();
-				EventQueue.invokeLater(new Runnable() {
+				edt(new Runnable() {
 					public void run () {
 						startIndex = 0;
 						showSearchItems(searchField.getText());
@@ -213,7 +213,7 @@ public class Popup extends PopupFrame {
 				int id = itemIDs.get(index);
 				String text = getText(id);
 				if (text != null && e.isControlDown() && clippy.textUpload != null) {
-					clippy.popup.hidePopup();
+					hidePopup();
 					Upload.uploadText(text);
 				} else
 					pasteItem(id, text);
@@ -388,7 +388,7 @@ public class Popup extends PopupFrame {
 		setLocation(position.x, position.y);
 		keepOnScreen();
 
-		mouseStart.setLocation(Util.getMouse(mouse));
+		mouseStart.setLocation(getMouse(mouse));
 		blockMouse.setVisible(true);
 
 		super.showPopup();
@@ -403,8 +403,8 @@ public class Popup extends PopupFrame {
 		Pointer monitor = MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTONEAREST);
 		MONITORINFO monitorInfo = new MONITORINFO();
 		if (GetMonitorInfo(monitor, monitorInfo)) {
-			position.x = Util.clamp(position.x, monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.right - getWidth());
-			position.y = Util.clamp(position.y, monitorInfo.rcMonitor.top, monitorInfo.rcMonitor.bottom - getHeight());
+			position.x = clamp(position.x, monitorInfo.rcMonitor.left, monitorInfo.rcMonitor.right - getWidth());
+			position.y = clamp(position.y, monitorInfo.rcMonitor.top, monitorInfo.rcMonitor.bottom - getHeight());
 		} else if (TRACE) //
 			trace("Unable to get monitor info.");
 
@@ -517,7 +517,7 @@ public class Popup extends PopupFrame {
 			}
 
 			void populateSearch () {
-				EventQueue.invokeLater(new Runnable() {
+				edt(new Runnable() {
 					public void run () {
 						itemSnips.clear();
 						itemSnips.addAll(searchSnips);
@@ -530,13 +530,11 @@ public class Popup extends PopupFrame {
 
 			boolean abort () {
 				try {
-					final AtomicBoolean abort = new AtomicBoolean();
-					EventQueue.invokeAndWait(new Runnable() {
-						public void run () {
-							if (!isVisible() || searchField.getParent() == null || !text.equals(searchField.getText())) abort.set(true);
+					return edtWait(new RunnableValue<Boolean>() {
+						public Boolean run () {
+							return !isVisible() || searchField.getParent() == null || !text.equals(searchField.getText());
 						}
 					});
-					return abort.get();
 				} catch (Exception ignored) {
 				}
 				return false;
@@ -553,6 +551,7 @@ public class Popup extends PopupFrame {
 	}
 
 	void populate () {
+		requireEDT();
 		int selectedItemID = selectedItem == null ? -1 : selectedItem.id;
 		clearItems();
 		for (int i = 0, n = itemSnips.size(); i < n; i++) {

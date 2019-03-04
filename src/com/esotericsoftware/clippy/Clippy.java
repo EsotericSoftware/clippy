@@ -21,15 +21,8 @@
 package com.esotericsoftware.clippy;
 
 import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
-
-import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
-import com.esotericsoftware.clippy.Win.POINT;
-import com.esotericsoftware.clippy.util.MultiplexOutputStream;
-import com.esotericsoftware.clippy.util.TextItem;
-import com.esotericsoftware.clippy.util.Util;
-import com.esotericsoftware.minlog.Log;
-import com.esotericsoftware.minlog.Log.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,9 +42,16 @@ import java.util.TimerTask;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
+import com.esotericsoftware.clippy.ClipDataStore.ClipConnection;
+import com.esotericsoftware.clippy.Win.POINT;
+import com.esotericsoftware.clippy.util.MultiplexOutputStream;
+import com.esotericsoftware.clippy.util.TextItem;
+import com.esotericsoftware.clippy.util.Util.RunnableValue;
+import com.esotericsoftware.minlog.Log;
+import com.esotericsoftware.minlog.Log.Logger;
+
 import com.sun.jna.WString;
 
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
 
@@ -154,8 +154,8 @@ public class Clippy {
 		if (System.currentTimeMillis() - backupDir.lastModified() > 1000l * 60 * 60 * 24 * config.clipBackupDays) {
 			try {
 				if (INFO) info("Backing up clip database: " + oldestDir.getAbsolutePath());
-				Util.delete(oldestDir);
-				Util.copy(new File(System.getProperty("user.home"), ".clippy/db"), oldestDir);
+				delete(oldestDir);
+				copy(new File(System.getProperty("user.home"), ".clippy/db"), oldestDir);
 			} catch (IOException ex) {
 				if (ERROR) error("Error backing up clip database.", ex);
 			}
@@ -277,7 +277,7 @@ public class Clippy {
 	}
 
 	void checkProcesses () {
-		String process = Util.getRunningProcess(config.processesDisable);
+		String process = getRunningProcess(config.processesDisable);
 		if (process != null) {
 			if (!disabled) {
 				if (TRACE) trace("Disabled, process running: " + process);
@@ -292,7 +292,7 @@ public class Clippy {
 			}
 		}
 
-		Util.timer.schedule(new TimerTask() {
+		timer.schedule(new TimerTask() {
 			public void run () {
 				checkProcesses();
 			}
@@ -313,12 +313,16 @@ public class Clippy {
 	}
 
 	void showPopup (KeyStroke keyStroke) {
-		popup.showPopup();
+		edt(new Runnable() {
+			public void run () {
+				popup.showPopup();
+			}
+		});
 	}
 
-	void store (String text) {
+	void store (final String text) {
 		if (config.processesDisableClipHistory != null) {
-			String process = Util.getRunningProcess(config.processesDisableClipHistory);
+			String process = getRunningProcess(config.processesDisableClipHistory);
 			if (process != null) {
 				if (TRACE) trace("Not storing clipboard text, process running: " + process);
 				return;
@@ -334,8 +338,12 @@ public class Clippy {
 		try {
 			ClipConnection conn = db.getThreadConnection();
 			if (!config.allowDuplicateClips) conn.removeText(text);
-			int id = conn.add(text);
-			popup.addRecentItem(id, text);
+			final int id = conn.add(text);
+			edt(new Runnable() {
+				public void run () {
+					popup.addRecentItem(id, text);
+				}
+			});
 		} catch (SQLException ex) {
 			if (ERROR) error("Error storing clipboard text.", ex);
 		}
@@ -343,21 +351,25 @@ public class Clippy {
 
 	/** @param text May be null.
 	 * @return The new ID for the clipboard item that was moved to last, or -1 if it was not moved. */
-	public int current (String text) {
+	public int current (final String text) {
 		if (text == null) return -1;
 		if (!clipboard.setContents(text)) return -1;
 
-		try {
-			ClipConnection conn = db.getThreadConnection();
-			if (popup.lockCheckbox.isSelected()) return conn.getID(text);
-			conn.removeText(text);
-			int newID = conn.add(text);
-			popup.makeLast(newID, text);
-			return newID;
-		} catch (SQLException ex) {
-			if (ERROR) error("Error moving clipboard text to last.", ex);
-			return -1;
-		}
+		return edtWait(new RunnableValue<Integer>() {
+			public Integer run () {
+				try {
+					ClipConnection conn = db.getThreadConnection();
+					if (popup.lockCheckbox.isSelected()) return conn.getID(text);
+					conn.removeText(text);
+					int newID = conn.add(text);
+					popup.makeLast(newID, text);
+					return newID;
+				} catch (SQLException ex) {
+					if (ERROR) error("Error moving clipboard text to last.", ex);
+					return -1;
+				}
+			}
+		});
 	}
 
 	/** @param text May be null.
@@ -460,7 +472,7 @@ public class Clippy {
 			}
 		});
 
-		EventQueue.invokeLater(new Runnable() {
+		edt(new Runnable() {
 			public void run () {
 				new Clippy();
 			}
