@@ -226,7 +226,11 @@ public class Tobii {
 					}
 					setGridOffset(gazeStartX, gazeStartY, mouse.x - gazeStartX, mouse.y - gazeStartY);
 				}
-				robot.mousePress(InputEvent.BUTTON1_MASK);
+				
+				//Send mouse click if configured.
+				if( clippy.config.tobiiDoClick ) { 
+					robot.mousePress(InputEvent.BUTTON1_MASK);
+				}
 				mouseDownTime = System.currentTimeMillis();
 			}
 			return false;

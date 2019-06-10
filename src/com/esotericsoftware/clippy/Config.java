@@ -108,6 +108,7 @@ public class Config {
 	public ArrayList<PhilipsHueLights> philipsHue;
 
 	public boolean tobiiEnabled;
+	public boolean tobiiDoClick = true;
 	public String tobiiClickHotkey = "CAPS_LOCK";
 	public float tobiiHeadSensitivityX = 6;
 	public float tobiiHeadSensitivityY = 8;
