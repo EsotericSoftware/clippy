@@ -177,12 +177,13 @@ public class Clippy {
 		final KeyStroke screenshotAppHotkey = KeyStroke.getKeyStroke(config.screenshotAppHotkey);
 		final KeyStroke screenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
 		final KeyStroke screenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
-		final KeyStroke tobiiPressedHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiClickHotkey) : null;
-		final KeyStroke tobiiPressedHotkey2 = tobiiPressedHotkey != null && tobiiPressedHotkey.getKeyCode() == KeyEvent.VK_CAPS_LOCK
+		final KeyStroke tobiiClickHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiClickHotkey) : null;
+		final KeyStroke tobiiClickHotkey2 = tobiiClickHotkey != null && tobiiClickHotkey.getKeyCode() == KeyEvent.VK_CAPS_LOCK
 			? KeyStroke.getKeyStroke("ctrl CAPS_LOCK")
 			: null; // Enables ctrl + click.
+		final KeyStroke tobiiMoveHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiMoveHotkey) : null;
 		List<KeyStroke> keys = Arrays.asList(toggleHotkey, popupHotkey, uploadHotkey, screenshotHotkey, screenshotAppHotkey,
-			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiPressedHotkey, tobiiPressedHotkey2);
+			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiClickHotkey, tobiiClickHotkey2, tobiiMoveHotkey);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(toggleHotkey)) {
@@ -199,8 +200,10 @@ public class Clippy {
 					screenshot.region();
 				else if (keyStroke.equals(screenshotLastRegionHotkey)) //
 					screenshot.lastRegion();
-				else if (keyStroke.equals(tobiiPressedHotkey) || keyStroke.equals(tobiiPressedHotkey2)) //
-					tobii.hotkeyPressed(tobiiPressedHotkey.getKeyCode());
+				else if (keyStroke.equals(tobiiClickHotkey) || keyStroke.equals(tobiiClickHotkey2)) //
+					tobii.hotkeyPressed(tobiiClickHotkey.getKeyCode(), true);
+				else if (keyStroke.equals(tobiiMoveHotkey)) //
+					tobii.hotkeyPressed(tobiiMoveHotkey.getKeyCode(), false);
 			}
 		};
 		for (KeyStroke key : keys) {

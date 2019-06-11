@@ -164,7 +164,7 @@ public class Tobii {
 		}
 	}
 
-	public synchronized void hotkeyPressed (final int vk) {
+	public synchronized void hotkeyPressed (final int vk, final boolean clickOnRelease) {
 		if (ignoreNextHotkey) {
 			ignoreNextHotkey = false;
 			return;
@@ -186,14 +186,14 @@ public class Tobii {
 
 		threadPool.submit(new Runnable() {
 			public void run () {
-				while (hotkeyPressedTick(vk))
+				while (hotkeyPressedTick(vk, clickOnRelease))
 					sleep(8);
 				hotkeyReleased(vk);
 			}
 		});
 	}
 
-	synchronized boolean hotkeyPressedTick (int vk) {
+	synchronized boolean hotkeyPressedTick (int vk, boolean clickOnRelease) {
 		// If mouse was moved manually, abort without clicking.
 		getMouse(mouse);
 		if (mouseLastX != mouse.x || mouseLastY != mouse.y) return false;
@@ -203,7 +203,7 @@ public class Tobii {
 
 		// Click when hotkey is released.
 		if (!clippy.keyboard.isKeyDown(vk)) {
-			if (System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
+			if (clickOnRelease && System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
 				// If a double click, use the same position as the mouse down.
 				setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
 				robot.mouseRelease(InputEvent.BUTTON1_MASK);
@@ -226,8 +226,10 @@ public class Tobii {
 					}
 					setGridOffset(gazeStartX, gazeStartY, mouse.x - gazeStartX, mouse.y - gazeStartY);
 				}
-				robot.mousePress(InputEvent.BUTTON1_MASK);
-				mouseDownTime = System.currentTimeMillis();
+				if (clickOnRelease) {
+					robot.mousePress(InputEvent.BUTTON1_MASK);
+					mouseDownTime = System.currentTimeMillis();
+				}
 			}
 			return false;
 		}
