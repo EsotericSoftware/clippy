@@ -23,6 +23,15 @@ package com.esotericsoftware.clippy;
 import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import com.esotericsoftware.clippy.PhilipsHue.PhilipsHueTimeline;
 import com.esotericsoftware.clippy.util.ColorTimeline;
 import com.esotericsoftware.clippy.util.Sun;
@@ -32,15 +41,6 @@ import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.JsonWriter;
 import com.esotericsoftware.minlog.Log;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map.Entry;
 
 /** @author Nathan Sweet */
 public class Config {
@@ -108,8 +108,10 @@ public class Config {
 	public ArrayList<PhilipsHueLights> philipsHue;
 
 	public boolean tobiiEnabled;
-	public String tobiiMoveHotkey;
 	public String tobiiClickHotkey = "CAPS_LOCK";
+	public String tobiiMoveHotkey;
+	public String tobiiLeftClickHotkey;
+	public String tobiiRightClickHotkey;
 	public float tobiiHeadSensitivityX = 6;
 	public float tobiiHeadSensitivityY = 8;
 

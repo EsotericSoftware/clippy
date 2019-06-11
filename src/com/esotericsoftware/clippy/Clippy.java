@@ -173,17 +173,23 @@ public class Clippy {
 		final KeyStroke toggleHotkey = KeyStroke.getKeyStroke(config.toggleHotkey);
 		final KeyStroke popupHotkey = KeyStroke.getKeyStroke(config.popupHotkey);
 		final KeyStroke uploadHotkey = KeyStroke.getKeyStroke(config.uploadHotkey);
+
 		final KeyStroke screenshotHotkey = KeyStroke.getKeyStroke(config.screenshotHotkey);
 		final KeyStroke screenshotAppHotkey = KeyStroke.getKeyStroke(config.screenshotAppHotkey);
 		final KeyStroke screenshotRegionHotkey = KeyStroke.getKeyStroke(config.screenshotRegionHotkey);
 		final KeyStroke screenshotLastRegionHotkey = KeyStroke.getKeyStroke(config.screenshotLastRegionHotkey);
+
 		final KeyStroke tobiiClickHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiClickHotkey) : null;
 		final KeyStroke tobiiClickHotkey2 = tobiiClickHotkey != null && tobiiClickHotkey.getKeyCode() == KeyEvent.VK_CAPS_LOCK
 			? KeyStroke.getKeyStroke("ctrl CAPS_LOCK")
 			: null; // Enables ctrl + click.
 		final KeyStroke tobiiMoveHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiMoveHotkey) : null;
+		final KeyStroke tobiiRightClickHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiRightClickHotkey) : null;
+		final KeyStroke tobiiLeftClickHotkey = config.tobiiEnabled ? KeyStroke.getKeyStroke(config.tobiiLeftClickHotkey) : null;
+
 		List<KeyStroke> keys = Arrays.asList(toggleHotkey, popupHotkey, uploadHotkey, screenshotHotkey, screenshotAppHotkey,
-			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiClickHotkey, tobiiClickHotkey2, tobiiMoveHotkey);
+			screenshotRegionHotkey, screenshotLastRegionHotkey, tobiiClickHotkey, tobiiClickHotkey2, tobiiMoveHotkey,
+			tobiiRightClickHotkey, tobiiLeftClickHotkey);
 		keyboard = new Keyboard() {
 			protected void hotkey (KeyStroke keyStroke) {
 				if (keyStroke.equals(toggleHotkey)) {
@@ -200,10 +206,16 @@ public class Clippy {
 					screenshot.region();
 				else if (keyStroke.equals(screenshotLastRegionHotkey)) //
 					screenshot.lastRegion();
-				else if (keyStroke.equals(tobiiClickHotkey) || keyStroke.equals(tobiiClickHotkey2)) //
-					tobii.hotkeyPressed(tobiiClickHotkey.getKeyCode(), true);
-				else if (keyStroke.equals(tobiiMoveHotkey)) //
-					tobii.hotkeyPressed(tobiiMoveHotkey.getKeyCode(), false);
+				else if (tobii.connected) {
+					if (keyStroke.equals(tobiiClickHotkey) || keyStroke.equals(tobiiClickHotkey2)) //
+						tobii.hotkeyPressed(tobiiClickHotkey.getKeyCode(), true);
+					else if (keyStroke.equals(tobiiMoveHotkey)) //
+						tobii.hotkeyPressed(tobiiMoveHotkey.getKeyCode(), false);
+					else if (keyStroke.equals(tobiiLeftClickHotkey)) //
+						tobii.hotkeyLeftClick();
+					else if (keyStroke.equals(tobiiRightClickHotkey)) //
+						tobii.hotkeyRightClick();
+				}
 			}
 		};
 		for (KeyStroke key : keys) {

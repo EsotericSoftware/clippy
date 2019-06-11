@@ -4,14 +4,14 @@ package com.esotericsoftware.clippy;
 import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
+import com.esotericsoftware.clippy.tobii.EyeX;
+import com.esotericsoftware.clippy.util.SharedLibraryLoader;
+
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-
-import com.esotericsoftware.clippy.tobii.EyeX;
-import com.esotericsoftware.clippy.util.SharedLibraryLoader;
 
 public class Tobii {
 	static private final int mouseAnimationMillis = 100; // Zero disables animating mouse movement.
@@ -34,7 +34,7 @@ public class Tobii {
 	final Clippy clippy = Clippy.instance;
 	EyeX eyeX;
 	Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-	boolean connected, hotkeyPressed, mouseControl, storeHeadAdjustment, ignoreNextHotkey;
+	boolean connected, hotkeyPressed, hotkeyLeftClick, hotkeyRightClick, mouseControl, storeHeadAdjustment, ignoreNextHotkey;
 
 	double gazeX, gazeY, gazeStartX, gazeStartY, gazeSnappedX, gazeSnappedY;
 	final Buffer gazeJumpSamples = new Buffer(gazeJumpSampleCount * 2);
@@ -44,7 +44,7 @@ public class Tobii {
 	int headSamplesSkipped;
 
 	final Point mouse = new Point();
-	int mouseLastX, mouseLastY, mouseStartX, mouseStartY, mouseEndX, mouseEndY;
+	int mouseLastX, mouseLastY, mouseStartX, mouseStartY, mouseEndX, mouseEndY, mouseButtonPressed;
 	long mouseMoveLastTime, mouseDownTime;
 	double mouseMoveTime;
 	boolean mouseDrag;
@@ -174,6 +174,8 @@ public class Tobii {
 
 		hotkeyPressed = true;
 		mouseControl = true;
+		hotkeyLeftClick = false;
+		hotkeyRightClick = false;
 		storeHeadAdjustment = true;
 		screen = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -181,8 +183,10 @@ public class Tobii {
 		mouseDownTime = 0;
 		if (mouseDrag)
 			setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
-		else
+		else {
+			mouseButtonPressed = 0;
 			setMouseToGaze();
+		}
 
 		threadPool.submit(new Runnable() {
 			public void run () {
@@ -201,8 +205,8 @@ public class Tobii {
 		// Shift aborts without clicking.
 		if (clippy.keyboard.isKeyDown(KeyEvent.VK_SHIFT)) return false;
 
-		// Click when hotkey is released.
-		if (!clippy.keyboard.isKeyDown(vk)) {
+		// Click when hotkey is released or aborted.
+		if (!hotkeyPressed || !clippy.keyboard.isKeyDown(vk)) {
 			if (clickOnRelease && System.currentTimeMillis() - hotkeyReleaseTime < doubleClickTime) {
 				// If a double click, use the same position as the mouse down.
 				setMousePosition(hotkeyReleaseX, hotkeyReleaseY, false);
@@ -226,8 +230,11 @@ public class Tobii {
 					}
 					setGridOffset(gazeStartX, gazeStartY, mouse.x - gazeStartX, mouse.y - gazeStartY);
 				}
-				if (clickOnRelease) {
-					robot.mousePress(InputEvent.BUTTON1_MASK);
+				if (clickOnRelease || hotkeyLeftClick || hotkeyRightClick) {
+					if (hotkeyRightClick)
+						robot.mousePress(mouseButtonPressed = InputEvent.BUTTON3_DOWN_MASK);
+					else
+						robot.mousePress(mouseButtonPressed = InputEvent.BUTTON1_DOWN_MASK);
 					mouseDownTime = System.currentTimeMillis();
 				}
 			}
@@ -259,7 +266,7 @@ public class Tobii {
 		// Stop mouse control.
 		boolean mouseDown;
 		synchronized (this) {
-			if (mouseDrag) robot.mouseRelease(InputEvent.BUTTON1_MASK);
+			if (mouseDrag) robot.mouseRelease(mouseButtonPressed);
 			mouseDown = mouseDownTime > 0;
 			mouseControl = false;
 		}
@@ -292,10 +299,33 @@ public class Tobii {
 			sleep(Math.max(0, doubleTapDragTime - (System.currentTimeMillis() - mouseDownTime)));
 			synchronized (this) {
 				if (mouseDownTime > 0) {
+					robot.mouseRelease(mouseButtonPressed);
 					mouseDownTime = 0;
-					robot.mouseRelease(InputEvent.BUTTON1_MASK);
+					mouseButtonPressed = 0;
 				}
 			}
+		}
+	}
+
+	synchronized void hotkeyLeftClick () {
+		if (!connected) return;
+		if (hotkeyPressed) {
+			hotkeyPressed = false; // Abort existing movement.
+			hotkeyLeftClick = true;
+		} else {
+			robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+		}
+	}
+
+	synchronized void hotkeyRightClick () {
+		if (!connected) return;
+		if (hotkeyPressed) {
+			hotkeyPressed = false; // Abort existing movement.
+			hotkeyRightClick = true;
+		} else {
+			robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+			robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 		}
 	}
 
