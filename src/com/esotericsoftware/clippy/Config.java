@@ -98,6 +98,8 @@ public class Config {
 	public int breakReminderMinutes = 5;
 	public int breakResetMinutes = 5;
 
+	public int autoLockSeconds;
+
 	public HashMap<String, ColorTimesReference> colorTimelines;
 
 	public ColorTimesReference gamma;

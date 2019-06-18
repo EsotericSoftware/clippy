@@ -77,6 +77,7 @@ public class Clippy {
 	final Gamma gamma;
 	final BreakWarning breakWarning;
 	final Tobii tobii;
+	final AutoLock autoLock;
 	boolean disabled;
 	boolean processDisabled;
 
@@ -251,6 +252,7 @@ public class Clippy {
 		if (text != null) store(text);
 
 		breakWarning = new BreakWarning();
+		autoLock = new AutoLock();
 		gamma = new Gamma();
 		new PhilipsHue();
 		tobii = new Tobii();

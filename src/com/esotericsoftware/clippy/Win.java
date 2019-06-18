@@ -188,6 +188,8 @@ public class Win {
 		static public native Pointer LoadImage (Pointer hinst, WString name, int type, int xDesired, int yDesired, int load);
 
 		static public native boolean GetLastInputInfo (LASTINPUTINFO result);
+
+		static public native boolean LockWorkStation ();
 	}
 
 	static public class LASTINPUTINFO extends Structure {

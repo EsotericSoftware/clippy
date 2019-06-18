@@ -107,6 +107,7 @@ public class Tobii {
 			}
 
 			protected void gazeEvent (double timestamp, double x, double y) {
+				clippy.autoLock.resetTimeout();
 				setGazePosition(x, y);
 			}
 
