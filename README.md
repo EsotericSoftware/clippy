@@ -12,6 +12,8 @@ Clippy is a small, multifunctional Windows productivity tool for programmers and
 
 * [**Eye tracking**](#eye-tracking) Clippy can use a [Tobii Eye Tracker 4C](https://tobiigaming.com/eye-tracker-4c/) to control the mouse. Just look at the screen where you want to click and press a hotkey.
 
+* [**Auto lock**](#auto-lock) Clippy can automatically lock your workstation when you are gone. It uses your keyboard and mouse inputs and optionally Tobii eye tracking to detect if you are there.
+
 * [**Lighting control**](#lighting-control) Clippy can control [Philips Hue](http://meethue.com) lights based on the time of day. Similar to blue light filtering for your monitor, this can help your body recognize when it is evening time and improve both your sleep schedule and quality of sleep.
 
 * [**Dyanmic DNS**](#dyanmic-dns) Clippy can keep your IP in sync with [DnsMadeEasy](http://dnsmadeeasy.com) so you can always access your computer.
@@ -238,6 +240,14 @@ The sensitivity settings control how head movement (millimeters) is translated t
 ```
 tobiiHeadSensitivityX: 7
 tobiiHeadSensitivityY: 9.5
+```
+
+## Auto lock
+
+Clippy can automatically lock your workstation after a set time has elapsed if you have not pressed any keys or moved the mouse. If Tobii eye tracking is enabled, it seeing your eyes will prevent the automatic locking.
+
+```
+autoLockSeconds: 90
 ```
 
 ## Lighting control
