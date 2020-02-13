@@ -83,6 +83,7 @@ abstract public class ColorTimeline {
 			fromTime = toTime;
 			if (i == n) toTime = times.get(0);
 		}
+		if (toTime == null) throw new RuntimeException("At least 2 times are required.");
 		int from = fromTime.dayMillis, to = toTime.dayMillis;
 		if (from > to) {
 			to += 24 * 60 * 60 * 1000;
