@@ -16,6 +16,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -218,7 +219,7 @@ public abstract class Upload {
 						setProgress(file, totalProgress);
 					}
 				});
-			return clippy.config.ftpUrl + file.getName();
+			return clippy.config.ftpUrl + URLEncoder.encode(file.getName(), "UTF-8");
 		}
 	}
 
@@ -231,7 +232,7 @@ public abstract class Upload {
 			if (TRACE) trace("Uploading to FTP: " + file);
 			ftpUpload(clippy.config.ftpServer, clippy.config.ftpUser, clippy.config.ftpPassword, clippy.config.ftpDir,
 				path(file.getAbsolutePath()), true);
-			return clippy.config.ftpUrl + file.getName();
+			return clippy.config.ftpUrl + URLEncoder.encode(file.getName(), "UTF-8");
 		}
 	}
 

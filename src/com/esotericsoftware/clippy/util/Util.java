@@ -285,11 +285,8 @@ public class Util {
 	static public File nextUploadFile (int number, String name) {
 		name = name.replaceAll("[ ,]", "-");
 		name = name.replaceAll("-+", "-");
+		name = name.replaceAll("[:\\\\/*\"?|<>']", "-");
 		name = name.replaceAll("-$", "");
-		try {
-			name = URLEncoder.encode(name, "UTF-8");
-		} catch (UnsupportedEncodingException ignored) {
-		}
 
 		if (number == 0) {
 			if (name.charAt(0) == '.') name = id(8) + name;
@@ -365,16 +362,21 @@ public class Util {
 	}
 
 	static public void edt (final Runnable runnable) {
-		if (EventQueue.isDispatchThread()) runnable.run();
-		EventQueue.invokeLater(runnable);
+		if (EventQueue.isDispatchThread())
+			runnable.run();
+		else
+			EventQueue.invokeLater(runnable);
 	}
 
 	static public void edtWait (final Runnable runnable) {
-		if (EventQueue.isDispatchThread()) runnable.run();
-		try {
-			EventQueue.invokeAndWait(runnable);
-		} catch (Exception ex) {
-			throw new RuntimeException();
+		if (EventQueue.isDispatchThread())
+			runnable.run();
+		else {
+			try {
+				EventQueue.invokeAndWait(runnable);
+			} catch (Exception ex) {
+				throw new RuntimeException();
+			}
 		}
 	}
 
