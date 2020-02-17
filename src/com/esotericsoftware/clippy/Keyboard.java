@@ -56,6 +56,18 @@ public class Keyboard {
 			put(VK_SEMICOLON, 0xBA);
 			put(VK_PRINTSCREEN, 0x2C);
 			put(VK_BACK_SLASH, 0xDC);
+			put(VK_F13, 0x7C);
+			put(VK_F14, 0x7D);
+			put(VK_F15, 0x7E);
+			put(VK_F16, 0x7F);
+			put(VK_F17, 0x80);
+			put(VK_F18, 0x81);
+			put(VK_F19, 0x82);
+			put(VK_F20, 0x83);
+			put(VK_F21, 0x84);
+			put(VK_F22, 0x85);
+			put(VK_F23, 0x86);
+			put(VK_F24, 0x87);
 		}
 	};
 
