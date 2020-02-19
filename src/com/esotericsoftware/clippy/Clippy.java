@@ -209,9 +209,9 @@ public class Clippy {
 					screenshot.lastRegion();
 				else if (tobii.connected) {
 					if (keyStroke.equals(tobiiClickHotkey) || keyStroke.equals(tobiiClickHotkey2)) //
-						tobii.hotkeyPressed(tobiiClickHotkey.getKeyCode(), true);
+						tobii.hotkeyPressed(Keyboard.getVK(tobiiClickHotkey), true);
 					else if (keyStroke.equals(tobiiMoveHotkey)) //
-						tobii.hotkeyPressed(tobiiMoveHotkey.getKeyCode(), false);
+						tobii.hotkeyPressed(Keyboard.getVK(tobiiMoveHotkey), false);
 					else if (keyStroke.equals(tobiiLeftClickHotkey)) //
 						tobii.hotkeyLeftClick();
 					else if (keyStroke.equals(tobiiRightClickHotkey)) //

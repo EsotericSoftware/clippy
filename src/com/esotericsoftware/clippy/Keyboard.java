@@ -103,7 +103,7 @@ public class Keyboard {
 					if (RegisterHotKey(null, i, getModifiers(keyStroke), getVK(keyStroke))) {
 						if (DEBUG) debug("Registered hotkey: " + keyStroke);
 					} else {
-						if (ERROR) error("Unable to register hotkey: " + keyStroke);
+						if (ERROR) error("Unable to register hotkey: " + keyStroke + " " + Integer.toString(getVK(keyStroke), 16));
 						System.exit(0);
 					}
 				}
