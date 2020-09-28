@@ -57,8 +57,8 @@ public class TextItem extends JLabel {
 				selected();
 
 				if (tooltipText != null) {
-					setToolTipText(
-						"<html><pre><font size=3>" + tooltipText.replace("\r\n", "\n").replace("\n", "<br>").replace("\t", "   "));
+					setToolTipText("<html><pre><font size=3>" + tooltipText.replace("\r\n", "\n").replace("\n", "<br>")
+						.replace("\t", "   ").replace("<", "&lt;").replace(">", "&gt;"));
 					tooltipText = null;
 				}
 			}
