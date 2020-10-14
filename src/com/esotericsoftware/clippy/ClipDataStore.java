@@ -20,12 +20,13 @@
 
 package com.esotericsoftware.clippy;
 
-import com.esotericsoftware.clippy.util.DataStore;
-
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import com.esotericsoftware.clippy.util.DataStore;
 
 /** @author Nathan Sweet */
 public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
@@ -47,6 +48,19 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		addIndex("snip");
 		addIndex("text");
 		createIndexes();
+	}
+
+	public Connection openConnection () throws SQLException {
+		try {
+			return super.openConnection();
+		} catch (Throwable ex1) {
+			setSocketLocking(false); // Can cause DB open failure if computer name is Unicode.
+			try {
+				return super.openConnection();
+			} catch (Throwable ex2) {
+				throw ex1;
+			}
+		}
 	}
 
 	public ClipConnection newConnection () throws SQLException {

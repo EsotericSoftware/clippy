@@ -168,9 +168,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		if (TRACE) trace("Opening data store connection: " + url);
 		try {
 			return DriverManager.getConnection(url);
-		} catch (SQLException ex) {
-			if (lockFile == null || !lockFile.exists()) throw ex;
-			throw new SQLException("Try deleting lock file: " + lockFile.getAbsolutePath(), ex);
+		} catch (Throwable ex) {
+			String message = "";
+			if (lockFile == null || !lockFile.exists()) message = "\nTry deleting lock file: " + lockFile.getAbsolutePath();
+			throw new RuntimeException("Error opening datastore: " + url + message, ex);
 		}
 	}
 
