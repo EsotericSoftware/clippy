@@ -45,7 +45,7 @@ import com.esotericsoftware.minlog.Log;
 /** @author Nathan Sweet */
 public class Config {
 	static public final Clippy clippy = Clippy.instance;
-	static private final File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
+	static public final File configFile = new File(System.getProperty("user.home"), ".clippy/config.json");
 
 	public boolean allowDuplicateClips;
 	public int maxLengthToStore = 1024 * 1024; // 1 MB

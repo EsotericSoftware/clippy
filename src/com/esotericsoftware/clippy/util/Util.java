@@ -31,8 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,6 +60,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
+import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
@@ -392,6 +391,14 @@ public class Util {
 			return (T)ref.get();
 		} catch (Exception ex) {
 			throw new RuntimeException();
+		}
+	}
+
+	static public void openFile (File file) {
+		try {
+			Desktop.getDesktop().open(file);
+		} catch (Throwable ex) {
+			if (WARN) warn("Unable to open file: " + file, ex);
 		}
 	}
 

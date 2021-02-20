@@ -259,6 +259,19 @@ public class Clippy {
 		new DnsMadeEasy();
 
 		menu.addSeparator(true);
+		menu.addItem(true, "Config", new Runnable() {
+			public void run () {
+				menu.hidePopup();
+				openFile(Config.configFile);
+			}
+		});
+		menu.addItem(true, "Log", new Runnable() {
+			public void run () {
+				menu.hidePopup();
+				openFile(logFile);
+			}
+		});
+		menu.addSeparator(true);
 		menu.addItem(true, "Upload clipboard", new Runnable() {
 			public void run () {
 				menu.hidePopup();
