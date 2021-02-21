@@ -153,7 +153,7 @@ public class ProgressBar extends JDialog {
 				if (delay != -1) {
 					threadPool.submit(new Runnable() {
 						public void run () {
-							sleep(20000);
+							sleep(20_000);
 							dispose();
 						}
 					});

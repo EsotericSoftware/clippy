@@ -199,7 +199,7 @@ public class BreakWarning {
 			progressBar.red("");
 			clippy.tray.updateTooltip("Clippy - Take a break!");
 			if (balloonFirst && clippy.config.breakReminderMinutes > 0)
-				clippy.tray.balloon("Clippy", "Take a break!", 30000);
+				clippy.tray.balloon("Clippy", "Take a break!", 30_000);
 			else {
 				playClip(startClip, 1);
 				progressBar.setVisible(true);

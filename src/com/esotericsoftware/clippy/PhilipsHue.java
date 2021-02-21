@@ -228,7 +228,7 @@ public class PhilipsHue {
 						progress.setVisible(true);
 					}
 					if (message == null) message = "Error " + code;
-					progress.failed("Philips Hue: " + message, 20000);
+					progress.failed("Philips Hue: " + message, 20_000);
 					progress = null;
 				}
 			}

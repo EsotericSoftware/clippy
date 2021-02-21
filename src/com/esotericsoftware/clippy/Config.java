@@ -284,7 +284,7 @@ public class Config {
 			if (dayMillis < 0)
 				timeString = "";
 			else
-				timeString = (dayMillis / 3600000) + ":" + (dayMillis % 3600000) / 60000 + ", ";
+				timeString = (dayMillis / 3_600_000) + ":" + (dayMillis % 3_600_000) / 60_000 + ", ";
 			if (kelvin != 0)
 				return "[" + timeString + kelvin + "K]";
 			else

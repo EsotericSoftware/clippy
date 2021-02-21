@@ -62,7 +62,7 @@ public abstract class Upload {
 					callback.complete(url);
 				} catch (Exception ex) {
 					if (ERROR) error("Upload failed.", ex);
-					if (progressBar != null) progressBar.failed("Failed!", 20000);
+					if (progressBar != null) progressBar.failed("Failed!", 20_000);
 					callback.failed();
 				} finally {
 					if (deleteAfterUpload) file.delete();
@@ -301,7 +301,7 @@ public abstract class Upload {
 			file = filePNG;
 		else {
 			long lengthPNG = filePNG.length();
-			if (lengthPNG > 350000 && fileJPG.length() / (double)lengthPNG < 0.66) {
+			if (lengthPNG > 350_000 && fileJPG.length() / (double)lengthPNG < 0.66) {
 				file = fileJPG;
 				filePNG.delete();
 			} else {

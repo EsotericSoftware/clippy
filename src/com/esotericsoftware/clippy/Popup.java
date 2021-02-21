@@ -501,7 +501,7 @@ public class Popup extends PopupFrame {
 					if (abort()) return;
 					// Disable searching only the most recent until it's proven faster.
 					// int count = conn.getCount(), max = clippy.config.popupSearchCount;
-					// int[] first = {1000, 10000, 50000, 100000};
+					// int[] first = {1000, 10_000, 50_000, 100_000};
 					// for (int i = 0, n = first.length; i < n; i++) {
 					// if (first[i] > count) break;
 					// conn.searchRecent(searchIDs, searchSnips, "%" + text + "%", first[i], max);
