@@ -4,8 +4,6 @@
 	<classpathentry kind="src" path="assets"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry exported="true" kind="lib" path="libs/minlog-1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/jna-4.1.0-min.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/jna-4.1.0-natives.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/retrofit-1.9.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/gson-2.3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/scar-1.11a.jar"/>
@@ -17,5 +15,6 @@
 	<classpathentry exported="true" kind="lib" path="libs/clippy-natives.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/jsonbeans-0.8.jar"/>
 	<classpathentry kind="lib" path="libs/h2-1.4.197.jar"/>
+	<classpathentry kind="lib" path="libs/jna-5.8.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

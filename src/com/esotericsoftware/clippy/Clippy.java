@@ -285,7 +285,7 @@ public class Clippy {
 			}
 		});
 
-		if (config.pluginClass != null) {
+		if (config.pluginClass != null && System.getProperty("dev") == null) {
 			try {
 				Class.forName(config.pluginClass).newInstance();
 			} catch (Exception ex) {

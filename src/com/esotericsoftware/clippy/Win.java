@@ -245,7 +245,7 @@ public class Win {
 		}
 
 		public Parameter (long value) {
-			super(Pointer.SIZE, value);
+			super(Native.POINTER_SIZE, value);
 		}
 	}
 
@@ -336,7 +336,7 @@ public class Win {
 			dwInfoFlags = niif;
 		}
 
-		protected List<?> getFieldOrder () {
+		protected List<String> getFieldOrder () {
 			return Arrays.asList(new String[] {"cbSize", "hWnd", "uID", "uFlags", "uCallbackMessage", "hIcon", "szTip", "dwState",
 				"dwStateMask", "szInfo", "uTimeoutOrVersion", "szInfoTitle", "dwInfoFlags"});
 		}
