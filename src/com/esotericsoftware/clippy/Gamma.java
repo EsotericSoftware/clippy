@@ -31,10 +31,8 @@ public class Gamma extends ColorTimeline {
 	public boolean set (float r, float g, float b, float brightness, Power power, int millis) {
 		if (disabled) return true;
 
+		float m = brightness * 256, rr = r * m, gg = g * m, bb = b * m;
 		synchronized (ramp) {
-			float rr = r * brightness * 256;
-			float gg = g * brightness * 256;
-			float bb = b * brightness * 256;
 			for (int i = 1; i < 256; i++) {
 				ramp.Red[i] = (char)(i * rr);
 				ramp.Green[i] = (char)(i * gg);
@@ -43,7 +41,7 @@ public class Gamma extends ColorTimeline {
 
 			// Ensure the same gamma is not set twice in a row, as some drivers will ignore it even if the gamma was changed
 			// elsewhere.
-			if (odd) ramp.Blue[3] = (char)(ramp.Blue[3] == 0 ? 1 : -1);
+			if (odd) ramp.Blue[3] += (char)(ramp.Blue[3] == 0 ? 1 : -1);
 			odd = !odd;
 
 			// SetDeviceGammaRamp will fail if the ramp has values < 128 unless this registry key is set to 256 (0x100, DWORD).
