@@ -56,8 +56,8 @@ public class Tray {
 			public void run () {
 				if (TRACE) trace("Entered tray thread.");
 
-				hwnd = CreateWindowEx(0, new WString("STATIC"), new WString("com.esotericsoftware.clippy"), 0, 0, 0, 0, 0, 0, 0, 0,
-					0);
+				hwnd = CreateWindowEx(0, new WString("STATIC"), new WString("com.esotericsoftware.clippy.tray"), 0, 0, 0, 0, 0, 0, 0,
+					0, 0);
 				if (hwnd == null) {
 					if (ERROR) error("Unable to create tray window.");
 					System.exit(0);

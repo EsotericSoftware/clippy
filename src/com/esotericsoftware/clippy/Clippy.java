@@ -408,18 +408,23 @@ public class Clippy {
 		int newID = current(text);
 		if (newID == -1) return -1;
 
-		// Could use SendInput or menu->Edit->Paste, or users could install the clink CMD prompt addon or use Windows 10.
-		// char[] chars = new char[2048];
-		// int count = GetClassName(GetForegroundWindow(), chars, chars.length);
-		// if (count > 0) {
-		// if (new String(chars, 0, count).equals("ConsoleWindowClass")) {
-		// }
-		// }
-
 		// Reset modifier key state in case they were down.
 		keyboard.sendKeyUp(VK_MENU);
 		keyboard.sendKeyUp(VK_SHIFT);
 		keyboard.sendKeyUp(VK_CONTROL);
+
+		char[] chars = new char[2048];
+		int count = GetClassName(GetForegroundWindow(), chars, chars.length);
+		if (count > 0) {
+			String className = new String(chars, 0, count);
+			if (className.equals("PuTTY")) {
+				keyboard.sendKeyDown(VK_SHIFT);
+				keyboard.sendKeyDown(VK_INSERT);
+				keyboard.sendKeyUp(VK_INSERT);
+				keyboard.sendKeyUp(VK_SHIFT);
+				return newID;
+			}
+		}
 
 		keyboard.sendKeyDown(VK_CONTROL);
 		keyboard.sendKeyDown((byte)'V');

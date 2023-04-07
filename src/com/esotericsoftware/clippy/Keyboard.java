@@ -45,7 +45,7 @@ public class Keyboard {
 
 	static private final Map<Integer, Integer> codeExceptions = new HashMap<Integer, Integer>() {
 		{
-			put(VK_INSERT, 0x2D);
+			put(KeyEvent.VK_INSERT, 0x2D);
 			put(VK_DELETE, 0x2E);
 			put(VK_ENTER, 0x0D);
 			put(VK_COMMA, 0xBC);

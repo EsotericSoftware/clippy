@@ -22,6 +22,7 @@ package com.esotericsoftware.clippy;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import com.sun.jna.Callback;
 import com.sun.jna.IntegerType;
@@ -82,20 +83,34 @@ public class Win {
 		static public final byte VK_SHIFT = 0x10;
 		static public final byte VK_CONTROL = 0x11;
 		static public final byte VK_MENU = 0x12;
+		static public final byte VK_INSERT = 0x2D;
 		static public final byte VK_LWIN = 0x5b;
 		static public final byte VK_RWIN = 0x5c;
 		static public final int KEYEVENTF_KEYUP = 2;
 
 		static public final int GWL_WNDPROC = -4;
 
+		static public final int WM_CLOSE = 0x10;
+		static public final int WM_SYSCOMMAND = 0x112;
 		static public final int WM_HOTKEY = 0x312;
 		static public final int WM_CLIPBOARDUPDATE = 0x31D;
-		static public final int WM_CLOSE = 0x10;
 		static public final int WM_USER = 0x400;
 		static public final int WM_LBUTTONDOWN = 0x201;
 		static public final int WM_LBUTTONUP = 0x202;
 		static public final int WM_RBUTTONDOWN = 0x204;
 		static public final int WM_RBUTTONUP = 0x205;
+
+		static public final int WM_POWERBROADCAST = 536;
+		static public final int WM_SESSION_CHANGE = 689;
+
+		static public final int PBT_APMPOWERSTATUSCHANGE = 0xA;
+		static public final int PBT_APMRESUMESUSPEND = 0x7;
+		static public final int PBT_APMSUSPEND = 0x4;
+		static public final int PBT_POWERSETTINGCHANGE = 0x8013;
+
+		static public final int SC_SCREENSAVE = 0xF140;
+
+		static public final int DEVICE_NOTIFY_WINDOW_HANDLE = 0;
 
 		static public final int CF_TEXT = 1;
 		static public final int CF_UNICODETEXT = 13;
@@ -135,11 +150,13 @@ public class Win {
 
 		static public native boolean GetWindowRect (Pointer hWnd, RECT rect);
 
-		static public native Pointer MonitorFromWindow (Pointer hwnd, int dwFlags);
+		static public native Pointer MonitorFromWindow (Pointer hWnd, int dwFlags);
 
 		static public native boolean GetMonitorInfo (Pointer hMonitor, MONITORINFO lpmi);
 
 		static public native Pointer GetDC (Pointer hWnd);
+
+		static public native void PostQuitMessage (int exitCode);
 
 		// Mouse
 
@@ -190,6 +207,8 @@ public class Win {
 		static public native boolean GetLastInputInfo (LASTINPUTINFO result);
 
 		static public native boolean LockWorkStation ();
+
+		static public native Pointer RegisterPowerSettingNotification (Pointer hRecipient, GUID PowerSettingGuid, int Flags);
 	}
 
 	static public class LASTINPUTINFO extends Structure {
@@ -378,10 +397,20 @@ public class Win {
 
 		static public final int WTS_CURRENT_SERVER_HANDLE = 0;
 
+		static public final int NOTIFY_FOR_THIS_SESSION = 0;
+
+		static public final int WTS_SESSION_LOGON = 0x5;
+		static public final int WTS_SESSION_LOGOFF = 0x6;
+		static public final int WTS_SESSION_LOCK = 0x7;
+		static public final int WTS_SESSION_UNLOCK = 0x8;
+		static public final int WTS_SESSION_REMOTE_CONTROL = 0x9;
+
 		static public native boolean WTSEnumerateProcesses (int hServer, Pointer Reserved, int Version,
 			PointerByReference ppProcessInfo, IntByReference pCount);
 
 		static public native void WTSFreeMemory (Pointer pMemory);
+
+		static public native boolean WTSRegisterSessionNotification (Pointer hWnd, int dwFlags);
 	}
 
 	static public class WTS_PROCESS_INFO extends Structure {
@@ -393,8 +422,9 @@ public class Win {
 		private WTS_PROCESS_INFO () {
 		}
 
-		public WTS_PROCESS_INFO (Pointer p) {
-			super(p);
+		public WTS_PROCESS_INFO (Pointer pointer) {
+			super(pointer);
+			read();
 		}
 
 		protected List<String> getFieldOrder () {
@@ -403,4 +433,135 @@ public class Win {
 
 		static public final int size = new WTS_PROCESS_INFO().size();
 	}
+
+	static public class GUID extends Structure {
+		static private final char[] hexChars = "0123456789ABCDEF".toCharArray();
+
+		public int Data1;
+		public short Data2;
+		public short Data3;
+		public byte[] Data4 = new byte[8];
+
+		public GUID () {
+		}
+
+		public GUID (Pointer pointer) {
+			super(pointer);
+			read();
+		}
+
+		protected List<String> getFieldOrder () {
+			return Arrays.asList("Data1", "Data2", "Data3", "Data4");
+		}
+
+		public boolean equals (Object o) {
+			if (o == null) return false;
+			if (this == o) return true;
+			if (getClass() != o.getClass()) return false;
+			GUID other = (GUID)o;
+			return Data1 == other.Data1 && Data2 == other.Data2 && Data3 == other.Data3 && Arrays.equals(Data4, other.Data4);
+		}
+
+		public int hashCode () {
+			return Objects.hash(Data1, Data2, Data3) * 31 + Arrays.hashCode(Data4);
+		}
+
+		public byte[] toBytes () {
+			byte[] guid = new byte[16];
+			guid[0] = (byte)(Data1 >> 24);
+			guid[1] = (byte)(Data1 >> 16);
+			guid[2] = (byte)(Data1 >> 8);
+			guid[3] = (byte)Data1;
+			guid[4] = (byte)(Data2 >> 8);
+			guid[5] = (byte)Data2;
+			guid[6] = (byte)(Data3 >> 8);
+			guid[7] = (byte)Data3;
+			System.arraycopy(Data4, 0, guid, 8, 8);
+			return guid;
+		}
+
+		public String toString () {
+			byte[] bGuid = toBytes();
+			StringBuilder buffer = new StringBuilder(2 * bGuid.length);
+			buffer.append("{");
+			for (int i = 0; i < bGuid.length; i++) {
+				char ch1 = hexChars[(bGuid[i] & 0xF0) >> 4];
+				char ch2 = hexChars[bGuid[i] & 0x0F];
+				buffer.append(ch1).append(ch2);
+				if ((i == 3) || (i == 5) || (i == 7) || (i == 9)) buffer.append("-");
+			}
+			buffer.append("}");
+			return buffer.toString();
+		}
+
+		static public GUID valueOf (String guid) {
+			if (guid.length() > 38) throw new IllegalArgumentException("Invalid GUID length: " + guid.length());
+
+			char[] _cguid = guid.toCharArray();
+			char[] _cnewguid = new char[32];
+			for (int i = 0, y = 0; i < _cguid.length; i++)
+				if ((_cguid[i] != '{') && (_cguid[i] != '-') && (_cguid[i] != '}')) _cnewguid[y++] = _cguid[i];
+
+			byte[] bdata = new byte[16];
+			for (int i = 0; i < 32; i += 2)
+				bdata[i / 2] = (byte)((Character.digit(_cnewguid[i], 16) << 4) + Character.digit(_cnewguid[i + 1], 16) & 0xff);
+
+			if (bdata.length != 16) {
+				throw new IllegalArgumentException("Invalid data length: " + bdata.length);
+			}
+
+			GUID newGuid = new GUID();
+
+			long data1Temp = bdata[0] & 0xff;
+			data1Temp <<= 8;
+			data1Temp |= bdata[1] & 0xff;
+			data1Temp <<= 8;
+			data1Temp |= bdata[2] & 0xff;
+			data1Temp <<= 8;
+			data1Temp |= bdata[3] & 0xff;
+			newGuid.Data1 = (int)data1Temp;
+
+			int data2Temp = bdata[4] & 0xff;
+			data2Temp <<= 8;
+			data2Temp |= bdata[5] & 0xff;
+			newGuid.Data2 = (short)data2Temp;
+
+			int data3Temp = bdata[6] & 0xff;
+			data3Temp <<= 8;
+			data3Temp |= bdata[7] & 0xff;
+			newGuid.Data3 = (short)data3Temp;
+
+			newGuid.Data4[0] = bdata[8];
+			newGuid.Data4[1] = bdata[9];
+			newGuid.Data4[2] = bdata[10];
+			newGuid.Data4[3] = bdata[11];
+			newGuid.Data4[4] = bdata[12];
+			newGuid.Data4[5] = bdata[13];
+			newGuid.Data4[6] = bdata[14];
+			newGuid.Data4[7] = bdata[15];
+
+			for (String name : newGuid.getFieldOrder())
+				newGuid.writeField(name);
+
+			return newGuid;
+		}
+	};
+
+	static public class POWERBROADCAST_SETTING extends Structure {
+		public GUID PowerSetting;
+		public int DataLength;
+		public byte[] Data = new byte[1];
+
+		private POWERBROADCAST_SETTING () {
+		}
+
+		public POWERBROADCAST_SETTING (Pointer pointer) {
+			super(pointer);
+			read();
+		}
+
+		protected List<String> getFieldOrder () {
+			return Arrays.asList("PowerSetting", "DataLength", "Data");
+		}
+	};
 }

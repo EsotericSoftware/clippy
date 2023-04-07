@@ -218,7 +218,7 @@ public abstract class Upload {
 					public void progress (float fileProgress, float totalProgress) {
 						setProgress(file, totalProgress);
 					}
-				});
+				}, false);
 			return clippy.config.ftpUrl + URLEncoder.encode(file.getName(), "UTF-8");
 		}
 	}
