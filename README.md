@@ -131,6 +131,11 @@ The r, g, and b values are percentages where 0 means none of that color and 1 me
 5:30am to 6:00am: transition from 1, 1, 0.7, 0.6 to 1, 1, 1, 1
 ```
 
+For Windows to allow setting the full range of gamma, this registry value needs to be set to 256 (0x100, DWORD).
+```
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ICM\GdiIcmGammaRange
+```
+
 ### Colors
 
 Colors can be described as RGB values, as shown above, or as a color temperature:
