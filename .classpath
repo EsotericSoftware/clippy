@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="assets"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
@@ -19,6 +19,6 @@
 	<classpathentry exported="true" kind="lib" path="libs/jsonbeans-0.8.jar"/>
 	<classpathentry kind="lib" path="libs/h2-1.4.197.jar"/>
 	<classpathentry kind="lib" path="libs/jna-5.8.0.jar"/>
-	<classpathentry kind="lib" path="libs/scar-1.11b.jar"/>
+	<classpathentry kind="lib" path="libs/scar-1.11-all.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

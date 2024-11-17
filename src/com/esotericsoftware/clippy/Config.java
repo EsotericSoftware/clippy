@@ -88,6 +88,7 @@ public class Config {
 	public int ftpPort;
 	public String ftpUser;
 	public String ftpPassword;
+	public String ftpKeyFile;
 	public String ftpDir;
 	public String ftpUrl;
 

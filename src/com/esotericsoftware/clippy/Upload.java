@@ -214,7 +214,7 @@ public abstract class Upload {
 			}
 			if (TRACE) trace("Uploading to SFTP: " + file);
 			sftpUpload(clippy.config.ftpServer, clippy.config.ftpPort, clippy.config.ftpUser, clippy.config.ftpPassword,
-				clippy.config.ftpDir, path(file.getAbsolutePath()), new ProgressMonitor() {
+				clippy.config.ftpKeyFile, clippy.config.ftpDir, path(file.getAbsolutePath()), new ProgressMonitor() {
 					public void progress (float fileProgress, float totalProgress) {
 						setProgress(file, totalProgress);
 					}
