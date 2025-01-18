@@ -24,11 +24,13 @@ import static com.esotericsoftware.clippy.Win.CLibrary.*;
 import static com.esotericsoftware.clippy.Win.Kernel32.*;
 import static com.esotericsoftware.clippy.Win.Shell32.*;
 import static com.esotericsoftware.clippy.Win.User32.*;
+import static com.esotericsoftware.clippy.util.Util.*;
 import static com.esotericsoftware.minlog.Log.*;
 
 import java.util.concurrent.CyclicBarrier;
 
 import com.esotericsoftware.clippy.Win.MSG;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 
@@ -71,7 +73,7 @@ public class Clipboard {
 						continue;
 					}
 					if (DEBUG) debug("Clipboard changed.");
-					changed();
+					edt(Clipboard.this::changed);
 				}
 
 				if (TRACE) trace("Exited clipboard thread.");
