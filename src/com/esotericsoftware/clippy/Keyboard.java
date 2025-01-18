@@ -75,10 +75,13 @@ public class Keyboard {
 	final byte[] keys = new byte[256];
 	boolean started;
 	final ArrayDeque<KeyStroke> fireEventQueue = new ArrayDeque();
-	final Runnable fireEvent = new Runnable() {
+	final Runnable fireEvents = new Runnable() {
 		public void run () {
-			KeyStroke keyStroke = fireEventQueue.pollFirst();
-			if (keyStroke != null) hotkey(keyStroke);
+			while (true) {
+				KeyStroke keyStroke = fireEventQueue.pollFirst();
+				if (keyStroke == null) return;
+				hotkey(keyStroke);
+			}
 		}
 	};
 
@@ -122,7 +125,7 @@ public class Keyboard {
 						KeyStroke hotkey = hotkeys.get(id);
 						if (TRACE) trace("Received hotkey: " + hotkey);
 						fireEventQueue.addLast(hotkey);
-						edt(fireEvent);
+						edt(fireEvents);
 					}
 				}
 
