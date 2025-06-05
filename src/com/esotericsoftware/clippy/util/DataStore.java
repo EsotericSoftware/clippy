@@ -147,7 +147,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		};
 	}
 
-	/** Returns a new open connection to the database that backs all DataStores. */
+	/** Returns a new open connection to the database that backs this DataStore. */
 	protected Connection openConnection () throws SQLException {
 		String url;
 		File lockFile = null;
