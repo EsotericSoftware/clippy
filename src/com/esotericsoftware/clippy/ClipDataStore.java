@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, Esoteric Software
+/* Copyright (c) 2014-2025, Esoteric Software
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -49,7 +49,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		createIndexes();
 	}
 
-	public Connection openConnection () throws SQLException {
+	protected Connection openConnection () throws SQLException {
 		try {
 			return super.openConnection();
 		} catch (Throwable ex1) {
@@ -84,19 +84,19 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		public int add (String text) throws SQLException {
 			add.setString(1, text);
 			add.setString(2, text.substring(0, Math.min(text.length(), maxSnipSize)));
-			add.executeUpdate();
+			executeUpdate(add);
 			ResultSet set = add.getGeneratedKeys();
 			return set.next() ? set.getInt(1) : 0;
 		}
 
 		public void removeText (String text) throws SQLException {
 			removeText.setString(1, text);
-			removeText.executeUpdate();
+			executeUpdate(removeText);
 		}
 
 		public void removeID (int id) throws SQLException {
 			removeID.setInt(1, id);
-			removeID.executeUpdate();
+			executeUpdate(removeID);
 		}
 
 		public void searchRecent (ArrayList<Integer> ids, ArrayList<String> snips, String text, int first, int max)
@@ -104,7 +104,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 			searchRecent.setInt(1, first);
 			searchRecent.setString(2, text);
 			searchRecent.setInt(3, max);
-			ResultSet set = searchRecent.executeQuery();
+			ResultSet set = executeQuery(searchRecent);
 			ids.clear();
 			snips.clear();
 			while (set.next()) {
@@ -116,7 +116,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		public void search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max) throws SQLException {
 			search.setString(1, text);
 			search.setInt(2, max);
-			ResultSet set = search.executeQuery();
+			ResultSet set = executeQuery(search);
 			ids.clear();
 			snips.clear();
 			while (set.next()) {
@@ -128,7 +128,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		public void last (ArrayList<Integer> ids, ArrayList<String> snips, int max, int start) throws SQLException {
 			last.setInt(1, max);
 			last.setInt(2, start);
-			ResultSet set = last.executeQuery();
+			ResultSet set = executeQuery(last);
 			ids.clear();
 			snips.clear();
 			while (set.next()) {
@@ -140,7 +140,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		/** @return May be null. */
 		public String getText (int id) throws SQLException {
 			getText.setInt(1, id);
-			ResultSet set = getText.executeQuery();
+			ResultSet set = executeQuery(getText);
 			if (set.next()) return set.getString(1);
 			return null;
 		}
@@ -148,7 +148,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		/** @return May be -1. */
 		public int getID (String text) throws SQLException {
 			getID.setString(1, text);
-			ResultSet set = getID.executeQuery();
+			ResultSet set = executeQuery(getID);
 			if (set.next()) return set.getInt(1);
 			return -1;
 		}

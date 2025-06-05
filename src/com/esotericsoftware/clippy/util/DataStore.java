@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, Esoteric Software
+/* Copyright (c) 2014-2025, Esoteric Software
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -148,7 +148,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	}
 
 	/** Returns a new open connection to the database that backs all DataStores. */
-	public Connection openConnection () throws SQLException {
+	protected Connection openConnection () throws SQLException {
 		String url;
 		File lockFile = null;
 		if (inMemory)
@@ -237,12 +237,17 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		if (DEBUG) debug("Closing data store: " + this);
 		if (!defaultConn.isClosed()) defaultConn.close();
 		defaultConn = null;
-		threadConnections = null;
+		if (threadConnections != null) {
+			threadConnections.remove();
+			threadConnections = null;
+		}
 	}
 
-	/** Returns a connection specifically for use only by the calling thread. */
+	/** Returns a connection specifically for use only by the calling thread. The caller is responsible for closing the connection
+	 * when no longer needed. */
 	public T getThreadConnection () throws SQLException {
 		if (defaultConn == null) throw new IllegalStateException("DataStore has not been opened.");
+		System.out.println(Thread.currentThread().getName());
 		return threadConnections.get();
 	}
 
@@ -257,9 +262,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 	abstract protected T newConnection () throws SQLException;
 
-	/** Represents a connection to a DataStore. Each thread accessing a DataStore must do so through its own
-	 * DataStoreConnection. */
+	/** Represents a connection to a DataStore. Each thread accessing a DataStore must do so through its own DataStoreConnection
+	 * and it must be closed when no longer needed. */
 	public class DataStoreConnection {
+		private final Thread thread = Thread.currentThread();
 		public final Connection conn;
 		private final Statement stmt;
 		private PreparedStatement getCount, clear;
@@ -276,41 +282,64 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 		/** Tokens in the SQL are replaced using {@link DataStore#sql(String)}. */
 		public PreparedStatement prepareStatement (String sql, boolean generatedKeys) throws SQLException {
+			checkThread();
 			return conn.prepareStatement(sql(sql), generatedKeys ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS);
 		}
 
 		/** Tokens in the SQL are replaced using {@link DataStore#sql(String)}. */
 		public boolean execute (String sql) throws SQLException {
+			checkThread();
 			return stmt.execute(sql(sql));
 		}
 
 		/** Tokens in the SQL are replaced using {@link DataStore#sql(String)}. */
 		public ResultSet executeQuery (String sql) throws SQLException {
+			checkThread();
 			return stmt.executeQuery(sql(sql));
+		}
+
+		public void executeUpdate (PreparedStatement stmt) throws SQLException {
+			checkThread();
+			stmt.executeUpdate();
+		}
+
+		public ResultSet executeQuery (PreparedStatement stmt) throws SQLException {
+			checkThread();
+			return stmt.executeQuery();
 		}
 
 		/** Releases resources associated with this connection. */
 		public void close () throws SQLException {
+			checkThread();
 			stmt.close();
 			conn.close();
+			threadConnections.remove();
 		}
 
 		/** Returns the connection to the database for this DataStoreConnection. */
 		public Connection getConnection () {
+			checkThread();
 			return conn;
 		}
 
 		/** Empties the data store. Can only be called after open is called. */
 		public void clear () throws SQLException {
+			checkThread();
 			if (clear == null) clear = prepareStatement("DELETE FROM :table:");
 			clear.execute();
 		}
 
 		public int getCount () throws SQLException {
+			checkThread();
 			if (getCount == null) getCount = prepareStatement("SELECT COUNT(*) FROM :table:");
 			ResultSet set = getCount.executeQuery();
 			if (!set.next()) return 0;
 			return set.getInt(1);
+		}
+
+		private void checkThread () {
+			if (Thread.currentThread() != thread)
+				throw new RuntimeException("Wrong thread: " + Thread.currentThread().getName() + " != " + thread.getName());
 		}
 	}
 
