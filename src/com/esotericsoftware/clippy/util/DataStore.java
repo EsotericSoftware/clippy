@@ -170,7 +170,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			return DriverManager.getConnection(url);
 		} catch (Throwable ex) {
 			String message = "";
-			if (lockFile == null || !lockFile.exists()) message = "\nTry deleting lock file: " + lockFile.getAbsolutePath();
+			if (lockFile != null && !lockFile.exists()) message = "\nTry deleting lock file: " + lockFile.getAbsolutePath();
 			throw new RuntimeException("Error opening datastore: " + url + message, ex);
 		}
 	}

@@ -33,14 +33,13 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	static public final int maxSnipSize = 2048;
 
 	public ClipDataStore () throws SQLException {
-		super("~/.clippy/db/db", "clips", //
-			"LOG=0"); // Disable transaction log.
+		super("~/.clippy/db/db", "clips");
 		// setTraceLevel(TraceLevel.DEBUG);
 		if (System.getProperty("dev") != null)
 			setInMemory(true);
 		else
 			setSocketLocking(true);
-		addColumn("id INTEGER IDENTITY");
+		addColumn("id INTEGER AUTO_INCREMENT");
 		addColumn("text VARCHAR_IGNORECASE NOT NULL");
 		addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ") NOT NULL");
 		open();
