@@ -33,20 +33,23 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 	static public final int maxSnipSize = 2048;
 
 	public ClipDataStore () throws SQLException {
-		super("~/.clippy/db/db", "clips");
+		super("~/.clippy/db/db");
 		// setTraceLevel(TraceLevel.DEBUG);
 		if (System.getProperty("dev") != null)
 			setInMemory(true);
 		else
 			setSocketLocking(true);
-		addColumn("id INTEGER AUTO_INCREMENT");
-		addColumn("text VARCHAR_IGNORECASE NOT NULL");
-		addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ") NOT NULL");
+
+		DataStoreTable table = new DataStoreTable("CLIPS");
+		table.addColumn("id INTEGER AUTO_INCREMENT");
+		table.addColumn("text VARCHAR_IGNORECASE NOT NULL");
+		table.addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ") NOT NULL");
+		table.addIndex("id DESC");
+		table.addIndex("snip");
+		table.addIndex("text");
+		addTable(table);
+
 		open();
-		addIndex("id DESC");
-		addIndex("snip");
-		addIndex("text");
-		createIndexes();
 	}
 
 	protected Connection openConnection () throws SQLException {
@@ -70,15 +73,15 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		private final PreparedStatement add, removeText, removeID, searchRecent, search, last, getText, getID;
 
 		ClipConnection () throws SQLException {
-			add = prepareStatement("INSERT INTO :table: SET text=?, snip=?", true);
-			removeText = prepareStatement("DELETE FROM :table: WHERE text=?");
-			removeID = prepareStatement("DELETE FROM :table: WHERE id=?");
-			last = prepareStatement("SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ? OFFSET ?");
+			add = prepareStatement("INSERT INTO clips SET text=?, snip=?", true);
+			removeText = prepareStatement("DELETE FROM clips WHERE text=?");
+			removeID = prepareStatement("DELETE FROM clips WHERE id=?");
+			last = prepareStatement("SELECT id, snip FROM clips ORDER BY id DESC LIMIT ? OFFSET ?");
 			searchRecent = prepareStatement(
-				"SELECT id, snip FROM (SELECT id, snip FROM :table: ORDER BY id DESC LIMIT ?) WHERE snip LIKE ? LIMIT ?");
-			search = prepareStatement("SELECT id, snip FROM :table: WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
-			getText = prepareStatement("SELECT text FROM :table: WHERE id=? LIMIT 1");
-			getID = prepareStatement("SELECT id FROM :table: WHERE text=? LIMIT 1");
+				"SELECT id, snip FROM (SELECT id, snip FROM clips ORDER BY id DESC LIMIT ?) WHERE snip LIKE ? LIMIT ?");
+			search = prepareStatement("SELECT id, snip FROM clips WHERE snip LIKE ? ORDER BY id DESC LIMIT ?");
+			getText = prepareStatement("SELECT text FROM clips WHERE id=? LIMIT 1");
+			getID = prepareStatement("SELECT id FROM clips WHERE text=? LIMIT 1");
 		}
 
 		public int add (String text) throws SQLException {
