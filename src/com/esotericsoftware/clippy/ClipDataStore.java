@@ -40,7 +40,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		else
 			setSocketLocking(true);
 
-		DataStoreTable table = new DataStoreTable("CLIPS");
+		DataStoreTable table = new DataStoreTable("clips");
 		table.addColumn("id INTEGER AUTO_INCREMENT");
 		table.addColumn("text VARCHAR_IGNORECASE NOT NULL");
 		table.addColumn("snip VARCHAR_IGNORECASE(" + maxSnipSize + ") NOT NULL");
@@ -65,7 +65,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		}
 	}
 
-	public ClipConnection newConnection () throws SQLException {
+	protected ClipConnection newConnection () throws SQLException {
 		return new ClipConnection();
 	}
 

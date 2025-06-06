@@ -177,7 +177,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 		public DataStoreTable (String name) {
 			if (name == null) throw new IllegalArgumentException("name cannot be null.");
-			this.name = name.toUpperCase();
+			this.name = name;
 		}
 
 		public void addColumn (String column) {
@@ -257,7 +257,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 					buffer.setLength(0);
 					for (int ii = 0, nn = columnNames.size(); ii < nn; ii++) {
 						if (ii > 0) buffer.append(',');
-						buffer.append(columnNames.get(ii).toUpperCase());
+						buffer.append(columnNames.get(ii));
 					}
 					if (lucene)
 						FullTextLucene.createIndex(defaultConn, "PUBLIC", getName(), buffer.toString());
