@@ -87,73 +87,73 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		public int add (String text) throws SQLException {
 			add.setString(1, text);
 			add.setString(2, text.substring(0, Math.min(text.length(), maxSnipSize)));
-			executeUpdate(add);
-			ResultSet set = add.getGeneratedKeys();
-			return set.next() ? set.getInt(1) : 0;
+			update(add);
+			try (ResultSet set = add.getGeneratedKeys()) {
+				return set.next() ? set.getInt(1) : 0;
+			}
 		}
 
 		public void removeText (String text) throws SQLException {
 			removeText.setString(1, text);
-			executeUpdate(removeText);
+			update(removeText);
 		}
 
 		public void removeID (int id) throws SQLException {
 			removeID.setInt(1, id);
-			executeUpdate(removeID);
+			update(removeID);
 		}
 
 		public void searchRecent (ArrayList<Integer> ids, ArrayList<String> snips, String text, int first, int max)
 			throws SQLException {
+			ids.clear();
+			snips.clear();
 			searchRecent.setInt(1, first);
 			searchRecent.setString(2, text);
 			searchRecent.setInt(3, max);
-			ResultSet set = executeQuery(searchRecent);
-			ids.clear();
-			snips.clear();
-			while (set.next()) {
-				ids.add(set.getInt(1));
-				snips.add(set.getString(2));
+			try (ResultSet set = query(searchRecent)) {
+				while (set.next()) {
+					ids.add(set.getInt(1));
+					snips.add(set.getString(2));
+				}
 			}
 		}
 
 		public void search (ArrayList<Integer> ids, ArrayList<String> snips, String text, int max) throws SQLException {
-			search.setString(1, text);
-			search.setInt(2, max);
-			ResultSet set = executeQuery(search);
 			ids.clear();
 			snips.clear();
-			while (set.next()) {
-				ids.add(set.getInt(1));
-				snips.add(set.getString(2));
+			search.setString(1, text);
+			search.setInt(2, max);
+			try (ResultSet set = query(search)) {
+				while (set.next()) {
+					ids.add(set.getInt(1));
+					snips.add(set.getString(2));
+				}
 			}
 		}
 
 		public void last (ArrayList<Integer> ids, ArrayList<String> snips, int max, int start) throws SQLException {
-			last.setInt(1, max);
-			last.setInt(2, start);
-			ResultSet set = executeQuery(last);
 			ids.clear();
 			snips.clear();
-			while (set.next()) {
-				ids.add(set.getInt(1));
-				snips.add(set.getString(2));
+			last.setInt(1, max);
+			last.setInt(2, start);
+			try (ResultSet set = query(last)) {
+				while (set.next()) {
+					ids.add(set.getInt(1));
+					snips.add(set.getString(2));
+				}
 			}
 		}
 
 		/** @return May be null. */
 		public String getText (int id) throws SQLException {
 			getText.setInt(1, id);
-			ResultSet set = executeQuery(getText);
-			if (set.next()) return set.getString(1);
-			return null;
+			return queryString(getText, null);
 		}
 
 		/** @return May be -1. */
 		public int getID (String text) throws SQLException {
 			getID.setString(1, text);
-			ResultSet set = executeQuery(getID);
-			if (set.next()) return set.getInt(1);
-			return -1;
+			return queryInt(getID, -1);
 		}
 	}
 }

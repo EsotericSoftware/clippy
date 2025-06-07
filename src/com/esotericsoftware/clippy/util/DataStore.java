@@ -286,14 +286,12 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		/** Empties the data store. Can only be called after open is called. */
 		public void clear (DataStoreConnection conn) throws SQLException {
 			if (clear == null) clear = conn.prepareStatement("DELETE FROM :table:");
-			conn.executeUpdate(clear);
+			conn.update(clear);
 		}
 
 		public int getCount (DataStoreConnection conn) throws SQLException {
 			if (getCount == null) getCount = conn.prepareStatement("SELECT COUNT(*) FROM :table:");
-			ResultSet set = conn.executeQuery(getCount);
-			if (!set.next()) return 0;
-			return set.getInt(1);
+			return conn.queryInt(getCount);
 		}
 
 		public String toString () {
@@ -327,19 +325,49 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			return stmt.execute(sql);
 		}
 
-		public ResultSet executeQuery (String sql) throws SQLException {
+		public ResultSet query (String sql) throws SQLException {
 			checkThread();
 			return stmt.executeQuery(sql);
 		}
 
-		public int executeUpdate (PreparedStatement stmt) throws SQLException {
+		public int update (PreparedStatement stmt) throws SQLException {
 			checkThread();
 			return stmt.executeUpdate();
 		}
 
-		public ResultSet executeQuery (PreparedStatement stmt) throws SQLException {
+		public ResultSet query (PreparedStatement stmt) throws SQLException {
 			checkThread();
 			return stmt.executeQuery();
+		}
+
+		public int queryInt (PreparedStatement stmt) throws SQLException {
+			checkThread();
+			try (ResultSet set = stmt.executeQuery()) {
+				if (!set.next()) throw new SQLException("No rows returned.");
+				return set.getInt(1);
+			}
+		}
+
+		public int queryInt (PreparedStatement stmt, int defaultValue) throws SQLException {
+			checkThread();
+			try (ResultSet set = stmt.executeQuery()) {
+				return set.next() ? set.getInt(1) : defaultValue;
+			}
+		}
+
+		public String queryString (PreparedStatement stmt) throws SQLException {
+			checkThread();
+			try (ResultSet set = stmt.executeQuery()) {
+				if (!set.next()) throw new SQLException("No rows returned.");
+				return set.getString(1);
+			}
+		}
+
+		public String queryString (PreparedStatement stmt, String defaultValue) throws SQLException {
+			checkThread();
+			try (ResultSet set = stmt.executeQuery()) {
+				return set.next() ? set.getString(1) : defaultValue;
+			}
 		}
 
 		/** Releases resources associated with this connection. */
