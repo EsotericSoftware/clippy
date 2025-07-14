@@ -65,12 +65,23 @@ public class Clipboard {
 				} catch (Exception ignored) {
 				}
 
+				char[] chars = new char[2048];
 				MSG msg = new MSG();
 				while (GetMessage(msg, null, WM_CLIPBOARDUPDATE, WM_CLIPBOARDUPDATE)) {
 					if (msg.message != WM_CLIPBOARDUPDATE) continue;
-					if (hwnd.equals(GetClipboardOwner())) {
-						if (TRACE) trace("Clipboard changed (own event).");
-						continue;
+					Pointer owner = GetClipboardOwner();
+					if (owner != null) {
+						if (hwnd.equals(owner)) {
+							if (TRACE) trace("Clipboard changed (own event).");
+							continue;
+						}
+
+						// To skip specific apps.
+						// int count = GetClassName(owner, chars, chars.length);
+						// if (count > 0) {
+						// String className = new String(chars, 0, count);
+						// if (className.equals("")) continue;
+						// }
 					}
 					if (DEBUG) debug("Clipboard changed.");
 					edt(Clipboard.this::changed);
