@@ -161,6 +161,10 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		if (defaultConn == null) throw new IllegalStateException("DataStore must be open.");
 	}
 
+	public String getDatabasePath () {
+		return databasePath;
+	}
+
 	public String toString () {
 		return databasePath;
 	}
@@ -301,14 +305,24 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 	/** Represents a connection to a DataStore. Each thread accessing a DataStore must do so through its own DataStoreConnection
 	 * and it must be closed when no longer needed. */
-	public class DataStoreConnection {
-		private final Thread thread = Thread.currentThread();
+	static public class DataStoreConnection implements AutoCloseable {
+		public final DataStore store;
 		public final Connection conn;
 		private final Statement stmt;
+		private final Thread thread;
 
-		public DataStoreConnection () throws SQLException {
-			conn = openConnection();
+		protected DataStoreConnection (DataStoreConnection delegate) throws SQLException {
+			store = delegate.store;
+			conn = delegate.conn;
+			stmt = delegate.stmt;
+			thread = delegate.thread;
+		}
+
+		public DataStoreConnection (DataStore store) throws SQLException {
+			this.store = store;
+			conn = store.openConnection();
 			stmt = conn.createStatement();
+			thread = Thread.currentThread();
 		}
 
 		public PreparedStatement prepareStatement (String sql) throws SQLException {
@@ -328,6 +342,14 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		public ResultSet query (String sql) throws SQLException {
 			checkThread();
 			return stmt.executeQuery(sql);
+		}
+
+		public int getGeneratedKey (PreparedStatement stmt) throws SQLException {
+			checkThread();
+			try (ResultSet set = stmt.getGeneratedKeys()) {
+				if (set.next()) return set.getInt(1);
+				throw new SQLException("Failed to get generated key.");
+			}
 		}
 
 		public int update (PreparedStatement stmt) throws SQLException {
@@ -375,7 +397,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			checkThread();
 			stmt.close();
 			conn.close();
-			threadConnections.remove();
+			if (store.threadConnections != null) store.threadConnections.remove();
 		}
 
 		/** Returns the connection to the database for this DataStoreConnection. */

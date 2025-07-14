@@ -73,6 +73,7 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		private final PreparedStatement add, removeText, removeID, searchRecent, search, last, getText, getID;
 
 		ClipConnection () throws SQLException {
+			super(ClipDataStore.this);
 			add = prepareStatement("INSERT INTO clips SET text=?, snip=?", true);
 			removeText = prepareStatement("DELETE FROM clips WHERE text=?");
 			removeID = prepareStatement("DELETE FROM clips WHERE id=?");
