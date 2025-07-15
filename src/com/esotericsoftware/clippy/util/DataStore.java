@@ -92,7 +92,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		defaultConn = openConnection();
 
 		for (DataStoreTable table : tables)
-			table.open();
+			table.open(this);
 
 		threadConnections = new ThreadLocal<T>() {
 			protected T initialValue () {
@@ -171,7 +171,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 	abstract protected T newConnection () throws SQLException;
 
-	public class DataStoreTable {
+	static public class DataStoreTable {
 		private final String name;
 		private final ArrayList<String> columns = new ArrayList();
 		private final ArrayList<List<String>> indexes = new ArrayList();
@@ -186,17 +186,14 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 		public void addColumn (String column) {
 			if (column == null) throw new IllegalArgumentException("column cannot be null.");
-			checkClosed();
 			columns.add(column);
 		}
 
 		public void addIndex (String... columnNames) {
-			checkClosed();
 			indexes.add(Arrays.asList(columnNames));
 		}
 
 		public void addFulltextIndex (String... columnNames) {
-			checkClosed();
 			fulltextIndexes.add(Arrays.asList(columnNames));
 		}
 
@@ -208,7 +205,8 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			return name;
 		}
 
-		void open () throws SQLException {
+		void open (DataStore store) throws SQLException {
+			Connection defaultConn = store.defaultConn;
 			Statement stmt = defaultConn.createStatement();
 			try {
 				stmt.execute(sql("SELECT 1 FROM :table:"));
@@ -299,7 +297,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 		}
 
 		public String toString () {
-			return databasePath + "/" + name;
+			return name;
 		}
 	}
 
