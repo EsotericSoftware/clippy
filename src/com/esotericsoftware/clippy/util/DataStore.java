@@ -42,9 +42,23 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	private final String databasePath, connectionOptions;
 	private boolean inMemory, socketLocking;
 	private TraceLevel traceLevel = TraceLevel.OFF;
-	private Connection defaultConn;
 	private final ArrayList<DataStoreTable> tables = new ArrayList();
-	private ThreadLocal<T> threadConnections;
+
+	private volatile boolean open;
+	private final ArrayList<T> connections = new ArrayList();
+	private final ThreadLocal<T> threadLocal = new ThreadLocal<T>() {
+		protected T initialValue () {
+			try {
+				T conn = newConnection();
+				synchronized (DataStore.this) {
+					connections.add(conn);
+				}
+				return conn;
+			} catch (SQLException ex) {
+				throw new RuntimeException("Unable to obtain datastore thread connection.", ex);
+			}
+		}
+	};
 
 	public DataStore (String databasePath) {
 		this(databasePath, "AUTO_RECONNECT=TRUE");
@@ -87,22 +101,13 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	}
 
 	/** Opens the DataStore, creating the tables if they do not exist. */
-	public void open () throws SQLException {
+	public synchronized void open () throws SQLException {
 		checkClosed();
-		defaultConn = openConnection();
-
-		for (DataStoreTable table : tables)
-			table.open(this);
-
-		threadConnections = new ThreadLocal<T>() {
-			protected T initialValue () {
-				try {
-					return newConnection();
-				} catch (SQLException ex) {
-					throw new RuntimeException("Unable to obtain datastore thread connection.", ex);
-				}
-			}
-		};
+		try (Connection conn = openConnection()) {
+			for (DataStoreTable table : tables)
+				table.open(conn);
+		}
+		open = true;
 	}
 
 	/** Returns a new open connection to the database that backs this DataStore. */
@@ -136,29 +141,26 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 	/** Releases all resources associated with this DataStore. Afterward, all connection objects will fail if an attempt is made to
 	 * use them. */
 	public synchronized void close () throws SQLException {
-		if (defaultConn == null) return;
+		if (!open) return;
 		if (DEBUG) debug("Closing data store: " + this);
-		if (!defaultConn.isClosed()) defaultConn.close();
-		defaultConn = null;
-		if (threadConnections != null) {
-			threadConnections.remove();
-			threadConnections = null;
-		}
+		open = false;
+		for (T conn : connections)
+			conn.close();
 	}
 
 	/** Returns a connection specifically for use only by the calling thread. The caller is responsible for closing the connection
 	 * when no longer needed. */
 	public T getThreadConnection () throws SQLException {
 		checkOpen();
-		return threadConnections.get();
+		return threadLocal.get();
 	}
 
 	void checkClosed () {
-		if (defaultConn != null) throw new IllegalStateException("DataStore must be closed.");
+		if (open) throw new IllegalStateException("DataStore must be closed.");
 	}
 
 	void checkOpen () {
-		if (defaultConn == null) throw new IllegalStateException("DataStore must be open.");
+		if (!open) throw new IllegalStateException("DataStore must be open.");
 	}
 
 	public String getDatabasePath () {
@@ -205,9 +207,8 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			return name;
 		}
 
-		void open (DataStore store) throws SQLException {
-			Connection defaultConn = store.defaultConn;
-			Statement stmt = defaultConn.createStatement();
+		void open (Connection conn) throws SQLException {
+			Statement stmt = conn.createStatement();
 			try {
 				stmt.execute(sql("SELECT 1 FROM :table:"));
 				if (TRACE) trace("Data store exists: " + this);
@@ -251,9 +252,9 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			if (fulltextIndexes.size() > 0) {
 				if (TRACE) trace("Creating fulltext indexes: " + this + ", " + fulltextIndexes);
 				if (lucene)
-					FullTextLucene.init(defaultConn);
+					FullTextLucene.init(conn);
 				else
-					FullText.init(defaultConn);
+					FullText.init(conn);
 				for (int i = 0, n = fulltextIndexes.size(); i < n; i++) {
 					List<String> columnNames = fulltextIndexes.get(i);
 					buffer.setLength(0);
@@ -262,9 +263,9 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 						buffer.append(columnNames.get(ii));
 					}
 					if (lucene)
-						FullTextLucene.createIndex(defaultConn, "PUBLIC", getName(), buffer.toString());
+						FullTextLucene.createIndex(conn, "PUBLIC", getName(), buffer.toString());
 					else
-						FullText.createIndex(defaultConn, "PUBLIC", getName(), buffer.toString());
+						FullText.createIndex(conn, "PUBLIC", getName(), buffer.toString());
 				}
 				// Example fulltext query:
 				// SELECT T.* FROM FT_SEARCH_DATA(?, 0, 0) FT, table T WHERE FT.TABLE='table' AND T.id=FT.KEYS[0]
@@ -395,7 +396,9 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 			checkThread();
 			stmt.close();
 			conn.close();
-			if (store.threadConnections != null) store.threadConnections.remove();
+			synchronized (store) {
+				store.connections.remove(this);
+			}
 		}
 
 		/** Returns the connection to the database for this DataStoreConnection. */
