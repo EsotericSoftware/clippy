@@ -393,7 +393,7 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 
 		/** Releases resources associated with this connection. */
 		public void close () throws SQLException {
-			checkThread();
+			if (store.open) checkThread();
 			stmt.close();
 			conn.close();
 			synchronized (store) {
