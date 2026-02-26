@@ -230,7 +230,7 @@ public class Clippy {
 		clipboard = new Clipboard(config.maxLengthToStore) {
 			protected void changed () {
 				String text = clipboard.getContents();
-				if (text != null) store(text);
+				if (text != null && !text.trim().isEmpty()) store(text);
 			}
 		};
 
