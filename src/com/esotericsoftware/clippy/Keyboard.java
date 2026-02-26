@@ -118,8 +118,12 @@ public class Keyboard {
 
 				// Listen for hotkeys.
 				MSG msg = new MSG();
-				while (GetMessage(msg, null, WM_HOTKEY, WM_HOTKEY)) {
-					if (msg.message != WM_HOTKEY) continue;
+				while (GetMessage(msg, null, 0, 0)) {
+					if (msg.message != WM_HOTKEY) {
+						TranslateMessage(msg);
+						DispatchMessage(msg);
+						continue;
+					}
 					int id = msg.wParam.intValue();
 					if (id >= 0 && id < hotkeys.size()) {
 						KeyStroke hotkey = hotkeys.get(id);

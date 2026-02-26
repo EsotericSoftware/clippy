@@ -67,8 +67,12 @@ public class Clipboard {
 
 				char[] chars = new char[2048];
 				MSG msg = new MSG();
-				while (GetMessage(msg, null, WM_CLIPBOARDUPDATE, WM_CLIPBOARDUPDATE)) {
-					if (msg.message != WM_CLIPBOARDUPDATE) continue;
+				while (GetMessage(msg, null, 0, 0)) {
+					if (msg.message != WM_CLIPBOARDUPDATE) {
+						TranslateMessage(msg);
+						DispatchMessage(msg);
+						continue;
+					}
 					Pointer owner = GetClipboardOwner();
 					if (owner != null) {
 						if (hwnd.equals(owner)) {
