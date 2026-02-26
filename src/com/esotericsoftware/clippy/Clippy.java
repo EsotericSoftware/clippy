@@ -50,6 +50,7 @@ import com.esotericsoftware.clippy.util.Util.RunnableValue;
 import com.esotericsoftware.minlog.Log;
 import com.esotericsoftware.minlog.Log.Logger;
 
+import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 
 import java.awt.Font;
