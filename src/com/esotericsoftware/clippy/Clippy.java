@@ -414,7 +414,8 @@ public class Clippy {
 		keyboard.sendKeyUp(VK_CONTROL);
 
 		char[] chars = new char[2048];
-		int count = GetClassName(GetForegroundWindow(), chars, chars.length);
+		Pointer foreground = GetForegroundWindow();
+		int count = foreground == null ? 0 : GetClassName(foreground, chars, chars.length);
 		if (count > 0) {
 			String className = new String(chars, 0, count);
 			if (className.equals("PuTTY")) {

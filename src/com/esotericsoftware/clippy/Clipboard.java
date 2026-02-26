@@ -190,7 +190,7 @@ public class Clipboard {
 
 			return text;
 		} finally {
-			if (!CloseClipboard(hwnd)) {
+			if (!CloseClipboard()) {
 				if (WARN) warn("Unable to close clipboard.");
 				return null;
 			}
@@ -229,13 +229,13 @@ public class Clipboard {
 			buffer.setWideString(0, text);
 			GlobalUnlock(data);
 
-			if (SetClipboardData(CF_UNICODETEXT, buffer) == null) {
+			if (SetClipboardData(CF_UNICODETEXT, data) == null) {
 				if (WARN) warn("Unable to set clipboard data.");
 				return false;
 			}
 			return true;
 		} finally {
-			if (!CloseClipboard(hwnd)) {
+			if (!CloseClipboard()) {
 				if (WARN) warn("Unable to close clipboard.");
 			}
 		}

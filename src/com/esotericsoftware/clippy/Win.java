@@ -186,7 +186,7 @@ public class Win {
 
 		static public native boolean OpenClipboard (Pointer hWnd);
 
-		static public native boolean CloseClipboard (Pointer hWnd);
+		static public native boolean CloseClipboard ();
 
 		static public native boolean EmptyClipboard ();
 
