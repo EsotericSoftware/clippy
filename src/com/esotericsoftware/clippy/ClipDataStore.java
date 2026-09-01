@@ -56,7 +56,12 @@ public class ClipDataStore extends DataStore<ClipDataStore.ClipConnection> {
 		try {
 			return super.openConnection();
 		} catch (Throwable ex1) {
-			setSocketLocking(false); // Can cause DB open failure if computer name is Unicode.
+			try {
+				setSocketLocking(false); // Can cause DB open failure if computer name is Unicode.
+			} catch (IllegalStateException ex2) {
+				ex1.addSuppressed(ex2);
+				throw ex1;
+			}
 			try {
 				return super.openConnection();
 			} catch (Throwable ex2) {
