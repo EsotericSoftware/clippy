@@ -22,7 +22,12 @@ package com.esotericsoftware.clippy.util;
 
 import static com.esotericsoftware.minlog.Log.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -32,7 +37,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
+import org.h2.api.ErrorCode;
 import org.h2.fulltext.FullText;
 import org.h2.fulltext.FullTextLucene;
 
@@ -124,17 +131,68 @@ public abstract class DataStore<T extends DataStore.DataStoreConnection> {
 				lockFile = new File(System.getProperty("user.home"), databasePath.substring(1) + ".lock.db");
 			else
 				lockFile = new File(databasePath + ".lock.db");
-			lockFile.delete(); // Try to delete orphaned database lock file.
 		}
 		if (traceLevel != TraceLevel.OFF) url += ";TRACE_LEVEL_SYSTEM_OUT=" + traceLevel.ordinal();
 		url += ";" + connectionOptions;
 		if (TRACE) trace("Opening data store connection: " + url);
+
+		Throwable failure;
 		try {
 			return DriverManager.getConnection(url);
 		} catch (Throwable ex) {
-			String message = "";
-			if (lockFile != null && !lockFile.exists()) message = "\nTry deleting lock file: " + lockFile.getAbsolutePath();
-			throw new RuntimeException("Error opening datastore: " + url + message, ex);
+			failure = ex;
+		}
+		if (lockFile != null && isLockFailure(failure) && deleteAbandonedSocketLock(lockFile)) {
+			if (DEBUG) debug("Deleted abandoned database lock file: " + lockFile.getAbsolutePath());
+			try {
+				return DriverManager.getConnection(url);
+			} catch (Throwable ex) {
+				ex.addSuppressed(failure);
+				failure = ex;
+			}
+		}
+
+		String message = "";
+		if (lockFile != null && lockFile.exists())
+			message = "\nDatabase lock is active or could not be safely removed: " + lockFile.getAbsolutePath();
+		throw new RuntimeException("Error opening datastore: " + url + message, failure);
+	}
+
+	static private boolean isLockFailure (Throwable ex) {
+		while (ex != null) {
+			if (ex instanceof SQLException) {
+				int errorCode = ((SQLException)ex).getErrorCode();
+				if (errorCode == ErrorCode.DATABASE_ALREADY_OPEN_1 || errorCode == ErrorCode.ERROR_OPENING_DATABASE_1)
+					return true;
+			}
+			ex = ex.getCause();
+		}
+		return false;
+	}
+
+	static private boolean deleteAbandonedSocketLock (File lockFile) {
+		try {
+			byte[] contents = Files.readAllBytes(lockFile.toPath());
+			Properties properties = new Properties();
+			properties.load(new ByteArrayInputStream(contents));
+			if (!"socket".equalsIgnoreCase(properties.getProperty("method"))) return false;
+
+			String ipAddress = properties.getProperty("ipAddress");
+			String portText = properties.getProperty("port");
+			if (ipAddress == null || portText == null) return false;
+			int port = Integer.parseInt(portText);
+			for (int i = 0; i < 3; i++) {
+				try (Socket socket = new Socket()) {
+					socket.connect(new InetSocketAddress(ipAddress, port), 500);
+					return false;
+				} catch (IOException ignored) {
+				}
+			}
+
+			if (!Arrays.equals(contents, Files.readAllBytes(lockFile.toPath()))) return false;
+			return Files.deleteIfExists(lockFile.toPath());
+		} catch (Exception ignored) {
+			return false;
 		}
 	}
 
